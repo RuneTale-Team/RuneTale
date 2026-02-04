@@ -1,5 +1,7 @@
 rootProject.name = "dev.hytalemodding"
 
+include("skills")
+
 plugins {
     // See documentation on https://scaffoldit.dev
     id("dev.scaffoldit") version "0.2.4"
