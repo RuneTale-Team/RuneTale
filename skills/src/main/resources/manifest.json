@@ -1,20 +1,19 @@
 {
-    "Group": "HytaleModding",
-    "Name": "ExamplePlugin",
-    "Version": "0.0.0",
-    "Description": "Description of your plugin",
+    "Group": "RuneTale",
+    "Name": "RuneTaleSkills",
+    "Version": "0.0.1",
+    "Description": "Provides mechanics for skills and leveling",
     "Authors": [
         {
-            "Name": "Your Name",
-            "Email": "your.email@example.com",
-            "Url": "https://your-website.com"
+            "Name": "Nico Piel",
+            "Email": "nicopiel@mailbox.org"
         }
     ],
-    "Website": "https://your-plugin-website.com",
+    "Website": "runetale.org",
     "DisabledByDefault": false,
     "IncludesAssetPack": false,
     "Dependencies": {},
     "OptionalDependencies": {},
     "ServerVersion": "*",
-    "Main": "dev.hytalemodding.ExamplePlugin"
+    "Main": "org.runetale.SkillsPlugin"
 }

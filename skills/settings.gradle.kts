@@ -1,11 +1,12 @@
 rootProject.name = "org.runetale"
 
-include("skills")
-
 plugins {
     // See documentation on https://scaffoldit.dev
     id("dev.scaffoldit") version "0.2.4"
 }
+
+// Would you like to do a split project?
+// Create a folder named "common", then configure details with `common { }`
 
 hytale {
     usePatchline("release")
@@ -17,5 +18,11 @@ hytale {
 
     dependencies {
         // Any external dependency you also want to include
+    }
+
+    manifest {
+        Group = "RuneTale"
+        Name = "Skills Plugin"
+        Main = "org.runetale.SkillsPlugin"
     }
 }
