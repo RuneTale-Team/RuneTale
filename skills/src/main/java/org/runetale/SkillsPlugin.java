@@ -1,4 +1,4 @@
-package dev.hytalemodding;
+package org.runetale;
 
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -8,9 +8,9 @@ import dev.hytalemodding.events.ExampleEvent;
 
 import javax.annotation.Nonnull;
 
-public class ExamplePlugin extends JavaPlugin {
+public class SkillsPlugin extends JavaPlugin {
 
-    public ExamplePlugin(@Nonnull JavaPluginInit init) {
+    public SkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
     }
 

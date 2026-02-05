@@ -3,19 +3,5 @@ rootProject.name = "org.runetale"
 include("skills")
 
 plugins {
-    // See documentation on https://scaffoldit.dev
-    id("dev.scaffoldit") version "0.2.4"
-}
-
-hytale {
-    usePatchline("release")
-    useVersion("+")
-
-    repositories {
-        // Any external repositories besides: MavenLocal, MavenCentral, HytaleMaven, and CurseMaven
-    }
-
-    dependencies {
-        // Any external dependency you also want to include
-    }
+    id("org.gradle.toolchains.foojay-resolver-convention") version("1.0.0")
 }

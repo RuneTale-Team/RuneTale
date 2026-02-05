@@ -1,11 +1,16 @@
-/**
- * NOTE: This is entirely optional and basics can be done in `settings.gradle.kts`
- */
-
-repositories {
-    // Any external repositories besides: MavenLocal, MavenCentral, HytaleMaven, and CurseMaven
+plugins {
+    // Apply the application plugin to add support for building a CLI application in Java.
+    application
 }
 
-dependencies {
-    // Any external dependency you also want to include
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
+
+
+application {
+    // Define the main class for the application.
+    mainClass = "org.runetale.skills."
 }
