@@ -8,9 +8,3 @@ java {
         languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
-
-
-application {
-    // Define the main class for the application.
-    mainClass = "org.runetale.skills."
-}

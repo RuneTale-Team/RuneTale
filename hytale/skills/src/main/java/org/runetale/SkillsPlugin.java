@@ -3,8 +3,8 @@ package org.runetale;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
-import dev.hytalemodding.commands.ExampleCommand;
-import dev.hytalemodding.events.ExampleEvent;
+import org.runetale.commands.ExampleCommand;
+import org.runetale.events.ExampleEvent;
 
 import javax.annotation.Nonnull;
 

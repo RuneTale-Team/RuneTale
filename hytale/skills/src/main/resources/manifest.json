@@ -1,0 +1,10 @@
+{
+    "Group": "Orgrunetalehytale",
+    "Name": "Skills",
+    "Version": "0.0.0",
+    "Authors": [],
+    "DisabledByDefault": false,
+    "IncludesAssetPack": false,
+    "ServerVersion": "*",
+    "Main": "orgrunetalehytale.skills.Skills"
+}
