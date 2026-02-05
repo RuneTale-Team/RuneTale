@@ -1,0 +1,5 @@
+{
+  "Group": "RuneTale",
+  "Name": "SkillsPlugin",
+  "Main": "org.runetale.skills.SkillsPlugin"
+}
