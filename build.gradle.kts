@@ -1,9 +1,26 @@
+import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.Copy
+
 plugins {
     // Shadow makes “fat jars” (bundle your dependencies)
     id("com.gradleup.shadow") version "9.3.1" apply false
     // java apply false
     // `java-library` apply false
 }
+
+val vineflower by configurations.creating
+
+dependencies {
+    vineflower("org.vineflower:vineflower:1.11.2")
+}
+
+val runDir = layout.projectDirectory.dir("run")
+val serverDir = layout.projectDirectory.dir("server")
+val modsDir = serverDir.dir("mods")
+val hytaleServerJar = serverDir.file("HytaleServer.jar").asFile
+val decompileOutDir = layout.buildDirectory.dir("decompiled/hytale-server")
+val unpackOutDir = layout.buildDirectory.dir("unpacked/hytale-server")
+val filteredJar = layout.buildDirectory.file("tmp/HytaleServer-com-hypixel.jar")
 
 allprojects {
     group = providers.gradleProperty("group").get()
@@ -56,12 +73,26 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     }
 }
 
-// in root build.gradle.kts
+// All plugin subprojects (":plugins:*")
+val pluginProjects = subprojects.filter { it.path.startsWith(":plugins:") }
 
-val runDir = layout.projectDirectory.dir("run")
-val modsDir = layout.projectDirectory.dir("server/mods")
+tasks.register<Delete>("cleanDeployedPlugins") {
+    // Only delete jars that match your plugin project names, e.g. "skills-*.jar"
+    val patterns = pluginProjects.map { "${it.name}-*.jar" }
+
+    delete(
+        fileTree(modsDir.asFile).apply {
+            patterns.forEach { include(it) }
+        }
+    )
+
+    doLast {
+        println("Cleaned deployed plugin jars from: ${modsDir.asFile}")
+    }
+}
 
 tasks.register("deployPluginsToRun") {
+    dependsOn("cleanDeployedPlugins")
     // build all plugin jars first
     dependsOn(subprojects.filter { it.path.startsWith(":plugins:") }.map { it.tasks.named("shadowJar") })
 
@@ -75,4 +106,35 @@ tasks.register("deployPluginsToRun") {
         }
         println("Copied plugin jars to ${modsDir.asFile}")
     }
+}
+
+tasks.register<Jar>("makeFilteredHytaleJar") {
+    inputs.file(hytaleServerJar)
+    archiveFileName.set(filteredJar.get().asFile.name)
+    destinationDirectory.set(filteredJar.get().asFile.parentFile)
+
+    from(zipTree(hytaleServerJar)) {
+        include("com/hypixel/**")
+    }
+}
+
+tasks.register<Exec>("decompileHytaleServerJar") {
+    dependsOn("makeFilteredHytaleJar")
+
+    doFirst {
+        val vineflowerJar = configurations.getByName("vineflower").singleFile
+        val outPath = layout.buildDirectory.dir("decompiled/hytale-server-hypixel").get().asFile.absolutePath
+        val inJar = filteredJar.get().asFile.absolutePath
+
+        commandLine(
+            "java", "-jar", vineflowerJar.absolutePath,
+            "--folder",
+            inJar,
+            outPath
+        )
+    }
+}
+
+tasks.register<Delete>("cleanDecompiledHytaleServerJar") {
+    delete(decompileOutDir)
 }
