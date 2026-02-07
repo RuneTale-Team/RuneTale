@@ -123,7 +123,7 @@ tasks.register<Exec>("decompileHytaleServerJar") {
 
     doFirst {
         val vineflowerJar = configurations.getByName("vineflower").singleFile
-        val outPath = layout.buildDirectory.dir("decompiled/hytale-server-hypixel").get().asFile.absolutePath
+        val outPath = layout.buildDirectory.dir("decompiled/hytale-server").get().asFile.absolutePath
         val inJar = filteredJar.get().asFile.absolutePath
 
         commandLine(
