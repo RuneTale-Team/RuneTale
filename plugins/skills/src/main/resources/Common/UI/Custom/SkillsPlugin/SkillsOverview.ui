@@ -129,8 +129,10 @@ Group {
       Group { Anchor: (Height: 8); }
 
       Group #CommandList {
-        LayoutMode: Top;
+        LayoutMode: TopScrolling;
         FlexWeight: 1;
+        ScrollbarStyle: $C.@DefaultScrollbarStyle;
+        KeepScrollPosition: true;
       }
 
       Group #SearchInput {
@@ -174,8 +176,10 @@ Group {
       Group { Anchor: (Height: 10); }
 
       Group #SubcommandCards {
-        LayoutMode: Top;
+        LayoutMode: TopScrolling;
         FlexWeight: 1;
+        ScrollbarStyle: $C.@DefaultScrollbarStyle;
+        KeepScrollPosition: true;
       }
     }
   }
