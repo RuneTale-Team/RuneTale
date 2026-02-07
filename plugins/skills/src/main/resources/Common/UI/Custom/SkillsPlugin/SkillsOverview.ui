@@ -1,67 +1,86 @@
 $C = "../Common.ui";
 
 @HeaderTitle = LabelStyle(
-  FontSize: 26,
-  TextColor: #f4f7ff,
+  FontSize: 30,
+  TextColor: #f2f6ff,
   RenderBold: true,
-  VerticalAlignment: Center
+  VerticalAlignment: Center,
+  FontName: "Secondary"
 );
 
 @HeaderMeta = LabelStyle(
-  FontSize: 18,
-  TextColor: #d3e0f5,
+  FontSize: 16,
+  TextColor: #a9bfdc,
   VerticalAlignment: Center
 );
 
 @SectionTitle = LabelStyle(
-  FontSize: 20,
-  TextColor: #f4f7ff,
+  FontSize: 18,
+  TextColor: #e8f0ff,
   RenderBold: true,
-  VerticalAlignment: Center
+  VerticalAlignment: Center,
+  RenderUppercase: true,
+  FontName: "Secondary"
+);
+
+@SectionSubtle = LabelStyle(
+  FontSize: 13,
+  TextColor: #7f93ac,
+  VerticalAlignment: Center,
+  RenderUppercase: true,
+  LetterSpacing: 1
 );
 
 @PanelButton = TextButtonStyle(
   Default: (
-    Background: #1a2738,
-    LabelStyle: (FontSize: 14, TextColor: #deebff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: #2a3f59,
+    LabelStyle: (FontSize: 14, TextColor: #e3eeff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   ),
   Hovered: (
-    Background: #233349,
-    LabelStyle: (FontSize: 14, TextColor: #f4f7ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: #334d6d,
+    LabelStyle: (FontSize: 14, TextColor: #f7fbff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   ),
   Pressed: (
-    Background: #141f2d,
-    LabelStyle: (FontSize: 14, TextColor: #cadbf5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: #22354c,
+    LabelStyle: (FontSize: 14, TextColor: #cfdef6, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   )
 );
 
 Group {
-  Anchor: (Width: 980, Height: 620);
+  Anchor: (Width: 1040, Height: 680);
   LayoutMode: Top;
-  Padding: (Full: 14);
-  Background: #0c1320(0.90);
+  Padding: (Full: 16);
+  Background: #0a1320(0.94);
 
   Group {
-    Anchor: (Height: 108);
+    Anchor: (Height: 130);
     LayoutMode: Top;
-    Padding: (Full: 12);
-    Background: #111f34(0.92);
+    Padding: (Left: 14, Right: 14, Top: 10, Bottom: 10);
+    Background: #111f33;
+
+    Label {
+      Text: "RuneTale Skills";
+      Anchor: (Height: 18);
+      Style: @SectionSubtle;
+    }
+
+    Group { Anchor: (Height: 4); }
 
     Label #CommandName {
       Text: "Skills";
-      Anchor: (Height: 34);
+      Anchor: (Height: 38);
       Style: @HeaderTitle;
     }
 
     Label #CommandDescription {
       Text: "";
-      Anchor: (Height: 30);
+      Anchor: (Height: 28);
       Style: @HeaderMeta;
     }
 
     Label #CommandUsageLabel {
       Text: "";
-      Anchor: (Height: 30);
+      Anchor: (Height: 28);
       Style: @HeaderMeta;
     }
   }
@@ -73,18 +92,33 @@ Group {
     FlexWeight: 1;
 
     Group {
-      Anchor: (Width: 320);
+      Anchor: (Width: 340);
       LayoutMode: Top;
-      Padding: (Full: 10);
-      Background: #131d2b(0.94);
+      Padding: (Full: 12);
+      Background: #122235;
+
+      Label {
+        Text: "Navigation";
+        Anchor: (Height: 18);
+        Style: @SectionSubtle;
+      }
+
+      Group { Anchor: (Height: 6); }
 
       TextButton #BackButton {
         Text: "Back";
-        Anchor: (Width: 164, Height: 40);
+        Anchor: (Width: 170, Height: 40);
         Style: @PanelButton;
       }
 
-      Group { Anchor: (Height: 8); }
+      Group { Anchor: (Height: 10); }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #263a52;
+      }
+
+      Group { Anchor: (Height: 10); }
 
       Label {
         Text: "Skills";
@@ -92,7 +126,7 @@ Group {
         Style: @SectionTitle;
       }
 
-      Group { Anchor: (Height: 6); }
+      Group { Anchor: (Height: 8); }
 
       Group #CommandList {
         LayoutMode: Top;
@@ -113,8 +147,16 @@ Group {
     Group #SubcommandSection {
       LayoutMode: Top;
       FlexWeight: 1;
-      Padding: (Full: 10);
-      Background: #131d2b(0.94);
+      Padding: (Full: 12);
+      Background: #122235;
+
+      Label {
+        Text: "Details";
+        Anchor: (Height: 18);
+        Style: @SectionSubtle;
+      }
+
+      Group { Anchor: (Height: 6); }
 
       Label #SkillsSectionTitle {
         Text: "Overview";
@@ -122,7 +164,14 @@ Group {
         Style: @SectionTitle;
       }
 
-      Group { Anchor: (Height: 8); }
+      Group { Anchor: (Height: 10); }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #263a52;
+      }
+
+      Group { Anchor: (Height: 10); }
 
       Group #SubcommandCards {
         LayoutMode: Top;
