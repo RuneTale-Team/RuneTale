@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.SkillsPageCommand;
+import org.runetale.skills.command.debug.SkillXpCommand;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillProgressionService;
@@ -148,6 +149,7 @@ public class SkillsPlugin extends JavaPlugin {
         registerAssets();
         registerComponents();
         this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService));
+        this.getCommandRegistry().registerCommand(new SkillXpCommand());
         this.getCommandRegistry().registerCommand(
                 new SkillsPageCommand(
                         this.playerSkillProfileComponentType,

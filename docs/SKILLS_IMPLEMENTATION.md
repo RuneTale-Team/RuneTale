@@ -44,6 +44,20 @@ This plugin implements an OSRS-inspired, data-driven skills runtime with a centr
   - If the profile component type is unavailable, the command returns a single unavailable message.
   - If the player profile component is unexpectedly missing, the command returns defaults for all skills.
 
+## `/skillxp` debug command semantics
+
+- Scope: self-only (`AbstractPlayerCommand`), intended for debug/admin usage.
+- Required args:
+  - `skill` (strictly parsed skill id, e.g. `MINING`)
+  - `xp` (must be `> 0`)
+- Optional args:
+  - `source` (telemetry/source tag, defaults to `command:skillxp`)
+  - `silent` flag (suppresses player XP/level notifications for the grant)
+- Behavior:
+  - Validates input.
+  - Queues grant through `SkillsPlugin#grantSkillXp(...)`.
+  - Confirms queueing in chat.
+
 ## Player feedback and logging
 
 Skills gameplay outcomes now surface in player chat (`[Skills] ...`) for normal interactions:
