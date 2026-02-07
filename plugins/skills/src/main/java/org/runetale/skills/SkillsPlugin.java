@@ -9,6 +9,7 @@ import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.service.OsrsXpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillNodeRuntimeService;
+import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
@@ -55,6 +56,11 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private ToolRequirementEvaluator toolRequirementEvaluator;
 
+    /**
+     * Session-scoped telemetry used by skill UI and feedback messaging.
+     */
+    private SkillSessionStatsService sessionStatsService;
+
     public SkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
         instance = this;
@@ -70,6 +76,10 @@ public class SkillsPlugin extends JavaPlugin {
      */
     public ComponentType<EntityStore, PlayerSkillProfileComponent> getPlayerSkillProfileComponentType() {
         return playerSkillProfileComponentType;
+    }
+
+    public SkillSessionStatsService getSessionStatsService() {
+        return this.sessionStatsService;
     }
 
     @Override
@@ -98,6 +108,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.nodeLookupService = new SkillNodeLookupService();
         this.nodeRuntimeService = new SkillNodeRuntimeService();
         this.toolRequirementEvaluator = new ToolRequirementEvaluator();
+        this.sessionStatsService = new SkillSessionStatsService();
         LOGGER.log(Level.INFO, "[Skills] Services registered.");
     }
 
@@ -155,7 +166,8 @@ public class SkillsPlugin extends JavaPlugin {
                         this.xpService,
                         this.nodeLookupService,
                         this.nodeRuntimeService,
-                        this.toolRequirementEvaluator));
+                        this.toolRequirementEvaluator,
+                        this.sessionStatsService));
 
         LOGGER.log(Level.INFO, "[Skills] Systems registered.");
     }
@@ -175,6 +187,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.nodeLookupService = null;
         this.nodeRuntimeService = null;
         this.toolRequirementEvaluator = null;
+        this.sessionStatsService = null;
 
         instance = null;
     }

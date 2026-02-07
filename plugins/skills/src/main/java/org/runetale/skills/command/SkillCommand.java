@@ -14,6 +14,7 @@ import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.service.OsrsXpService;
 
 import javax.annotation.Nonnull;
+import java.util.Locale;
 
 /**
  * Player-only command that prints the caller's current skill progression.
@@ -43,22 +44,44 @@ public class SkillCommand extends AbstractPlayerCommand {
 
 		PlayerSkillProfileComponent profile = store.getComponent(ref, PlayerSkillProfileComponent.getComponentType());
 		if (profile == null) {
-			playerRef.sendMessage(Message.raw("Skill profile missing; showing default levels."));
+			playerRef.sendMessage(Message.raw("[Skills] Profile missing; showing defaults."));
 			for (SkillType skillType : SkillType.values()) {
-				playerRef.sendMessage(Message.raw(String.format("%s: level=1 xp=0 progress=0/%d", skillType.name(),
+				playerRef.sendMessage(Message.raw(String.format("- %s | Lv 1 | XP 0 | Progress 0/%d", formatSkillName(skillType),
 						xpRequiredForNextLevel(1))));
 			}
 			return;
 		}
 
-		playerRef.sendMessage(Message.raw("Your skills:"));
+		long totalXp = 0L;
+		int totalLevel = 0;
+		SkillType highestSkill = SkillType.WOODCUTTING;
+		int highestLevel = 1;
+
+		for (SkillType skillType : SkillType.values()) {
+			int level = profile.getLevel(skillType);
+			totalLevel += level;
+			if (level > highestLevel) {
+				highestLevel = level;
+				highestSkill = skillType;
+			}
+			totalXp += profile.getExperience(skillType);
+		}
+
+		playerRef.sendMessage(Message.raw("[Skills] Overview"));
+		playerRef.sendMessage(Message.raw(String.format("Total Level: %d | Total XP: %,d | Highest: %s Lv %d",
+				totalLevel,
+				totalXp,
+				formatSkillName(highestSkill),
+				highestLevel)));
+		playerRef.sendMessage(Message.raw("------------------------------"));
+
 		for (SkillType skillType : SkillType.values()) {
 			int level = profile.getLevel(skillType);
 			long experience = profile.getExperience(skillType);
 			String progress = formatProgress(level, experience);
 			playerRef
 					.sendMessage(Message.raw(
-							String.format("%s: level=%d xp=%d progress=%s", skillType.name(), level, experience, progress)));
+							String.format("- %s | Lv %d | XP %,d | %s", formatSkillName(skillType), level, experience, progress)));
 		}
 	}
 
@@ -74,7 +97,8 @@ public class SkillCommand extends AbstractPlayerCommand {
 		long xpIntoLevel = Math.max(0L, experience - levelStartXp);
 		long clampedXpIntoLevel = Math.min(xpIntoLevel, xpNeeded);
 
-		return String.format("%d/%d", clampedXpIntoLevel, xpNeeded);
+		double percent = (double) clampedXpIntoLevel * 100.0D / (double) xpNeeded;
+		return String.format(Locale.ROOT, "Progress %d/%d (%.1f%%)", clampedXpIntoLevel, xpNeeded, percent);
 	}
 
 	private long xpRequiredForNextLevel(int level) {
@@ -82,5 +106,11 @@ public class SkillCommand extends AbstractPlayerCommand {
 		long currentLevelXp = this.xpService.xpForLevel(safeLevel);
 		long nextLevelXp = this.xpService.xpForLevel(safeLevel + 1);
 		return Math.max(1L, nextLevelXp - currentLevelXp);
+	}
+
+	@Nonnull
+	private String formatSkillName(@Nonnull SkillType skillType) {
+		String lowered = skillType.name().toLowerCase(Locale.ROOT);
+		return Character.toUpperCase(lowered.charAt(0)) + lowered.substring(1);
 	}
 }
