@@ -15,6 +15,7 @@ public class SkillSessionStatsService {
 
 	private final Map<UUID, Long> mostRecentGainByPlayer = new ConcurrentHashMap<>();
 	private final Map<UUID, SkillType> mostRecentSkillByPlayer = new ConcurrentHashMap<>();
+	private final Map<UUID, SkillType> trackedSkillByPlayer = new ConcurrentHashMap<>();
 
 	public void recordGain(@Nonnull UUID playerId, @Nonnull SkillType skillType, long gainedXp) {
 		this.mostRecentGainByPlayer.put(playerId, Math.max(0L, gainedXp));
@@ -31,8 +32,22 @@ public class SkillSessionStatsService {
 		return this.mostRecentSkillByPlayer.get(playerId);
 	}
 
+	public void setTrackedSkill(@Nonnull UUID playerId, @Nonnull SkillType skillType) {
+		this.trackedSkillByPlayer.put(playerId, skillType);
+	}
+
+	public void clearTrackedSkill(@Nonnull UUID playerId) {
+		this.trackedSkillByPlayer.remove(playerId);
+	}
+
+	@Nullable
+	public SkillType getTrackedSkill(@Nonnull UUID playerId) {
+		return this.trackedSkillByPlayer.get(playerId);
+	}
+
 	public void clear(@Nonnull UUID playerId) {
 		this.mostRecentGainByPlayer.remove(playerId);
 		this.mostRecentSkillByPlayer.remove(playerId);
+		this.trackedSkillByPlayer.remove(playerId);
 	}
 }

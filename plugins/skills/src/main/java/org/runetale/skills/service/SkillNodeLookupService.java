@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -260,6 +261,27 @@ public class SkillNodeLookupService {
 			LOGGER.log(Level.FINER, String.format("[Skills] Node lookup miss for block=%s", blockId));
 		}
 		return def;
+	}
+
+	@Nonnull
+	public List<SkillNodeDefinition> listAllDefinitions() {
+		LinkedHashSet<SkillNodeDefinition> deduped = new LinkedHashSet<>(this.byBlockId.values());
+		List<SkillNodeDefinition> definitions = new ArrayList<>(deduped);
+		definitions.sort(Comparator
+				.comparingInt(SkillNodeDefinition::getRequiredSkillLevel)
+				.thenComparing(SkillNodeDefinition::getId));
+		return definitions;
+	}
+
+	@Nonnull
+	public List<SkillNodeDefinition> listDefinitionsForSkill(@Nonnull SkillType skillType) {
+		List<SkillNodeDefinition> filtered = new ArrayList<>();
+		for (SkillNodeDefinition definition : listAllDefinitions()) {
+			if (definition.getSkillType() == skillType) {
+				filtered.add(definition);
+			}
+		}
+		return filtered;
 	}
 
 	@Nonnull

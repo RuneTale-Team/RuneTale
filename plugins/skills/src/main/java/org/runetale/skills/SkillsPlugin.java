@@ -5,6 +5,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.command.SkillCommand;
+import org.runetale.skills.command.SkillsPageCommand;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.service.OsrsXpService;
 import org.runetale.skills.service.SkillNodeLookupService;
@@ -93,6 +94,12 @@ public class SkillsPlugin extends JavaPlugin {
         registerAssets();
         registerComponents();
         this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService));
+        this.getCommandRegistry().registerCommand(
+                new SkillsPageCommand(
+                        this.playerSkillProfileComponentType,
+                        this.xpService,
+                        this.nodeLookupService,
+                        this.sessionStatsService));
         registerSystems();
 
         LOGGER.log(Level.INFO, "Skills runtime setup complete.");
