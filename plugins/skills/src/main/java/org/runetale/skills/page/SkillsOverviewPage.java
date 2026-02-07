@@ -126,10 +126,9 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		commandBuilder.clear("#CommandList");
 		for (int i = 0; i < SkillType.values().length; i++) {
 			SkillType skill = SkillType.values()[i];
-			long xp = profile == null ? 0L : profile.getExperience(skill);
 			int level = profile == null ? 1 : profile.getLevel(skill);
 			commandBuilder.append("#CommandList", "Pages/BasicTextButton.ui");
-			commandBuilder.set("#CommandList[" + i + "].TextSpans", Message.raw(formatSkillName(skill) + "  Lv " + level + "  (" + formatNumber(xp) + " XP)"));
+			commandBuilder.set("#CommandList[" + i + "].TextSpans", Message.raw(formatSkillName(skill) + "  Lv " + level));
 			eventBuilder.addEventBinding(
 					CustomUIEventBindingType.Activating,
 					"#CommandList[" + i + "]",
@@ -183,7 +182,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			long xp = profile == null ? 0L : profile.getExperience(skill);
 			long current = xpProgressCurrent(level, xp);
 			long required = xpProgressRequired(level);
-			String usage = level >= MAX_LEVEL ? "Lv 99 (MAX)" : "Lv " + level + "  " + current + "/" + required;
+			String usage = level >= MAX_LEVEL ? "Lv 99 (MAX)" : "Lv " + level + "  Progress " + current + "/" + required;
 			appendCard(commandBuilder, eventBuilder, cardIndex++, formatSkillName(skill), usage, formatNumber(xp) + " XP total", skill);
 		}
 	}
@@ -250,9 +249,9 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 				continue;
 			}
 			String state = unlocked ? "Unlocked" : "Locked";
-			String usage = state + "  Lv " + level + "/" + node.getRequiredSkillLevel();
-			String description = "Tool " + node.getRequiredToolTier().name().toLowerCase(Locale.ROOT)
-					+ " " + node.getRequiredToolKeyword().toLowerCase(Locale.ROOT)
+			String usage = "Current/Required Lv " + level + "/" + node.getRequiredSkillLevel();
+			String description = state
+					+ "  |  Tool " + formatToolTier(node) + " " + formatToolKeyword(node)
 					+ "  |  +" + Math.round(node.getExperienceReward()) + " XP";
 			appendCard(commandBuilder, eventBuilder, cardIndex++, prettifyNodeId(node.getId()), usage, description, null);
 			if (unlocked) {
@@ -348,6 +347,25 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			return "Unknown Node";
 		}
 		return Character.toUpperCase(spaced.charAt(0)) + spaced.substring(1);
+	}
+
+	@Nonnull
+	private String formatToolTier(@Nonnull SkillNodeDefinition node) {
+		String raw = node.getRequiredToolTier().name().toLowerCase(Locale.ROOT);
+		if ("none".equals(raw)) {
+			return "Any";
+		}
+		return Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
+	}
+
+	@Nonnull
+	private String formatToolKeyword(@Nonnull SkillNodeDefinition node) {
+		String raw = node.getRequiredToolKeyword().toLowerCase(Locale.ROOT).replace('_', ' ').trim();
+		raw = raw.replace("tool ", "");
+		if (raw.isEmpty()) {
+			return "Tool";
+		}
+		return Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
 	}
 
 	@Nonnull
