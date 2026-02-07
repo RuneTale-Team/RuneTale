@@ -143,40 +143,26 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull UIEventBuilder eventBuilder) {
 		long totalXp = 0L;
 		int totalLevel = 0;
-		SkillType highestSkill = SkillType.WOODCUTTING;
-		int highestLevel = 1;
 
 		for (SkillType skill : SkillType.values()) {
 			int level = profile == null ? 1 : profile.getLevel(skill);
 			long xp = profile == null ? 0L : profile.getExperience(skill);
 			totalXp += xp;
 			totalLevel += level;
-			if (level > highestLevel) {
-				highestLevel = level;
-				highestSkill = skill;
-			}
 		}
 
-		long recentGain = this.sessionStatsService.getMostRecentGain(this.playerRef.getUuid());
-		SkillType recentSkill = this.sessionStatsService.getMostRecentSkill(this.playerRef.getUuid());
 		SkillType trackedSkill = this.sessionStatsService.getTrackedSkill(this.playerRef.getUuid());
+		String trackedLabel = trackedSkill == null ? "None" : formatSkillName(trackedSkill);
 
 		commandBuilder.set("#BackButton.Visible", false);
 		commandBuilder.set("#CommandName.TextSpans", Message.raw("Skills Overview"));
-		commandBuilder.set("#CommandDescription.TextSpans", Message.raw("Select a skill card to inspect progression and unlock roadmap."));
-		String trackedLabel = trackedSkill == null ? "None" : formatSkillName(trackedSkill);
-		commandBuilder.set("#CommandUsageLabel.TextSpans", Message.raw("Cards: overview metrics + all skills | Tracked: " + trackedLabel));
+		commandBuilder.set("#CommandDescription.TextSpans", Message.raw("Total Level: " + totalLevel + " | Tracked: " + trackedLabel));
+		commandBuilder.set("#CommandUsageLabel.TextSpans", Message.raw("Total XP: " + formatNumber(totalXp)));
 
 		commandBuilder.set("#SubcommandSection.Visible", true);
 		commandBuilder.clear("#SubcommandCards");
 
 		int cardIndex = 0;
-		appendCard(commandBuilder, eventBuilder, cardIndex++, "Total Level", Integer.toString(totalLevel), "All tracked skills combined", null);
-		appendCard(commandBuilder, eventBuilder, cardIndex++, "Total XP", formatNumber(totalXp), "Combined experience across skills", null);
-		appendCard(commandBuilder, eventBuilder, cardIndex++, "Highest Skill", formatSkillName(highestSkill) + " Lv " + highestLevel, "Current peak progression", highestSkill);
-		String recentValue = recentSkill == null ? "+0 XP" : "+" + formatNumber(recentGain) + " " + formatSkillName(recentSkill) + " XP";
-		appendCard(commandBuilder, eventBuilder, cardIndex++, "Recent Gain", recentValue, "Most recent successful gather", null);
-
 		for (SkillType skill : SkillType.values()) {
 			int level = profile == null ? 1 : profile.getLevel(skill);
 			long xp = profile == null ? 0L : profile.getExperience(skill);
@@ -222,8 +208,6 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		} else {
 			appendCard(commandBuilder, eventBuilder, cardIndex++, "Next Milestone", "Lv " + (level + 1), formatNumber(nextLevelGap) + " XP remaining", null);
 		}
-		long recent = this.sessionStatsService.getMostRecentGain(this.playerRef.getUuid());
-		appendCard(commandBuilder, eventBuilder, cardIndex++, "Recent Gain", "+" + formatNumber(recent) + " XP", "Session scoped", null);
 		appendCardWithAction(
 				commandBuilder,
 				eventBuilder,
