@@ -15,7 +15,7 @@
 );
 
 Group #SkillsXpToastRoot {
-  Anchor: (Width: 372, Height: 68, Top: 30);
+  Anchor: (Width: 372, Height: 68, Top: 72);
   Background: #27476d(0.92);
 
   Group #ToastInner {

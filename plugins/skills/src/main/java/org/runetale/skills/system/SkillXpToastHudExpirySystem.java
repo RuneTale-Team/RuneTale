@@ -26,7 +26,7 @@ public class SkillXpToastHudExpirySystem extends DelayedSystem<EntityStore> {
 		World world = store.getExternalData().getWorld();
 		long nowMillis = System.currentTimeMillis();
 		for (PlayerRef playerRef : world.getPlayerRefs()) {
-			this.skillXpToastHudService.expireIfDue(playerRef, nowMillis);
+			this.skillXpToastHudService.tickLifecycle(playerRef, nowMillis);
 		}
 	}
 }

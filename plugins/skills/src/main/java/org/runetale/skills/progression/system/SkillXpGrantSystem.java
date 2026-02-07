@@ -81,7 +81,11 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 			return;
 		}
 
-		this.skillXpToastHudService.showXpToast(playerRef, result.getSkillType(), result.getGainedExperience());
+		this.skillXpToastHudService.showXpToast(
+				playerRef,
+				result.getSkillType(),
+				result.getGainedExperience(),
+				result.isLevelUp());
 
 		if (result.isLevelUp()) {
 			EventTitleUtil.showEventTitleToPlayer(
