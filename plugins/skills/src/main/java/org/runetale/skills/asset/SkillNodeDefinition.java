@@ -25,6 +25,8 @@ public class SkillNodeDefinition {
 			.builder(SkillNodeDefinition.class, SkillNodeDefinition::new)
 			.append(new KeyedCodec<>("Id", Codec.STRING), (o, i) -> o.id = i, SkillNodeDefinition::getId)
 			.add()
+			.append(new KeyedCodec<>("Label", Codec.STRING), (o, i) -> o.label = i, SkillNodeDefinition::getLabel)
+			.add()
 			.append(new KeyedCodec<>("Skill", new EnumCodec<>(SkillType.class)), (o, i) -> o.skillType = i,
 					SkillNodeDefinition::getSkillType)
 			.add()
@@ -54,6 +56,7 @@ public class SkillNodeDefinition {
 			.build();
 
 	private String id = "unknown";
+	private String label = "";
 	private SkillType skillType = SkillType.WOODCUTTING;
 	private String blockId = "Empty";
 	private int requiredSkillLevel = 1;
@@ -81,7 +84,15 @@ public class SkillNodeDefinition {
 	public SkillNodeDefinition(String id, SkillType skillType, String blockId, int requiredSkillLevel,
 			ToolTier requiredToolTier, String requiredToolKeyword, double experienceReward,
 			double depletionChance, boolean depletes, int respawnSeconds) {
+		this(id, "", skillType, blockId, requiredSkillLevel, requiredToolTier, requiredToolKeyword,
+				experienceReward, depletionChance, depletes, respawnSeconds);
+	}
+
+	public SkillNodeDefinition(String id, String label, SkillType skillType, String blockId, int requiredSkillLevel,
+			ToolTier requiredToolTier, String requiredToolKeyword, double experienceReward,
+			double depletionChance, boolean depletes, int respawnSeconds) {
 		this.id = id;
+		this.label = label;
 		this.skillType = skillType;
 		this.blockId = blockId;
 		this.requiredSkillLevel = requiredSkillLevel;
@@ -95,6 +106,10 @@ public class SkillNodeDefinition {
 
 	public String getId() {
 		return id;
+	}
+
+	public String getLabel() {
+		return label;
 	}
 
 	public SkillType getSkillType() {

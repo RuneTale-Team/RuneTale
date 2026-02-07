@@ -181,6 +181,7 @@ public class SkillNodeLookupService {
 		}
 
 		String id = value(properties, "id", fileName.replace(".properties", ""));
+		String label = optionalValue(properties, "label");
 		SkillType skillType = SkillType.fromString(value(properties, "skill", SkillType.WOODCUTTING.name()));
 		List<String> blockIds = resolveBlockIds(properties);
 		String primaryBlockId = blockIds.get(0);
@@ -192,7 +193,7 @@ public class SkillNodeLookupService {
 		boolean depletes = booleanValue(properties, "depletes", true);
 		int respawnSeconds = Math.max(0, integerValue(properties, "respawnSeconds", 5));
 
-		SkillNodeDefinition definition = new SkillNodeDefinition(id, skillType, primaryBlockId, requiredSkillLevel,
+		SkillNodeDefinition definition = new SkillNodeDefinition(id, label, skillType, primaryBlockId, requiredSkillLevel,
 				requiredToolTier, requiredToolKeyword, experienceReward, depletionChance, depletes, respawnSeconds);
 		register(definition, blockIds);
 
@@ -313,6 +314,16 @@ public class SkillNodeLookupService {
 							defaultValue));
 			return defaultValue;
 		}
+	}
+
+	@Nullable
+	private static String optionalValue(@Nonnull Properties properties, @Nonnull String key) {
+		String raw = properties.getProperty(key);
+		if (raw == null) {
+			return null;
+		}
+		String trimmed = raw.trim();
+		return trimmed.isEmpty() ? null : trimmed;
 	}
 
 	private static double doubleValue(@Nonnull Properties properties, @Nonnull String key, double defaultValue) {

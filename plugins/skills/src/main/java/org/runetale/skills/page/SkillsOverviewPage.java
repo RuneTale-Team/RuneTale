@@ -255,7 +255,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			String description = state
 					+ "  |  Tool " + formatToolTier(node) + " " + formatToolKeyword(node)
 					+ "  |  +" + Math.round(node.getExperienceReward()) + " XP";
-			appendCard(commandBuilder, eventBuilder, cardIndex++, prettifyNodeId(node.getId()), usage, description, null, null);
+			appendCard(commandBuilder, eventBuilder, cardIndex++, displayNodeName(node), usage, description, null, null);
 			if (unlocked) {
 				unlockedShown++;
 			} else {
@@ -359,12 +359,16 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	@Nonnull
-	private String prettifyNodeId(@Nonnull String nodeId) {
-		String spaced = nodeId.replace('_', ' ').trim();
-		if (spaced.isEmpty()) {
-			return "Unknown Node";
+	private String displayNodeName(@Nonnull SkillNodeDefinition node) {
+		String label = node.getLabel();
+		if (label != null && !label.isBlank()) {
+			return label;
 		}
-		return Character.toUpperCase(spaced.charAt(0)) + spaced.substring(1);
+		String id = node.getId();
+		if (id == null || id.isBlank()) {
+			return "unknown";
+		}
+		return id;
 	}
 
 	@Nonnull
