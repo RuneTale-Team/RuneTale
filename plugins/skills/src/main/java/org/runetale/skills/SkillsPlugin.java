@@ -18,9 +18,11 @@ import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillNodeRuntimeService;
 import org.runetale.skills.service.SkillSessionStatsService;
+import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
+import org.runetale.skills.system.SkillXpToastHudExpirySystem;
 
 import javax.annotation.Nonnull;
 import java.util.logging.Level;
@@ -68,6 +70,11 @@ public class SkillsPlugin extends JavaPlugin {
      * Session-scoped telemetry used by skill UI and feedback messaging.
      */
     private SkillSessionStatsService sessionStatsService;
+
+    /**
+     * Session-scoped custom HUD toasts for XP gains.
+     */
+    private SkillXpToastHudService skillXpToastHudService;
 
     /**
      * Central progression mutation service used by all XP sources.
@@ -172,6 +179,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.nodeRuntimeService = new SkillNodeRuntimeService();
         this.toolRequirementEvaluator = new ToolRequirementEvaluator();
         this.sessionStatsService = new SkillSessionStatsService();
+        this.skillXpToastHudService = new SkillXpToastHudService();
         this.xpDispatchService = new SkillXpDispatchService();
         LOGGER.log(Level.INFO, "[Skills] Services registered.");
     }
@@ -225,7 +233,10 @@ public class SkillsPlugin extends JavaPlugin {
 
         // Apply all queued XP grants through the centralized progression pipeline.
         this.getEntityStoreRegistry().registerSystem(
-                new SkillXpGrantSystem(this.progressionService, this.xpService, this.sessionStatsService));
+                new SkillXpGrantSystem(this.progressionService, this.sessionStatsService, this.skillXpToastHudService));
+
+        // Keep custom XP toasts transient and auto-expiring.
+        this.getEntityStoreRegistry().registerSystem(new SkillXpToastHudExpirySystem(this.skillXpToastHudService));
 
         // Then process block-break events with requirement checks, XP, and depletion
         // logic.
@@ -256,6 +267,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.nodeRuntimeService = null;
         this.toolRequirementEvaluator = null;
         this.sessionStatsService = null;
+        this.skillXpToastHudService = null;
         this.progressionService = null;
         this.xpDispatchService = null;
 
