@@ -1,12 +1,18 @@
 package org.runetale.skills;
 
+import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.ComponentType;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.SkillsPageCommand;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
+import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.progression.service.SkillProgressionService;
+import org.runetale.skills.progression.service.SkillXpDispatchService;
+import org.runetale.skills.progression.system.SkillXpGrantSystem;
 import org.runetale.skills.service.OsrsXpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillNodeRuntimeService;
@@ -62,6 +68,16 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private SkillSessionStatsService sessionStatsService;
 
+    /**
+     * Central progression mutation service used by all XP sources.
+     */
+    private SkillProgressionService progressionService;
+
+    /**
+     * Dispatch service used by systems/APIs to enqueue XP grants.
+     */
+    private SkillXpDispatchService xpDispatchService;
+
     public SkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
         instance = this;
@@ -81,6 +97,44 @@ public class SkillsPlugin extends JavaPlugin {
 
     public SkillSessionStatsService getSessionStatsService() {
         return this.sessionStatsService;
+    }
+
+    public SkillXpDispatchService getXpDispatchService() {
+        return this.xpDispatchService;
+    }
+
+    /**
+     * Public plugin API: queue an XP grant by strict skill id.
+     */
+    public boolean grantSkillXp(
+            @Nonnull ComponentAccessor<EntityStore> accessor,
+            @Nonnull Ref<EntityStore> playerRef,
+            @Nonnull String skillId,
+            double experience,
+            @Nonnull String source,
+            boolean notifyPlayer) {
+        if (this.xpDispatchService == null) {
+            LOGGER.log(Level.WARNING, "Rejected XP grant because dispatch service is unavailable.");
+            return false;
+        }
+        return this.xpDispatchService.grantSkillXp(accessor, playerRef, skillId, experience, source, notifyPlayer);
+    }
+
+    /**
+     * Public plugin API: queue an XP grant by enum skill identity.
+     */
+    public boolean grantSkillXp(
+            @Nonnull ComponentAccessor<EntityStore> accessor,
+            @Nonnull Ref<EntityStore> playerRef,
+            @Nonnull SkillType skillType,
+            double experience,
+            @Nonnull String source,
+            boolean notifyPlayer) {
+        if (this.xpDispatchService == null) {
+            LOGGER.log(Level.WARNING, "Rejected XP grant because dispatch service is unavailable.");
+            return false;
+        }
+        return this.xpDispatchService.grantSkillXp(accessor, playerRef, skillType, experience, source, notifyPlayer);
     }
 
     @Override
@@ -116,6 +170,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.nodeRuntimeService = new SkillNodeRuntimeService();
         this.toolRequirementEvaluator = new ToolRequirementEvaluator();
         this.sessionStatsService = new SkillSessionStatsService();
+        this.xpDispatchService = new SkillXpDispatchService();
         LOGGER.log(Level.INFO, "[Skills] Services registered.");
     }
 
@@ -151,6 +206,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.playerSkillProfileComponentType = this.getEntityStoreRegistry()
                 .registerComponent(PlayerSkillProfileComponent.class, "PlayerSkillProfile",
                         PlayerSkillProfileComponent.CODEC);
+        this.progressionService = new SkillProgressionService(this.playerSkillProfileComponentType, this.xpService);
         LOGGER.log(Level.INFO, "[Skills] Components registered.");
     }
 
@@ -165,16 +221,19 @@ public class SkillsPlugin extends JavaPlugin {
         this.getEntityStoreRegistry()
                 .registerSystem(new EnsurePlayerSkillProfileSystem(this.playerSkillProfileComponentType));
 
+        // Apply all queued XP grants through the centralized progression pipeline.
+        this.getEntityStoreRegistry().registerSystem(
+                new SkillXpGrantSystem(this.progressionService, this.xpService, this.sessionStatsService));
+
         // Then process block-break events with requirement checks, XP, and depletion
         // logic.
         this.getEntityStoreRegistry().registerSystem(
                 new SkillNodeBreakBlockSystem(
                         this.playerSkillProfileComponentType,
-                        this.xpService,
+                        this.xpDispatchService,
                         this.nodeLookupService,
                         this.nodeRuntimeService,
-                        this.toolRequirementEvaluator,
-                        this.sessionStatsService));
+                        this.toolRequirementEvaluator));
 
         LOGGER.log(Level.INFO, "[Skills] Systems registered.");
     }
@@ -195,6 +254,8 @@ public class SkillsPlugin extends JavaPlugin {
         this.nodeRuntimeService = null;
         this.toolRequirementEvaluator = null;
         this.sessionStatsService = null;
+        this.progressionService = null;
+        this.xpDispatchService = null;
 
         instance = null;
     }

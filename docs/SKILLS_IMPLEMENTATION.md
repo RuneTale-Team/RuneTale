@@ -1,18 +1,20 @@
 # Skills Plugin Implementation Notes
 
-This plugin implements an OSRS-inspired, data-driven gathering/skills runtime for block-break interactions.
+This plugin implements an OSRS-inspired, data-driven skills runtime with a centralized XP grant pipeline and gather-node content.
 
 ## Runtime flow
 
 1. Plugin setup wires services, codecs, assets, components, then systems in deterministic order.
 2. A profile bootstrap system ensures every player has a persistent skill profile component.
 3. `/skill` is a player-only self-inspection command that prints every declared skill with current level and XP.
-4. On block break:
-   - Resolve the broken block to a skill node definition.
-   - Enforce skill-level and held-tool requirements.
-   - Prevent gathering if the node is currently depleted.
-   - Award XP and recompute level using OSRS-style math.
-   - Mark node depleted with timed respawn tracking when configured.
+4. Any runtime source can queue XP grants through `SkillXpDispatchService` (strict skill id parsing, no silent fallback).
+5. `SkillXpGrantSystem` applies queued grants via `SkillProgressionService`.
+6. On block break:
+    - Resolve the broken block to a skill node definition.
+    - Enforce skill-level and held-tool requirements.
+    - Prevent gathering if the node is currently depleted.
+    - Queue XP grant through the shared progression pipeline.
+    - Mark node depleted with timed respawn tracking when configured.
 
 ## Core pieces
 
@@ -20,6 +22,9 @@ This plugin implements an OSRS-inspired, data-driven gathering/skills runtime fo
 - `PlayerSkillProfileComponent`: persistent per-player map of skill progress.
 - `SkillProgress`: per-skill XP + level state.
 - `OsrsXpService`: XP thresholds and level calculation.
+- `SkillXpDispatchService`: API/service entrypoint to enqueue XP grants from any source.
+- `SkillProgressionService`: single source of truth for XP+level mutations.
+- `SkillXpGrantSystem`: ECS event system that applies queued XP grants and handles feedback.
 - `SkillNodeDefinition`: data model for node requirements/rewards/depletion.
 - `SkillNodeLookupService`: lookup hooks + default node bootstrap.
 - `ToolRequirementEvaluator`: keyword + tier validation from held `ItemStack`.
@@ -49,9 +54,19 @@ Skills gameplay outcomes now surface in player chat (`[Skills] ...`) for normal 
 
 Server logs remain focused on setup/runtime diagnostics and unexpected safety paths (for example, missing profile component).
 
+## Programmatic XP grants
+
+- Use `SkillsPlugin#grantSkillXp(...)` or `SkillXpDispatchService#grantSkillXp(...)` from any system/command that has a `ComponentAccessor<EntityStore>` and player `Ref<EntityStore>`.
+- Preferred inputs:
+  - `skillId` (strict parse; unknown values are rejected),
+  - `experience` (non-positive values are ignored),
+  - `source` tag (for telemetry/logging),
+  - `notifyPlayer` (whether player feedback is sent).
+- Grant handling stays centralized in `SkillXpGrantSystem` -> `SkillProgressionService` to avoid duplicated XP logic.
+
 ## Notes / assumptions
 
-- Node definitions are now loaded from classpath resources under `src/main/resources/Skills/Nodes/` via `index.list`; in-memory defaults remain as a fail-safe fallback only.
+- Node definitions are loaded from classpath resources under `src/main/resources/Skills/Nodes/**/*.properties` via `index.list`; in-memory defaults remain as a fail-safe fallback only.
 - World identity for depletion keys currently uses `world.getName()`.
 - Unknown blocks remain a no-op path (fail-safe behavior).
 
@@ -69,7 +84,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ### 2) Manual in-game flow (quick checklist)
 
 1. Start the game/server with this plugin enabled.
-2. Try breaking a configured node block (from `Skills/Nodes/*.properties`) with:
+2. Try breaking a configured node block (from `Skills/Nodes/**/*.properties`) with:
    - no item,
    - wrong tool keyword,
    - low tool tier,
@@ -97,7 +112,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
   - `Break denied: ... requiredKeyword=... requiredTier=...`
   - `Tool requirement check: item=... detected=... required=... success=...`
 - XP + level updates:
-  - `Gather success: ... xp=before->after level=before->after ...`
+  - `Applied XP grant source=... skill=... gain=... totalXp=... level=...`
 - Depletion lifecycle:
   - `Depletion roll: ... roll=... chance=... result=...`
   - `Node depleted: key=...`
@@ -111,7 +126,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ### Add a new node (resource-driven)
 
-1. Create `src/main/resources/Skills/Nodes/<your_node>.properties` using existing files as a template.
+1. Create `src/main/resources/Skills/Nodes/<skill>/<your_node>.properties` using existing files as a template.
 2. Add that filename as a new line in `src/main/resources/Skills/Nodes/index.list`.
 3. Keep keys aligned with current loader schema:
    - `id`, `skill`, `blockIds` (preferred, comma-separated) or `blockId` (backward-compatible fallback),

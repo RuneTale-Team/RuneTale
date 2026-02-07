@@ -1,5 +1,6 @@
 package org.runetale.skills.domain;
 
+import javax.annotation.Nullable;
 import java.util.Locale;
 
 /**
@@ -22,14 +23,27 @@ public enum SkillType {
 	 * data does not crash server startup.
 	 */
 	public static SkillType fromString(String raw) {
+		SkillType parsed = tryParseStrict(raw);
+		return parsed == null ? WOODCUTTING : parsed;
+	}
+
+	/**
+	 * Parses a skill identity without fallback behavior.
+	 *
+	 * <p>
+	 * Returns null for missing/unknown values so callers can reject invalid input
+	 * explicitly.
+	 */
+	@Nullable
+	public static SkillType tryParseStrict(String raw) {
 		if (raw == null || raw.isBlank()) {
-			return WOODCUTTING;
+			return null;
 		}
 
 		try {
 			return SkillType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
 		} catch (IllegalArgumentException ignored) {
-			return WOODCUTTING;
+			return null;
 		}
 	}
 }

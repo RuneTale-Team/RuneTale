@@ -46,7 +46,7 @@ This document explains how the Skills custom UI is wired, where assets live, and
 
 ## Node definition labels
 - Node files live in:
-  - `plugins/skills/src/main/resources/Skills/Nodes/*.properties`
+  - `plugins/skills/src/main/resources/Skills/Nodes/**/*.properties`
 - Optional display label key:
   - `label=Oak Tree`
 - Fallback behavior when label is missing/blank:
@@ -63,7 +63,7 @@ This document explains how the Skills custom UI is wired, where assets live, and
    - verify list icon, overview card icon, selection, and detail view rendering.
 
 ## Add or edit node cards (checklist)
-1. Create/update node `.properties` file in `Skills/Nodes/`.
+1. Create/update node `.properties` file in `Skills/Nodes/<skill>/`.
 2. Ensure `id` is present.
 3. Add `label` if you want human-friendly UI text.
 4. Ensure node file is included in `Skills/Nodes/index.list`.

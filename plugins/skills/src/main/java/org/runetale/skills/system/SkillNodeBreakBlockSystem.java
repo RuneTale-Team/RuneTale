@@ -13,16 +13,14 @@ import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.core.util.EventTitleUtil;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.service.OsrsXpService;
+import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillNodeRuntimeService;
-import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
 
 import javax.annotation.Nonnull;
@@ -34,34 +32,31 @@ import java.util.logging.Logger;
 
 /**
  * Handles block-break gathering flow:
- * lookup -> requirements -> XP mutation -> optional depletion state.
+ * lookup -> requirements -> XP dispatch -> optional depletion state.
  */
 public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
 
 	private static final Logger LOGGER = Logger.getLogger(SkillNodeBreakBlockSystem.class.getName());
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
-	private final OsrsXpService xpService;
+	private final SkillXpDispatchService skillXpDispatchService;
 	private final SkillNodeLookupService nodeLookupService;
 	private final SkillNodeRuntimeService nodeRuntimeService;
 	private final ToolRequirementEvaluator toolRequirementEvaluator;
-	private final SkillSessionStatsService sessionStatsService;
 	private final Query<EntityStore> query;
 
 	public SkillNodeBreakBlockSystem(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull OsrsXpService xpService,
+			@Nonnull SkillXpDispatchService skillXpDispatchService,
 			@Nonnull SkillNodeLookupService nodeLookupService,
 			@Nonnull SkillNodeRuntimeService nodeRuntimeService,
-			@Nonnull ToolRequirementEvaluator toolRequirementEvaluator,
-			@Nonnull SkillSessionStatsService sessionStatsService) {
+			@Nonnull ToolRequirementEvaluator toolRequirementEvaluator) {
 		super(BreakBlockEvent.class);
 		this.profileComponentType = profileComponentType;
-		this.xpService = xpService;
+		this.skillXpDispatchService = skillXpDispatchService;
 		this.nodeLookupService = nodeLookupService;
 		this.nodeRuntimeService = nodeRuntimeService;
 		this.toolRequirementEvaluator = toolRequirementEvaluator;
-		this.sessionStatsService = sessionStatsService;
 		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
 	}
 
@@ -94,7 +89,6 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 		SkillType skill = node.getSkillType();
 		int levelBefore = profile.getLevel(skill);
-		long xpBefore = profile.getExperience(skill);
 
 		if (levelBefore < node.getRequiredSkillLevel()) {
 			event.setCancelled(true);
@@ -125,35 +119,13 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			return;
 		}
 
-		long updatedXp = this.xpService.addXp(xpBefore, node.getExperienceReward());
-		int updatedLevel = this.xpService.levelForXp(updatedXp);
-		long gainedXp = Math.max(0L, updatedXp - xpBefore);
-		long progressCurrent = xpProgressCurrent(updatedLevel, updatedXp);
-		long progressRequired = xpProgressRequired(updatedLevel);
-		profile.set(skill, updatedXp, updatedLevel);
-		commandBuffer.putComponent(ref, this.profileComponentType, profile);
-		if (playerRef != null) {
-			this.sessionStatsService.recordGain(playerRef.getUuid(), skill, gainedXp);
-		}
-		sendPlayerNotification(playerRef,
-				String.format("[Skills] +%d %s XP (%d/%d current/required, %d total).",
-						gainedXp,
-						formatSkillName(skill),
-						progressCurrent,
-						progressRequired,
-						updatedXp));
-		if (updatedLevel > levelBefore) {
-			sendPlayerNotification(playerRef,
-					String.format("[Skills] %s level up: %d -> %d.", formatSkillName(skill), levelBefore, updatedLevel),
-					NotificationStyle.Success);
-			if (playerRef != null) {
-				EventTitleUtil.showEventTitleToPlayer(
-						playerRef,
-						Message.raw(formatSkillName(skill) + " Level Up!"),
-						Message.raw("Now level " + updatedLevel),
-						true);
-			}
-		}
+		this.skillXpDispatchService.grantSkillXp(
+				commandBuffer,
+				ref,
+				skill,
+				node.getExperienceReward(),
+				"node:" + node.getId(),
+				true);
 
 		if (node.isDepletes()) {
 			// Depletion remains deterministic from data: each successful gather rolls
@@ -200,25 +172,4 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		return lowered.contains("log") || lowered.contains("tree") || lowered.contains("ore") || lowered.contains("rock");
 	}
 
-	private long xpProgressCurrent(int level, long totalXp) {
-		int safeLevel = Math.max(1, Math.min(99, level));
-		if (safeLevel >= 99) {
-			return 0L;
-		}
-		long levelStartXp = this.xpService.xpForLevel(safeLevel);
-		long nextLevelXp = this.xpService.xpForLevel(safeLevel + 1);
-		long required = Math.max(1L, nextLevelXp - levelStartXp);
-		long current = Math.max(0L, totalXp - levelStartXp);
-		return Math.min(current, required);
-	}
-
-	private long xpProgressRequired(int level) {
-		int safeLevel = Math.max(1, Math.min(99, level));
-		if (safeLevel >= 99) {
-			return 0L;
-		}
-		long levelStartXp = this.xpService.xpForLevel(safeLevel);
-		long nextLevelXp = this.xpService.xpForLevel(safeLevel + 1);
-		return Math.max(1L, nextLevelXp - levelStartXp);
-	}
 }

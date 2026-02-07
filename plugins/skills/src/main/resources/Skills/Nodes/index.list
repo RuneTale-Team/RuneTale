@@ -4,9 +4,9 @@
 # consistently across local dev and packaged runtime environments.
 
 # WOODCUTTING
-woodcutting_oak_tree.properties
-woodcutting_beech_tree.properties
-woodcutting_birch_tree.properties
+woodcutting/oak_tree.properties
+woodcutting/beech_tree.properties
+woodcutting/birch_tree.properties
 
 # MINING
-mining_copper.properties
+mining/copper.properties
