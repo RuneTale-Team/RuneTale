@@ -32,6 +32,8 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	private static final int MAX_ROADMAP_CARDS = 6;
 	private static final String SKILL_SUBMENU_CARD_TEMPLATE = "SkillsPlugin/SkillSubmenuCard.ui";
 	private static final String SKILL_LIST_ITEM_TEMPLATE = "SkillsPlugin/SkillListItem.ui";
+	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 10); }";
+	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final OsrsXpService xpService;
@@ -278,14 +280,42 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull String description,
 			@Nullable Integer clickSkillIndex,
 			@Nullable SkillType iconSkill) {
+		appendCardInternal(commandBuilder, eventBuilder, cardIndex, title, usage, description, clickSkillIndex, null,
+				iconSkill);
+	}
+
+	private void appendCardWithAction(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nonnull UIEventBuilder eventBuilder,
+			int cardIndex,
+			@Nonnull String title,
+			@Nonnull String usage,
+			@Nonnull String description,
+			@Nonnull String action,
+			@Nullable SkillType iconSkill) {
+		appendCardInternal(commandBuilder, eventBuilder, cardIndex, title, usage, description, null, action,
+				iconSkill);
+	}
+
+	private void appendCardInternal(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nonnull UIEventBuilder eventBuilder,
+			int cardIndex,
+			@Nonnull String title,
+			@Nonnull String usage,
+			@Nonnull String description,
+			@Nullable Integer clickSkillIndex,
+			@Nullable String action,
+			@Nullable SkillType iconSkill) {
 		int row = cardIndex / 2;
 		int col = cardIndex % 2;
 		if (col == 0) {
-			commandBuilder.appendInline("#SubcommandCards", "Group { LayoutMode: Left; Anchor: (Bottom: 10); }");
+			commandBuilder.appendInline("#SubcommandCards", CARD_ROW_INLINE);
 		} else {
-			commandBuilder.appendInline("#SubcommandCards[" + row + "]", "Group { Anchor: (Width: 10); }");
+			commandBuilder.appendInline("#SubcommandCards[" + row + "]", CARD_COLUMN_SPACER_INLINE);
 		}
 
+		// Row layout: [0]=left card, [1]=spacer, [2]=right card.
 		int uiCol = col == 0 ? 0 : 2;
 		String cardSelector = "#SubcommandCards[" + row + "][" + uiCol + "]";
 		commandBuilder.append("#SubcommandCards[" + row + "]", SKILL_SUBMENU_CARD_TEMPLATE);
@@ -304,40 +334,14 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 					EventData.of("Index", Integer.toString(clickSkillIndex)),
 					false);
 		}
-	}
 
-	private void appendCardWithAction(
-			@Nonnull UICommandBuilder commandBuilder,
-			@Nonnull UIEventBuilder eventBuilder,
-			int cardIndex,
-			@Nonnull String title,
-			@Nonnull String usage,
-			@Nonnull String description,
-			@Nonnull String action,
-			@Nullable SkillType iconSkill) {
-		int row = cardIndex / 2;
-		int col = cardIndex % 2;
-		if (col == 0) {
-			commandBuilder.appendInline("#SubcommandCards", "Group { LayoutMode: Left; Anchor: (Bottom: 10); }");
-		} else {
-			commandBuilder.appendInline("#SubcommandCards[" + row + "]", "Group { Anchor: (Width: 10); }");
+		if (action != null && !action.isBlank()) {
+			eventBuilder.addEventBinding(
+					CustomUIEventBindingType.Activating,
+					cardSelector,
+					EventData.of("Action", action),
+					false);
 		}
-
-		int uiCol = col == 0 ? 0 : 2;
-		String cardSelector = "#SubcommandCards[" + row + "][" + uiCol + "]";
-		commandBuilder.append("#SubcommandCards[" + row + "]", SKILL_SUBMENU_CARD_TEMPLATE);
-		commandBuilder.set(cardSelector + " #IconContainer.Visible", iconSkill != null);
-		if (iconSkill != null) {
-			commandBuilder.set(cardSelector + " #SubcommandIcon.Background", skillIconTexturePath(iconSkill));
-		}
-		commandBuilder.set(cardSelector + " #SubcommandName.Text", title);
-		commandBuilder.set(cardSelector + " #SubcommandUsage.Text", usage);
-		commandBuilder.set(cardSelector + " #SubcommandDescription.Text", description);
-		eventBuilder.addEventBinding(
-				CustomUIEventBindingType.Activating,
-				cardSelector,
-				EventData.of("Action", action),
-				false);
 	}
 
 	@Nullable

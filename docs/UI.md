@@ -1,53 +1,81 @@
-# Custom UI Findings (Skills Plugin)
+# Skills Custom UI Guide
 
-## Key Findings
+## Purpose
+This document explains how the Skills custom UI is wired, where assets live, and which implementation decisions were made so future changes stay safe and predictable.
 
-### 1) Resource pathing and packaging
-- Skills page is loaded with:
-  - Java: `append("SkillsPlugin/SkillsOverview.ui")`
-  - Resource location in jar: `Common/UI/Custom/SkillsPlugin/SkillsOverview.ui`
-- Confirmed by inspecting deployed jar:
-  - `server/mods/skills-0.1.0.jar` contains:
-    - `Common/UI/Custom/SkillsPlugin/SkillsOverview.ui`
-- Conclusion:
-  - Paths are resolved relative to `Common/UI/Custom/`.
-  - Current page pathing is correct.
+## Runtime pathing model
+- UI files are loaded from plugin resources under `Common/UI/Custom/`.
+- Skills page is appended from Java with `append("SkillsPlugin/SkillsOverview.ui")`.
+- Effective packaged path inside the plugin jar is `Common/UI/Custom/SkillsPlugin/SkillsOverview.ui`.
+- Decompiled `build/decompiled/Interface` and `build/decompiled/UI` are references only, not runtime sources.
 
-### 2) Decompiled folders are references, not direct runtime source
-- `build/decompiled/Interface` and `build/decompiled/UI` are useful for patterns only.
-- They confirm syntax, component usage, and visual conventions.
-- They do not replace plugin-packaged assets/resources.
+## Current UI structure
+- Main layout: `plugins/skills/src/main/resources/Common/UI/Custom/SkillsPlugin/SkillsOverview.ui`
+  - Left panel contains skill list (`#CommandList`).
+  - Right panel contains cards (`#SubcommandCards`).
+  - Both containers are scrollable via `LayoutMode: TopScrolling` + `$C.@DefaultScrollbarStyle`.
+- Left list row template: `plugins/skills/src/main/resources/Common/UI/Custom/SkillsPlugin/SkillListItem.ui`
+- Right card template: `plugins/skills/src/main/resources/Common/UI/Custom/SkillsPlugin/SkillSubmenuCard.ui`
 
-### 3) Custom UI element feasibility
-- Fully feasible via composition:
-  - `Group`, `Label`, `TextButton`, styles, templates (`@Something = Group { ... }`)
-  - Runtime dynamic UI updates (`append`, `appendInline`, `clear`, `set`, event bindings)
-- This allows building "custom components" without a separate formal component framework.
+## Java rendering entrypoint
+- Page controller: `plugins/skills/src/main/java/org/runetale/skills/page/SkillsOverviewPage.java`
+- Event model:
+  - `Action=Back`
+  - `Action=ToggleTrack`
+  - `Index=<skill ordinal>` for list/card activation
 
-### 4) Icon support feasibility
-- Icon-like UI is commonly done with:
-  - `Background: "SomeIcon.png"` or `Background: (TexturePath: "...")`
-- Observed in decompiled references:
-  - Social/status/icons, server rows, ability icons, etc.
-- Conclusion:
-  - Texture-backed icons are feasible for Skills UI.
-  - Placeholder icons can be implemented immediately.
+## Decisions we made
+- Keep two-pane layout (navigation + details).
+- Keep interaction click-driven; no hover behavior.
+- Selection indicator is visual-only in UI (no `>` prefix in label text).
+- Left list always shows small skill icons.
+- Right cards show icons on overview cards, but hide icons in detail view cards for readability.
+- Missing icon files are acceptable (engine may show red-X placeholders).
+- Node card display name uses optional `label` property; fallback is raw `id` verbatim.
+- Right card rows include explicit horizontal spacer to prevent cards touching.
+  - Row child order is `[left card, spacer, right card]`.
 
-### 5) Practical placeholder strategy (recommended)
-- Phase 1 (no new files required):
-  - Use text/shape placeholders (initials/glyphs) in dedicated icon slots.
-- Phase 2 (ready for assets):
-  - Add texture path hooks/placeholders in UI now.
-  - Later drop PNG files under plugin resources and swap paths only.
+## Icon conventions
+- Convention-based icon paths are generated from `SkillType`:
+  - `icon_<skill>.png`
+  - Example: `WOODCUTTING` -> `icon_woodcutting.png`
+- Place icons in plugin resources:
+  - `plugins/skills/src/main/resources/Common/UI/Custom/SkillsPlugin/Assets/Icons/`
+- Referenced runtime path format:
+  - `SkillsPlugin/Assets/Icons/icon_<skill>.png`
 
-## Recommended asset location for future icons
-- Put icons under plugin resources, e.g.:
-  - `Common/UI/Custom/SkillsPlugin/Assets/...`
-- Reference from `SkillsOverview.ui` with local relative paths:
-  - `Background: (TexturePath: "Assets/IconFishing.png")`
+## Node definition labels
+- Node files live in:
+  - `plugins/skills/src/main/resources/Skills/Nodes/*.properties`
+- Optional display label key:
+  - `label=Oak Tree`
+- Fallback behavior when label is missing/blank:
+  - UI displays `id` as-is.
 
-## Stability constraints to preserve
-- Keep existing IDs/selectors used by Java event bindings.
-- Keep click handling based on current `Index` flow.
-- Do not reintroduce hover-driven event flow unless explicitly requested.
-- Keep layout two-pane structure unchanged unless a design refactor is requested.
+## Add a new skill (checklist)
+1. Add enum value in `plugins/skills/src/main/java/org/runetale/skills/domain/SkillType.java`.
+2. Add skill gameplay data (XP profile, node definitions, etc.).
+3. Add icon file named `icon_<skill>.png` under `Common/UI/Custom/SkillsPlugin/Assets/Icons/`.
+4. Ensure commands/systems include the new skill where needed.
+5. Deploy and verify:
+   - `./gradlew deployPluginsToRun`
+   - open `/skills`
+   - verify list icon, overview card icon, selection, and detail view rendering.
+
+## Add or edit node cards (checklist)
+1. Create/update node `.properties` file in `Skills/Nodes/`.
+2. Ensure `id` is present.
+3. Add `label` if you want human-friendly UI text.
+4. Ensure node file is included in `Skills/Nodes/index.list`.
+5. Deploy and verify detail roadmap cards.
+
+## Scroll behavior notes
+- `#CommandList` and `#SubcommandCards` are scrollable.
+- `KeepScrollPosition: true` is enabled on both containers.
+- Detail cards are still intentionally capped by `MAX_ROADMAP_CARDS` in
+  `plugins/skills/src/main/java/org/runetale/skills/page/SkillsOverviewPage.java`.
+
+## Guardrails for future edits
+- Do not rename existing selectors used by Java bindings unless Java is updated in lockstep.
+- If changing right-card row composition, update selector indexing logic accordingly.
+- Prefer adding new `.ui` templates over overloading one template with too many mode branches.
