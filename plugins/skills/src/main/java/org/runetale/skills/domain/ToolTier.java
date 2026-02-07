@@ -11,14 +11,15 @@ import java.util.Locale;
  */
 public enum ToolTier {
 	NONE(0),
-	BRONZE(1),
-	IRON(2),
-	STEEL(3),
-	MITHRIL(4),
-	ADAMANT(5),
-	RUNE(6),
-	DRAGON(7),
-	CRYSTAL(8);
+	WOOD(1),
+	CRUDE(2),
+	COPPER(3),
+	IRON(4),
+	THORIUM(5),
+	COBALT(6),
+	ADAMANTITE(7),
+	ONYXIUM(8),
+	MITHRIL(9);
 
 	private final int rank;
 
@@ -41,8 +42,25 @@ public enum ToolTier {
 			return NONE;
 		}
 
+		String normalized = raw.trim().toUpperCase(Locale.ROOT);
+		switch (normalized) {
+			case "BRONZE":
+				return WOOD;
+			case "STEEL":
+				return CRUDE;
+			case "ADAMANT":
+				return ADAMANTITE;
+			case "RUNE":
+				return ONYXIUM;
+			case "DRAGON":
+			case "CRYSTAL":
+				return MITHRIL;
+			default:
+				break;
+		}
+
 		try {
-			return ToolTier.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+			return ToolTier.valueOf(normalized);
 		} catch (IllegalArgumentException ignored) {
 			// Fail-safe: unknown configuration should not crash runtime.
 			return NONE;

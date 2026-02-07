@@ -3,8 +3,4 @@
 # Keep this file explicit and deterministic so classpath/JAR loading works
 # consistently across local dev and packaged runtime environments.
 woodcutting_normal_tree.properties
-woodcutting_oak_tree.properties
-woodcutting_willow_tree.properties
-woodcutting_maple_tree.properties
-woodcutting_yew_tree.properties
-
+woodcutting_birch_tree.properties

@@ -82,7 +82,7 @@ public class SkillsPlugin extends JavaPlugin {
         registerCodecs();
         registerAssets();
         registerComponents();
-        this.getCommandRegistry().registerCommand(new SkillCommand());
+        this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService));
         registerSystems();
 
         LOGGER.log(Level.INFO, "Skills runtime setup complete.");
