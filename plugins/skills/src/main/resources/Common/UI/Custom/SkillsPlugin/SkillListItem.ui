@@ -1,0 +1,41 @@
+@SkillLabelStyle = LabelStyle(
+  FontSize: 16,
+  TextColor: #d7e7ff,
+  RenderBold: true,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center
+);
+
+Button {
+  Anchor: (Height: 42, Bottom: 6);
+  Padding: (Left: 10, Right: 10);
+  Style: (
+    Default: (Background: #122439),
+    Hovered: (Background: #1a3150),
+    Pressed: (Background: #162b46)
+  );
+
+  Group #SelectedAccent {
+    Anchor: (Width: 3, Top: 4, Bottom: 4, Left: 0);
+    Background: #66a3ff;
+    Visible: false;
+  }
+
+  Group {
+    LayoutMode: Left;
+    Padding: (Left: 8);
+
+    Group #SkillIcon {
+      Anchor: (Width: 20, Height: 20, Top: 1);
+      Background: "SkillsPlugin/Assets/Icons/icon_unknown.png";
+    }
+
+    Group { Anchor: (Width: 10); }
+
+    Label #SkillLabel {
+      Text: "Skill";
+      Anchor: (Height: 22);
+      Style: @SkillLabelStyle;
+    }
+  }
+}

@@ -9,7 +9,6 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
-import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
@@ -31,9 +30,8 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 
 	private static final int MAX_LEVEL = 99;
 	private static final int MAX_ROADMAP_CARDS = 6;
-	private static final String SKILL_CARD_TEMPLATE = "SkillsPlugin/SkillCard.ui";
-	private static final Value<String> BASIC_BUTTON_STYLE = Value.ref("Pages/BasicTextButton.ui", "LabelStyle");
-	private static final Value<String> BASIC_BUTTON_STYLE_SELECTED = Value.ref("Pages/BasicTextButton.ui", "SelectedLabelStyle");
+	private static final String SKILL_SUBMENU_CARD_TEMPLATE = "SkillsPlugin/SkillSubmenuCard.ui";
+	private static final String SKILL_LIST_ITEM_TEMPLATE = "SkillsPlugin/SkillListItem.ui";
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final OsrsXpService xpService;
@@ -143,9 +141,10 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			int level = profile == null ? 1 : profile.getLevel(skill);
 			boolean selected = this.selectedSkill == skill;
 			String selector = "#CommandList[" + i + "]";
-			commandBuilder.append("#CommandList", "Pages/BasicTextButton.ui");
-			commandBuilder.set(selector + ".Text", decorateSkillTitle(skill, trackedSkill, selected) + "  Lv " + level);
-			commandBuilder.set(selector + ".Style", selected ? BASIC_BUTTON_STYLE_SELECTED : BASIC_BUTTON_STYLE);
+			commandBuilder.append("#CommandList", SKILL_LIST_ITEM_TEMPLATE);
+			commandBuilder.set(selector + " #SkillLabel.Text", decorateSkillTitle(skill, trackedSkill) + "  Lv " + level);
+			commandBuilder.set(selector + " #SkillIcon.Background", skillIconTexturePath(skill));
+			commandBuilder.set(selector + " #SelectedAccent.Visible", selected);
 			eventBuilder.addEventBinding(
 					CustomUIEventBindingType.Activating,
 					selector,
@@ -188,7 +187,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			long current = xpProgressCurrent(level, xp);
 			long required = xpProgressRequired(level);
 			String usage = level >= MAX_LEVEL ? "Lv 99 (MAX)" : "Lv " + level + "  Progress " + current + "/" + required;
-			appendCard(commandBuilder, eventBuilder, cardIndex++, formatSkillName(skill), usage, formatNumber(xp) + " XP total", skill, skillIndex);
+			appendCard(commandBuilder, eventBuilder, cardIndex++, formatSkillName(skill), usage, formatNumber(xp) + " XP total", skillIndex, skill);
 		}
 	}
 
@@ -220,11 +219,11 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		commandBuilder.clear("#SubcommandCards");
 
 		int cardIndex = 0;
-		appendCard(commandBuilder, eventBuilder, cardIndex++, "Current", "Lv " + level, formatNumber(xp) + " XP total", skill, null);
+		appendCard(commandBuilder, eventBuilder, cardIndex++, "Current", "Lv " + level, formatNumber(xp) + " XP total", null, null);
 		if (level >= MAX_LEVEL) {
-			appendCard(commandBuilder, eventBuilder, cardIndex++, "Next Milestone", "MAX", "No further level requirement", skill, null);
+			appendCard(commandBuilder, eventBuilder, cardIndex++, "Next Milestone", "MAX", "No further level requirement", null, null);
 		} else {
-			appendCard(commandBuilder, eventBuilder, cardIndex++, "Next Milestone", "Lv " + (level + 1), formatNumber(nextLevelGap) + " XP remaining", skill, null);
+			appendCard(commandBuilder, eventBuilder, cardIndex++, "Next Milestone", "Lv " + (level + 1), formatNumber(nextLevelGap) + " XP remaining", null, null);
 		}
 		appendCardWithAction(
 				commandBuilder,
@@ -233,8 +232,8 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 				isTracked ? "Tracked Skill" : "Track Skill",
 				isTracked ? formatSkillName(skill) : "Set as tracked",
 				isTracked ? "Click to clear tracked skill" : "Click to prioritize this skill",
-				skill,
-				"ToggleTrack");
+				"ToggleTrack",
+				null);
 
 		List<SkillNodeDefinition> nodes = this.nodeLookupService.listDefinitionsForSkill(skill);
 		int shown = 0;
@@ -256,7 +255,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			String description = state
 					+ "  |  Tool " + formatToolTier(node) + " " + formatToolKeyword(node)
 					+ "  |  +" + Math.round(node.getExperienceReward()) + " XP";
-			appendCard(commandBuilder, eventBuilder, cardIndex++, prettifyNodeId(node.getId()), usage, description, skill, null);
+			appendCard(commandBuilder, eventBuilder, cardIndex++, prettifyNodeId(node.getId()), usage, description, null, null);
 			if (unlocked) {
 				unlockedShown++;
 			} else {
@@ -266,7 +265,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		}
 
 		if (nodes.size() > shown) {
-			appendCard(commandBuilder, eventBuilder, cardIndex, "More Nodes", "+" + (nodes.size() - shown), "Additional roadmap entries available", skill, null);
+			appendCard(commandBuilder, eventBuilder, cardIndex, "More Nodes", "+" + (nodes.size() - shown), "Additional roadmap entries available", null, null);
 		}
 	}
 
@@ -277,17 +276,23 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull String title,
 			@Nonnull String usage,
 			@Nonnull String description,
-			@Nullable SkillType iconSkill,
-			@Nullable Integer clickSkillIndex) {
+			@Nullable Integer clickSkillIndex,
+			@Nullable SkillType iconSkill) {
 		int row = cardIndex / 2;
 		int col = cardIndex % 2;
 		if (col == 0) {
 			commandBuilder.appendInline("#SubcommandCards", "Group { LayoutMode: Left; Anchor: (Bottom: 10); }");
+		} else {
+			commandBuilder.appendInline("#SubcommandCards[" + row + "]", "Group { Anchor: (Width: 10); }");
 		}
 
-		String cardSelector = "#SubcommandCards[" + row + "][" + col + "]";
-		commandBuilder.append("#SubcommandCards[" + row + "]", SKILL_CARD_TEMPLATE);
-		commandBuilder.set(cardSelector + " #SubcommandIcon.Text", skillIconToken(iconSkill));
+		int uiCol = col == 0 ? 0 : 2;
+		String cardSelector = "#SubcommandCards[" + row + "][" + uiCol + "]";
+		commandBuilder.append("#SubcommandCards[" + row + "]", SKILL_SUBMENU_CARD_TEMPLATE);
+		commandBuilder.set(cardSelector + " #IconContainer.Visible", iconSkill != null);
+		if (iconSkill != null) {
+			commandBuilder.set(cardSelector + " #SubcommandIcon.Background", skillIconTexturePath(iconSkill));
+		}
 		commandBuilder.set(cardSelector + " #SubcommandName.Text", title);
 		commandBuilder.set(cardSelector + " #SubcommandUsage.Text", usage);
 		commandBuilder.set(cardSelector + " #SubcommandDescription.Text", description);
@@ -308,17 +313,23 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull String title,
 			@Nonnull String usage,
 			@Nonnull String description,
-			@Nullable SkillType iconSkill,
-			@Nonnull String action) {
+			@Nonnull String action,
+			@Nullable SkillType iconSkill) {
 		int row = cardIndex / 2;
 		int col = cardIndex % 2;
 		if (col == 0) {
 			commandBuilder.appendInline("#SubcommandCards", "Group { LayoutMode: Left; Anchor: (Bottom: 10); }");
+		} else {
+			commandBuilder.appendInline("#SubcommandCards[" + row + "]", "Group { Anchor: (Width: 10); }");
 		}
 
-		String cardSelector = "#SubcommandCards[" + row + "][" + col + "]";
-		commandBuilder.append("#SubcommandCards[" + row + "]", SKILL_CARD_TEMPLATE);
-		commandBuilder.set(cardSelector + " #SubcommandIcon.Text", skillIconToken(iconSkill));
+		int uiCol = col == 0 ? 0 : 2;
+		String cardSelector = "#SubcommandCards[" + row + "][" + uiCol + "]";
+		commandBuilder.append("#SubcommandCards[" + row + "]", SKILL_SUBMENU_CARD_TEMPLATE);
+		commandBuilder.set(cardSelector + " #IconContainer.Visible", iconSkill != null);
+		if (iconSkill != null) {
+			commandBuilder.set(cardSelector + " #SubcommandIcon.Background", skillIconTexturePath(iconSkill));
+		}
 		commandBuilder.set(cardSelector + " #SubcommandName.Text", title);
 		commandBuilder.set(cardSelector + " #SubcommandUsage.Text", usage);
 		commandBuilder.set(cardSelector + " #SubcommandDescription.Text", description);
@@ -383,13 +394,8 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	@Nonnull
 	private String decorateSkillTitle(
 			@Nonnull SkillType skill,
-			@Nullable SkillType trackedSkill,
-			boolean selected) {
+			@Nullable SkillType trackedSkill) {
 		StringBuilder label = new StringBuilder();
-		if (selected) {
-			label.append("> ");
-		}
-		label.append(skillIconToken(skill)).append(' ');
 		label.append(formatSkillName(skill));
 		if (trackedSkill == skill) {
 			label.append("  [Tracked]");
@@ -398,20 +404,9 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	@Nonnull
-	private String skillIconToken(@Nullable SkillType skill) {
-		if (skill == null) {
-			return "[**]";
-		}
-		switch (skill) {
-			case WOODCUTTING:
-				return "[WC]";
-			case MINING:
-				return "[MN]";
-			case FISHING:
-				return "[FS]";
-			default:
-				return "[??]";
-		}
+	private String skillIconTexturePath(@Nullable SkillType skill) {
+		String id = skill == null ? "unknown" : skill.name().toLowerCase(Locale.ROOT);
+		return "SkillsPlugin/Assets/Icons/icon_" + id + ".png";
 	}
 
 	private long xpProgressCurrent(int level, long totalXp) {

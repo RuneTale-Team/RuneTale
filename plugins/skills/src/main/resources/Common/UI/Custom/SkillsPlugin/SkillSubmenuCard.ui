@@ -1,0 +1,77 @@
+@CardNameStyle = LabelStyle(
+  FontSize: 17,
+  TextColor: #eaf3ff,
+  RenderBold: true,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  FontName: "Secondary"
+);
+
+@CardMetaStyle = LabelStyle(
+  FontSize: 14,
+  TextColor: #b2c8e5,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center
+);
+
+@CardDescStyle = LabelStyle(
+  FontSize: 13,
+  TextColor: #7f9bbd,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  Wrap: true
+);
+
+Button {
+  Anchor: (Height: 118, Bottom: 10);
+  FlexWeight: 1;
+  Padding: (Full: 10);
+  Style: (
+    Default: (Background: #1a2a3e),
+    Hovered: (Background: #243851),
+    Pressed: (Background: #172638)
+  );
+
+  Group {
+    LayoutMode: Left;
+
+    Group #IconContainer {
+      Anchor: (Width: 44, Height: 44, Top: 2);
+      Background: #2d4564;
+      LayoutMode: Middle;
+      Visible: false;
+
+      Group #SubcommandIcon {
+        Anchor: (Width: 32, Height: 32);
+        Background: "SkillsPlugin/Assets/Icons/icon_unknown.png";
+      }
+    }
+
+    Group {
+      Anchor: (Width: 10);
+    }
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+
+      Label #SubcommandName {
+        Text: "";
+        Anchor: (Height: 30);
+        Style: @CardNameStyle;
+      }
+
+      Label #SubcommandUsage {
+        Text: "";
+        Anchor: (Height: 24);
+        Style: @CardMetaStyle;
+      }
+
+      Label #SubcommandDescription {
+        Text: "";
+        Anchor: (Height: 42);
+        Style: @CardDescStyle;
+      }
+    }
+  }
+}

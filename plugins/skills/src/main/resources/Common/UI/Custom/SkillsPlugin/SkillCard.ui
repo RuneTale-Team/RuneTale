@@ -33,48 +33,24 @@ Button {
   );
 
   Group {
-    LayoutMode: Left;
+    LayoutMode: Top;
 
-    Group {
-      Anchor: (Width: 54, Height: 54, Top: 4);
-      Background: #2d4564;
-      LayoutMode: Middle;
-
-      Label #SubcommandIcon {
-        Text: "[**]";
-        Style: (
-          FontSize: 13,
-          TextColor: #f3f8ff,
-          RenderBold: true,
-          HorizontalAlignment: Center,
-          VerticalAlignment: Center
-        );
-      }
+    Label #SubcommandName {
+      Text: "";
+      Anchor: (Height: 30);
+      Style: @CardNameStyle;
     }
 
-    Group { Anchor: (Width: 10); }
+    Label #SubcommandUsage {
+      Text: "";
+      Anchor: (Height: 24);
+      Style: @CardMetaStyle;
+    }
 
-    Group {
-      LayoutMode: Top;
-      FlexWeight: 1;
-
-      Label #SubcommandName {
-        Text: "";
-        Anchor: (Height: 30);
-        Style: @CardNameStyle;
-      }
-
-      Label #SubcommandUsage {
-        Text: "";
-        Anchor: (Height: 24);
-        Style: @CardMetaStyle;
-      }
-
-      Label #SubcommandDescription {
-        Text: "";
-        Anchor: (Height: 42);
-        Style: @CardDescStyle;
-      }
+    Label #SubcommandDescription {
+      Text: "";
+      Anchor: (Height: 42);
+      Style: @CardDescStyle;
     }
   }
 }
