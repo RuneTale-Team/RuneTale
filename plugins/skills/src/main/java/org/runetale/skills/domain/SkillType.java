@@ -11,8 +11,7 @@ import java.util.Locale;
  */
 public enum SkillType {
 	WOODCUTTING,
-	MINING,
-	FISHING;
+	MINING;
 
 	/**
 	 * Parses a skill identity from resource/config text in a forgiving,
