@@ -10,6 +10,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
+import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
@@ -31,6 +32,8 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 
 	private static final int MAX_LEVEL = 99;
 	private static final int MAX_ROADMAP_CARDS = 6;
+	private static final Value<String> BASIC_BUTTON_STYLE = Value.ref("Pages/BasicTextButton.ui", "LabelStyle");
+	private static final Value<String> BASIC_BUTTON_STYLE_SELECTED = Value.ref("Pages/BasicTextButton.ui", "SelectedLabelStyle");
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final OsrsXpService xpService;
@@ -60,7 +63,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull UIEventBuilder eventBuilder,
 			@Nonnull Store<EntityStore> store) {
 		this.selectedSkill = null;
-		commandBuilder.append("Pages/CommandListPage.ui");
+		commandBuilder.append("SkillsPlugin/SkillsOverview.ui");
 		eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#BackButton", EventData.of("Action", "Back"), false);
 		this.render(ref, store, commandBuilder, eventBuilder);
 	}
@@ -87,6 +90,16 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			SkillType parsed = parseSkill(data.skill);
 			if (parsed != null) {
 				this.selectedSkill = parsed;
+			}
+		}
+
+		if (data.index != null) {
+			try {
+				int index = Integer.parseInt(data.index);
+				if (index >= 0 && index < SkillType.values().length) {
+					this.selectedSkill = SkillType.values()[index];
+				}
+			} catch (NumberFormatException ignored) {
 			}
 		}
 
@@ -124,15 +137,19 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder) {
 		commandBuilder.clear("#CommandList");
+		SkillType trackedSkill = this.sessionStatsService.getTrackedSkill(this.playerRef.getUuid());
 		for (int i = 0; i < SkillType.values().length; i++) {
 			SkillType skill = SkillType.values()[i];
 			int level = profile == null ? 1 : profile.getLevel(skill);
+			boolean selected = this.selectedSkill == skill;
+			String selector = "#CommandList[" + i + "]";
 			commandBuilder.append("#CommandList", "Pages/BasicTextButton.ui");
-			commandBuilder.set("#CommandList[" + i + "].TextSpans", Message.raw(formatSkillName(skill) + "  Lv " + level));
+			commandBuilder.set(selector + ".Text", decorateSkillTitle(skill, trackedSkill, selected) + "  Lv " + level);
+			commandBuilder.set(selector + ".Style", selected ? BASIC_BUTTON_STYLE_SELECTED : BASIC_BUTTON_STYLE);
 			eventBuilder.addEventBinding(
 					CustomUIEventBindingType.Activating,
-					"#CommandList[" + i + "]",
-					EventData.of("Skill", skill.name()),
+					selector,
+					EventData.of("Index", Integer.toString(i)),
 					false);
 		}
 	}
@@ -155,21 +172,24 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		String trackedLabel = trackedSkill == null ? "None" : formatSkillName(trackedSkill);
 
 		commandBuilder.set("#BackButton.Visible", false);
-		commandBuilder.set("#CommandName.TextSpans", Message.raw("Skills Overview"));
-		commandBuilder.set("#CommandDescription.TextSpans", Message.raw("Total Level: " + totalLevel + " | Tracked: " + trackedLabel));
-		commandBuilder.set("#CommandUsageLabel.TextSpans", Message.raw("Total XP: " + formatNumber(totalXp)));
+		commandBuilder.set("#CommandName.Text", "Skills Overview");
+		commandBuilder.set("#CommandDescription.Text", "Total Level: " + totalLevel + " | Tracked: " + trackedLabel);
+		commandBuilder.set("#CommandUsageLabel.Text", "Total XP: " + formatNumber(totalXp) + " | Select a skill to inspect details");
+		commandBuilder.set("#SkillsSectionTitle.Text", "Skills");
 
 		commandBuilder.set("#SubcommandSection.Visible", true);
 		commandBuilder.clear("#SubcommandCards");
 
 		int cardIndex = 0;
 		for (SkillType skill : SkillType.values()) {
+			int skillIndex = skill.ordinal();
 			int level = profile == null ? 1 : profile.getLevel(skill);
 			long xp = profile == null ? 0L : profile.getExperience(skill);
 			long current = xpProgressCurrent(level, xp);
 			long required = xpProgressRequired(level);
 			String usage = level >= MAX_LEVEL ? "Lv 99 (MAX)" : "Lv " + level + "  Progress " + current + "/" + required;
-			appendCard(commandBuilder, eventBuilder, cardIndex++, formatSkillName(skill), usage, formatNumber(xp) + " XP total", skill);
+			String decoratedTitle = decorateSkillTitle(skill, trackedSkill, false);
+			appendCard(commandBuilder, eventBuilder, cardIndex++, decoratedTitle, usage, formatNumber(xp) + " XP total", skillIndex);
 		}
 	}
 
@@ -187,15 +207,14 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		boolean isTracked = trackedSkill == skill;
 
 		commandBuilder.set("#BackButton.Visible", true);
-		commandBuilder.set("#CommandName.TextSpans", Message.raw(formatSkillName(skill) + " Details"));
+		commandBuilder.set("#CommandName.Text", formatSkillName(skill) + " Details");
+		commandBuilder.set("#SkillsSectionTitle.Text", "Roadmap");
 		if (level >= MAX_LEVEL) {
-			commandBuilder.set("#CommandDescription.TextSpans", Message.raw("Level 99 reached. Progression is capped."));
-			commandBuilder.set("#CommandUsageLabel.TextSpans", Message.raw("Total XP: " + formatNumber(xp)));
+			commandBuilder.set("#CommandDescription.Text", "Level 99 reached. Progression is capped.");
+			commandBuilder.set("#CommandUsageLabel.Text", "Total XP: " + formatNumber(xp));
 		} else {
-			commandBuilder.set(
-					"#CommandDescription.TextSpans",
-					Message.raw("Level " + level + "  |  Progress " + current + "/" + required + " (current/required)"));
-			commandBuilder.set("#CommandUsageLabel.TextSpans", Message.raw("XP to next level: " + formatNumber(nextLevelGap)));
+			commandBuilder.set("#CommandDescription.Text", "Level " + level + "  |  Progress " + current + "/" + required + " (current/required)");
+			commandBuilder.set("#CommandUsageLabel.Text", "XP to next level: " + formatNumber(nextLevelGap));
 		}
 
 		commandBuilder.set("#SubcommandSection.Visible", true);
@@ -258,9 +277,9 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull String title,
 			@Nonnull String usage,
 			@Nonnull String description,
-			@Nullable SkillType clickSkill) {
-		int row = cardIndex / 3;
-		int col = cardIndex % 3;
+			@Nullable Integer clickSkillIndex) {
+		int row = cardIndex / 2;
+		int col = cardIndex % 2;
 		if (col == 0) {
 			commandBuilder.appendInline("#SubcommandCards", "Group { LayoutMode: Left; Anchor: (Bottom: 0); }");
 		}
@@ -271,11 +290,11 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		commandBuilder.set(cardSelector + " #SubcommandUsage.TextSpans", Message.raw(usage));
 		commandBuilder.set(cardSelector + " #SubcommandDescription.TextSpans", Message.raw(description));
 
-		if (clickSkill != null) {
+		if (clickSkillIndex != null) {
 			eventBuilder.addEventBinding(
 					CustomUIEventBindingType.Activating,
 					cardSelector,
-					EventData.of("Skill", clickSkill.name()),
+					EventData.of("Index", Integer.toString(clickSkillIndex)),
 					false);
 		}
 	}
@@ -288,8 +307,8 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull String usage,
 			@Nonnull String description,
 			@Nonnull String action) {
-		int row = cardIndex / 3;
-		int col = cardIndex % 3;
+		int row = cardIndex / 2;
+		int col = cardIndex % 2;
 		if (col == 0) {
 			commandBuilder.appendInline("#SubcommandCards", "Group { LayoutMode: Left; Anchor: (Bottom: 0); }");
 		}
@@ -357,6 +376,22 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		return String.format(Locale.ROOT, "%,d", value);
 	}
 
+	@Nonnull
+	private String decorateSkillTitle(
+			@Nonnull SkillType skill,
+			@Nullable SkillType trackedSkill,
+			boolean selected) {
+		StringBuilder label = new StringBuilder();
+		if (selected) {
+			label.append("> ");
+		}
+		label.append(formatSkillName(skill));
+		if (trackedSkill == skill) {
+			label.append(" [Tracked]");
+		}
+		return label.toString();
+	}
+
 	private long xpProgressCurrent(int level, long totalXp) {
 		int safeLevel = Math.max(1, Math.min(MAX_LEVEL, level));
 		if (safeLevel >= MAX_LEVEL) {
@@ -390,6 +425,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	public static class SkillsPageEventData {
 		private static final String KEY_ACTION = "Action";
 		private static final String KEY_SKILL = "Skill";
+		private static final String KEY_INDEX = "Index";
 
 		public static final BuilderCodec<SkillsPageEventData> CODEC = BuilderCodec
 				.builder(SkillsPageEventData.class, SkillsPageEventData::new)
@@ -397,9 +433,12 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 				.add()
 				.append(new KeyedCodec<>(KEY_SKILL, Codec.STRING), (entry, value) -> entry.skill = value, entry -> entry.skill)
 				.add()
+				.append(new KeyedCodec<>(KEY_INDEX, Codec.STRING), (entry, value) -> entry.index = value, entry -> entry.index)
+				.add()
 				.build();
 
 		private String action;
 		private String skill;
+		private String index;
 	}
 }

@@ -1,0 +1,137 @@
+$C = "../Common.ui";
+
+@HeaderTitle = LabelStyle(
+  FontSize: 26,
+  TextColor: #f4f7ff,
+  RenderBold: true,
+  VerticalAlignment: Center
+);
+
+@HeaderMeta = LabelStyle(
+  FontSize: 18,
+  TextColor: #d3e0f5,
+  VerticalAlignment: Center
+);
+
+@SectionTitle = LabelStyle(
+  FontSize: 20,
+  TextColor: #f4f7ff,
+  RenderBold: true,
+  VerticalAlignment: Center
+);
+
+@PanelButton = TextButtonStyle(
+  Default: (
+    Background: #1a2738,
+    LabelStyle: (FontSize: 14, TextColor: #deebff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Hovered: (
+    Background: #233349,
+    LabelStyle: (FontSize: 14, TextColor: #f4f7ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Pressed: (
+    Background: #141f2d,
+    LabelStyle: (FontSize: 14, TextColor: #cadbf5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  )
+);
+
+Group {
+  Anchor: (Width: 980, Height: 620);
+  LayoutMode: Top;
+  Padding: (Full: 14);
+  Background: #0c1320(0.90);
+
+  Group {
+    Anchor: (Height: 108);
+    LayoutMode: Top;
+    Padding: (Full: 12);
+    Background: #111f34(0.92);
+
+    Label #CommandName {
+      Text: "Skills";
+      Anchor: (Height: 34);
+      Style: @HeaderTitle;
+    }
+
+    Label #CommandDescription {
+      Text: "";
+      Anchor: (Height: 30);
+      Style: @HeaderMeta;
+    }
+
+    Label #CommandUsageLabel {
+      Text: "";
+      Anchor: (Height: 30);
+      Style: @HeaderMeta;
+    }
+  }
+
+  Group { Anchor: (Height: 10); }
+
+  Group {
+    LayoutMode: Left;
+    FlexWeight: 1;
+
+    Group {
+      Anchor: (Width: 320);
+      LayoutMode: Top;
+      Padding: (Full: 10);
+      Background: #131d2b(0.94);
+
+      TextButton #BackButton {
+        Text: "Back";
+        Anchor: (Width: 164, Height: 40);
+        Style: @PanelButton;
+      }
+
+      Group { Anchor: (Height: 8); }
+
+      Label {
+        Text: "Skills";
+        Anchor: (Height: 28);
+        Style: @SectionTitle;
+      }
+
+      Group { Anchor: (Height: 6); }
+
+      Group #CommandList {
+        LayoutMode: Top;
+        FlexWeight: 1;
+      }
+
+      Group #SearchInput {
+        Anchor: (Height: 0);
+      }
+
+      Group #SendToChatButton {
+        Anchor: (Height: 0);
+      }
+    }
+
+    Group { Anchor: (Width: 10); }
+
+    Group #SubcommandSection {
+      LayoutMode: Top;
+      FlexWeight: 1;
+      Padding: (Full: 10);
+      Background: #131d2b(0.94);
+
+      Label #SkillsSectionTitle {
+        Text: "Overview";
+        Anchor: (Height: 30);
+        Style: @SectionTitle;
+      }
+
+      Group { Anchor: (Height: 8); }
+
+      Group #SubcommandCards {
+        LayoutMode: Top;
+        FlexWeight: 1;
+      }
+    }
+  }
+
+  Group #AliasesSection { Anchor: (Height: 0); }
+  Group #PermissionSection { Anchor: (Height: 0); }
+  Group #VariantsSection { Anchor: (Height: 0); }
+}
