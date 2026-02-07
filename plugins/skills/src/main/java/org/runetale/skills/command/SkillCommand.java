@@ -11,7 +11,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.service.OsrsXpService;
+import org.runetale.skills.service.XpService;
 
 import javax.annotation.Nonnull;
 import java.util.Locale;
@@ -22,9 +22,9 @@ import java.util.Locale;
 public class SkillCommand extends AbstractPlayerCommand {
 
 	private static final int MAX_LEVEL = 99;
-	private final OsrsXpService xpService;
+	private final XpService xpService;
 
-	public SkillCommand(@Nonnull OsrsXpService xpService) {
+	public SkillCommand(@Nonnull XpService xpService) {
 		super("skill", "Displays your skill levels and XP.");
 		this.setPermissionGroup(GameMode.Adventure);
 		this.xpService = xpService;

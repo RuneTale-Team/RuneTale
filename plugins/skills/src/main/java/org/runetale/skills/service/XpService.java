@@ -6,9 +6,9 @@ import java.util.logging.Logger;
 /**
  * OSRS-inspired nonlinear XP/level math service.
  */
-public class OsrsXpService {
+public class XpService {
 
-	private static final Logger LOGGER = Logger.getLogger(OsrsXpService.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(XpService.class.getName());
 	private static final int MAX_LEVEL = 99;
 	private static final int[] XP_THRESHOLDS = buildThresholds();
 

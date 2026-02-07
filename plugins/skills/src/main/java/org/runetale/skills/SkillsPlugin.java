@@ -13,7 +13,7 @@ import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
-import org.runetale.skills.service.OsrsXpService;
+import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillNodeRuntimeService;
 import org.runetale.skills.service.SkillSessionStatsService;
@@ -46,7 +46,7 @@ public class SkillsPlugin extends JavaPlugin {
     /**
      * Service that encapsulates OSRS-like nonlinear XP/level mathematics.
      */
-    private OsrsXpService xpService;
+    private XpService xpService;
 
     /**
      * Service that resolves data-driven skill-node assets for broken blocks.
@@ -165,7 +165,7 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private void registerServices() {
         LOGGER.log(Level.INFO, "[Skills] Registering services...");
-        this.xpService = new OsrsXpService();
+        this.xpService = new XpService();
         this.nodeLookupService = new SkillNodeLookupService();
         this.nodeRuntimeService = new SkillNodeRuntimeService();
         this.toolRequirementEvaluator = new ToolRequirementEvaluator();

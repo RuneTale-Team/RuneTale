@@ -16,7 +16,7 @@ import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.domain.SkillXpGrantResult;
 import org.runetale.skills.progression.event.SkillXpGrantEvent;
 import org.runetale.skills.progression.service.SkillProgressionService;
-import org.runetale.skills.service.OsrsXpService;
+import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillSessionStatsService;
 
 import javax.annotation.Nonnull;
@@ -34,13 +34,13 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 	private static final int MAX_LEVEL = 99;
 
 	private final SkillProgressionService progressionService;
-	private final OsrsXpService xpService;
+	private final XpService xpService;
 	private final SkillSessionStatsService sessionStatsService;
 	private final Query<EntityStore> query;
 
 	public SkillXpGrantSystem(
 			@Nonnull SkillProgressionService progressionService,
-			@Nonnull OsrsXpService xpService,
+			@Nonnull XpService xpService,
 			@Nonnull SkillSessionStatsService sessionStatsService) {
 		super(SkillXpGrantEvent.class);
 		this.progressionService = progressionService;

@@ -17,7 +17,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.service.OsrsXpService;
+import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillSessionStatsService;
 
@@ -36,7 +36,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
-	private final OsrsXpService xpService;
+	private final XpService xpService;
 	private final SkillNodeLookupService nodeLookupService;
 	private final SkillSessionStatsService sessionStatsService;
 
@@ -46,7 +46,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	public SkillsOverviewPage(
 			@Nonnull PlayerRef playerRef,
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull OsrsXpService xpService,
+			@Nonnull XpService xpService,
 			@Nonnull SkillNodeLookupService nodeLookupService,
 			@Nonnull SkillSessionStatsService sessionStatsService) {
 		super(playerRef, CustomPageLifetime.CanDismiss, SkillsPageEventData.CODEC);

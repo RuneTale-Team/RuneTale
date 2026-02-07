@@ -7,7 +7,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.domain.SkillXpGrantResult;
-import org.runetale.skills.service.OsrsXpService;
+import org.runetale.skills.service.XpService;
 
 import javax.annotation.Nonnull;
 
@@ -17,11 +17,11 @@ import javax.annotation.Nonnull;
 public class SkillProgressionService {
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
-	private final OsrsXpService xpService;
+	private final XpService xpService;
 
 	public SkillProgressionService(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull OsrsXpService xpService) {
+			@Nonnull XpService xpService) {
 		this.profileComponentType = profileComponentType;
 		this.xpService = xpService;
 	}

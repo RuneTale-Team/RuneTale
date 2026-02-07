@@ -12,7 +12,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.page.SkillsOverviewPage;
-import org.runetale.skills.service.OsrsXpService;
+import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillSessionStatsService;
 
@@ -21,13 +21,13 @@ import javax.annotation.Nonnull;
 public class SkillsPageCommand extends AbstractPlayerCommand {
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
-	private final OsrsXpService xpService;
+	private final XpService xpService;
 	private final SkillNodeLookupService nodeLookupService;
 	private final SkillSessionStatsService sessionStatsService;
 
 	public SkillsPageCommand(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull OsrsXpService xpService,
+			@Nonnull XpService xpService,
 			@Nonnull SkillNodeLookupService nodeLookupService,
 			@Nonnull SkillSessionStatsService sessionStatsService) {
 		super("skills", "Opens your skills overview page.");
