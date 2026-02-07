@@ -1,5 +1,5 @@
 import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.bundling.Zip
 
 plugins {
     // Shadow makes “fat jars” (bundle your dependencies)
@@ -91,18 +91,43 @@ tasks.register<Delete>("cleanDeployedPlugins") {
     }
 }
 
+tasks.register<Delete>("cleanDeployedPluginBundles") {
+    delete(
+        fileTree(modsDir.asFile).apply {
+            include("${rootProject.name}-plugin-jars-*.zip")
+            include("*-plugin-jars-*.zip")
+        }
+    )
+
+    doLast {
+        println("Cleaned deployed plugin bundle zips from: ${modsDir.asFile}")
+    }
+}
+
+tasks.register<Zip>("bundlePluginJars") {
+    dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
+
+    archiveBaseName.set("${rootProject.name}-plugin-jars")
+    archiveVersion.set(project.version.toString())
+    archiveClassifier.set("")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+
+    from(pluginProjects.map { project ->
+        project.tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
+    })
+}
+
 tasks.register("deployPluginsToRun") {
     dependsOn("cleanDeployedPlugins")
-    // build all plugin jars first
-    dependsOn(subprojects.filter { it.path.startsWith(":plugins:") }.map { it.tasks.named("shadowJar") })
+    dependsOn("cleanDeployedPluginBundles")
+    dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
 
     doLast {
         copy {
             into(modsDir)
-            from(subprojects.filter { it.path.startsWith(":plugins:") }.map { p ->
-                p.layout.buildDirectory.dir("libs")
+            from(pluginProjects.map { project ->
+                project.tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
             })
-            include("*.jar")
         }
         println("Copied plugin jars to ${modsDir.asFile}")
     }
