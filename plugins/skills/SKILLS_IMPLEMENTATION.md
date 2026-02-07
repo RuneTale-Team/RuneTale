@@ -39,15 +39,15 @@ This plugin implements an OSRS-inspired, data-driven gathering/skills runtime fo
   - If the profile component type is unavailable, the command returns a single unavailable message.
   - If the player profile component is unexpectedly missing, the command returns defaults for all skills.
 
-## Logging
+## Player feedback and logging
 
-Logs are intentionally included at `INFO`/`FINE`/`FINER` levels at setup and key runtime decision points:
+Skills gameplay outcomes now surface in player chat (`[Skills] ...`) for normal interactions:
 
-- setup/registration lifecycle
-- requirement pass/fail reasons
-- lookup misses
-- XP mutations and level transitions
-- depletion/respawn transitions
+- requirement failures (skill level/tool/depleted node)
+- XP gain after successful gather
+- level-up notifications
+
+Server logs remain focused on setup/runtime diagnostics and unexpected safety paths (for example, missing profile component).
 
 ## Notes / assumptions
 

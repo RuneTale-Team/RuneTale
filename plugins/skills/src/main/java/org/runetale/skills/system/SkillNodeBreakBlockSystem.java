@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
+import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -21,6 +22,8 @@ import org.runetale.skills.service.SkillNodeRuntimeService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -68,6 +71,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		}
 
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+		PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
 		PlayerSkillProfileComponent profile = commandBuffer.getComponent(ref, this.profileComponentType);
 		if (profile == null) {
 			LOGGER.log(Level.WARNING,
@@ -81,8 +85,8 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 		if (levelBefore < node.getRequiredSkillLevel()) {
 			event.setCancelled(true);
-			LOGGER.log(Level.FINE,
-					String.format("Break denied: block=%s requiredLevel=%d currentLevel=%d", brokenBlockType.getId(),
+			sendPlayerMessage(playerRef,
+					String.format("[Skills] %s level %d required (you are %d).", formatSkillName(skill),
 							node.getRequiredSkillLevel(), levelBefore));
 			return;
 		}
@@ -91,27 +95,30 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 				node.getRequiredToolKeyword(), node.getRequiredToolTier());
 		if (!toolCheck.isSuccess()) {
 			event.setCancelled(true);
-			LOGGER.log(Level.FINE,
-					String.format(
-							"Break denied: block=%s heldItem=%s detectedTier=%s requiredKeyword=%s requiredTier=%s",
-							brokenBlockType.getId(), toolCheck.getHeldItemId(), toolCheck.getDetectedTier(),
-							node.getRequiredToolKeyword(), node.getRequiredToolTier()));
+			sendPlayerMessage(playerRef,
+					String.format("[Skills] You need a %s %s tool.", node.getRequiredToolTier().name().toLowerCase(Locale.ROOT),
+							node.getRequiredToolKeyword()));
 			return;
 		}
 
 		String worldId = store.getExternalData().getWorld().getName();
 		if (this.nodeRuntimeService.isDepleted(worldId, event.getTargetBlock(), node)) {
 			event.setCancelled(true);
-			LOGGER.log(Level.FINER,
-					String.format("Break denied: node still depleted world=%s node=%s pos=%s", worldId, node.getId(),
-							event.getTargetBlock()));
+			sendPlayerMessage(playerRef, "[Skills] This node is depleted. Try again in a bit.");
 			return;
 		}
 
 		long updatedXp = this.xpService.addXp(xpBefore, node.getExperienceReward());
 		int updatedLevel = this.xpService.levelForXp(updatedXp);
+		long gainedXp = Math.max(0L, updatedXp - xpBefore);
 		profile.set(skill, updatedXp, updatedLevel);
 		commandBuffer.putComponent(ref, this.profileComponentType, profile);
+		sendPlayerMessage(playerRef,
+				String.format("[Skills] +%d %s XP (%d total).", gainedXp, formatSkillName(skill), updatedXp));
+		if (updatedLevel > levelBefore) {
+			sendPlayerMessage(playerRef,
+					String.format("[Skills] %s level up: %d -> %d.", formatSkillName(skill), levelBefore, updatedLevel));
+		}
 
 		if (node.isDepletes()) {
 			// Depletion remains deterministic from data: each successful gather rolls
@@ -119,31 +126,27 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			double roll = ThreadLocalRandom.current().nextDouble();
 			double chance = node.getDepletionChance();
 			boolean willDeplete = roll <= chance;
-			LOGGER.log(Level.FINE,
-					String.format("Depletion roll: node=%s world=%s pos=%s roll=%.4f chance=%.4f result=%s",
-							node.getId(), worldId, event.getTargetBlock(), roll, chance, willDeplete));
 			if (willDeplete) {
 				this.nodeRuntimeService.markDepleted(worldId, event.getTargetBlock(), node);
 			}
 		}
-
-		LOGGER.log(Level.INFO,
-				String.format(
-						"Gather success: world=%s block=%s skill=%s xp=%d->%d level=%d->%d node=%s depletes=%s",
-						worldId,
-						brokenBlockType.getId(),
-						skill,
-						xpBefore,
-						updatedXp,
-						levelBefore,
-						updatedLevel,
-						node.getId(),
-						node.isDepletes()));
 	}
 
 	@Nonnull
 	@Override
 	public Query<EntityStore> getQuery() {
 		return this.query;
+	}
+
+	private void sendPlayerMessage(@Nullable PlayerRef playerRef, @Nonnull String text) {
+		if (playerRef != null) {
+			playerRef.sendMessage(Message.raw(text));
+		}
+	}
+
+	@Nonnull
+	private String formatSkillName(@Nonnull SkillType skill) {
+		String name = skill.name().toLowerCase(Locale.ROOT);
+		return Character.toUpperCase(name.charAt(0)) + name.substring(1);
 	}
 }
