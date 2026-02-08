@@ -19,16 +19,18 @@ public enum SkillType {
 	MINING;
 
 	/**
-	 * Parses a skill identity from resource/config text in a forgiving,
+	 * Parses a skill identity from resource/config text in a strict,
 	 * case-insensitive way.
 	 *
 	 * <p>
-	 * Unknown values intentionally fall back to WOODCUTTING so malformed resource
-	 * data does not crash server startup.
+	 * Missing or unknown values throw to prevent silent fallback behavior.
 	 */
 	public static SkillType fromString(String raw) {
 		SkillType parsed = tryParseStrict(raw);
-		return parsed == null ? WOODCUTTING : parsed;
+		if (parsed == null) {
+			throw new IllegalArgumentException("Unknown skill id: " + raw);
+		}
+		return parsed;
 	}
 
 	/**

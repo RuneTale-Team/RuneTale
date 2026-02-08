@@ -172,7 +172,7 @@ Runtime wiring expectation: no new system/service registration is required for b
 ### Caveats / staged behavior TODOs
 
 - `Skills/tool-tier-defaults.properties` is currently informational/logged metadata; runtime tool checks still rely on evaluator code paths.
-- `SkillType.fromString(...)` falls back to `WOODCUTTING` on unknown values, so malformed `skill=` data can silently route to that skill.
+- Node resources now parse `skill` strictly. Missing/invalid `skill` values are skipped with a warning instead of silently routing to a default skill.
 - If node resources fail to load, in-memory fallback defaults are registered to keep runtime alive (use logs to detect this during testing).
 
 ## Acceptance checklist

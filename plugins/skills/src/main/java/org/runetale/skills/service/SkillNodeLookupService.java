@@ -182,7 +182,17 @@ public class SkillNodeLookupService {
 
 		String id = value(properties, "id", fileName.replace(".properties", ""));
 		String label = optionalValue(properties, "label");
-		SkillType skillType = SkillType.fromString(value(properties, "skill", SkillType.WOODCUTTING.name()));
+		String rawSkill = optionalValue(properties, "skill");
+		SkillType skillType = SkillType.tryParseStrict(rawSkill);
+		if (skillType == null) {
+			LOGGER.log(Level.WARNING,
+					String.format(
+							"[Skills] Skipping node resource=%s id=%s because skill is missing or invalid: %s",
+							resourcePath,
+							id,
+							rawSkill == null ? "<missing>" : rawSkill));
+			return false;
+		}
 		List<String> blockIds = resolveBlockIds(properties);
 		String primaryBlockId = blockIds.get(0);
 		int requiredSkillLevel = integerValue(properties, "requiredSkillLevel", 1);
