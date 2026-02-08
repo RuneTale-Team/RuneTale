@@ -6,6 +6,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.command.CombatStyleCommand;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.SkillsPageCommand;
 import org.runetale.skills.command.debug.SkillXpCommand;
@@ -14,12 +15,14 @@ import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
+import org.runetale.skills.service.CombatStyleService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillNodeRuntimeService;
 import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
+import org.runetale.skills.system.CombatDamageXpSystem;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
@@ -70,6 +73,11 @@ public class SkillsPlugin extends JavaPlugin {
      * Session-scoped telemetry used by skill UI and feedback messaging.
      */
     private SkillSessionStatsService sessionStatsService;
+
+    /**
+     * Session-scoped player melee combat style preferences.
+     */
+    private CombatStyleService combatStyleService;
 
     /**
      * Session-scoped custom HUD toasts for XP gains.
@@ -156,6 +164,7 @@ public class SkillsPlugin extends JavaPlugin {
         registerAssets();
         registerComponents();
         this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService));
+        this.getCommandRegistry().registerCommand(new CombatStyleCommand(this.combatStyleService));
         this.getCommandRegistry().registerCommand(new SkillXpCommand());
         this.getCommandRegistry().registerCommand(
                 new SkillsPageCommand(
@@ -179,6 +188,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.nodeRuntimeService = new SkillNodeRuntimeService();
         this.toolRequirementEvaluator = new ToolRequirementEvaluator();
         this.sessionStatsService = new SkillSessionStatsService();
+        this.combatStyleService = new CombatStyleService();
         this.skillXpToastHudService = new SkillXpToastHudService();
         this.xpDispatchService = new SkillXpDispatchService();
         LOGGER.log(Level.INFO, "[Skills] Services registered.");
@@ -235,6 +245,10 @@ public class SkillsPlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(
                 new SkillXpGrantSystem(this.progressionService, this.sessionStatsService, this.skillXpToastHudService));
 
+        // Apply combat-derived XP from damage events (melee style + ranged).
+        this.getEntityStoreRegistry().registerSystem(
+                new CombatDamageXpSystem(this.xpDispatchService, this.combatStyleService));
+
         // Keep custom XP toasts transient and auto-expiring.
         this.getEntityStoreRegistry().registerSystem(new SkillXpToastHudExpirySystem(this.skillXpToastHudService));
 
@@ -267,6 +281,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.nodeRuntimeService = null;
         this.toolRequirementEvaluator = null;
         this.sessionStatsService = null;
+        this.combatStyleService = null;
         this.skillXpToastHudService = null;
         this.progressionService = null;
         this.xpDispatchService = null;

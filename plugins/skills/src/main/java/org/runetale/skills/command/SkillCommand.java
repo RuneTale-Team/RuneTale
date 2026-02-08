@@ -54,7 +54,7 @@ public class SkillCommand extends AbstractPlayerCommand {
 
 		long totalXp = 0L;
 		int totalLevel = 0;
-		SkillType highestSkill = SkillType.WOODCUTTING;
+		SkillType highestSkill = SkillType.values()[0];
 		int highestLevel = 1;
 
 		for (SkillType skillType : SkillType.values()) {

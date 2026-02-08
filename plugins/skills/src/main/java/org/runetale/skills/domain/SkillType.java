@@ -11,6 +11,10 @@ import java.util.Locale;
  * can be added without changing persistence shape or system architecture.
  */
 public enum SkillType {
+	ATTACK,
+	STRENGTH,
+	DEFENSE,
+	RANGED,
 	WOODCUTTING,
 	MINING;
 
