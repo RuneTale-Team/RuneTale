@@ -7,7 +7,6 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.FlagArg;
 import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
-import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -26,16 +25,16 @@ import java.util.stream.Collectors;
  */
 public class SkillXpCommand extends AbstractPlayerCommand {
 
-	private final RequiredArg<String> skillArg;
-	private final RequiredArg<Double> xpArg;
+	private final OptionalArg<String> skillArg;
+	private final OptionalArg<Double> xpArg;
 	private final OptionalArg<String> sourceArg;
 	private final FlagArg silentFlag;
 
 	public SkillXpCommand() {
 		super("skillxp", "Queues a debug XP grant for one of your skills.");
 		this.setPermissionGroup(GameMode.Creative);
-		this.skillArg = this.withRequiredArg("skill", "Skill id (e.g. MINING)", ArgTypes.STRING);
-		this.xpArg = this.withRequiredArg("xp", "XP amount to grant", ArgTypes.DOUBLE);
+		this.skillArg = this.withOptionalArg("skill", "Skill id (e.g. MINING)", ArgTypes.STRING);
+		this.xpArg = this.withOptionalArg("xp", "XP amount to grant", ArgTypes.DOUBLE);
 		this.sourceArg = this.withOptionalArg("source", "Optional telemetry source label", ArgTypes.STRING);
 		this.silentFlag = this.withFlagArg("silent", "Suppress player XP/level notifications.");
 	}
@@ -48,17 +47,35 @@ public class SkillXpCommand extends AbstractPlayerCommand {
 			@Nonnull PlayerRef playerRef,
 			@Nonnull World world) {
 
+		if (!this.skillArg.provided(context)) {
+			sendHelp(context);
+			return;
+		}
+
 		String rawSkill = this.skillArg.get(context);
+		if (isHelpToken(rawSkill)) {
+			sendHelp(context);
+			return;
+		}
+
+		if (!this.xpArg.provided(context)) {
+			context.sendMessage(Message.raw("[Skills] Missing required argument: xp."));
+			sendHelp(context);
+			return;
+		}
+
 		SkillType skillType = SkillType.tryParseStrict(rawSkill);
 		if (skillType == null) {
 			context.sendMessage(Message.raw("[Skills] Unknown skill id: " + rawSkill + "."));
 			context.sendMessage(Message.raw("[Skills] Valid skills: " + validSkillIds()));
+			context.sendMessage(Message.raw("[Skills] Type /skillxp help for usage examples."));
 			return;
 		}
 
 		double xp = this.xpArg.get(context);
 		if (xp <= 0.0D) {
 			context.sendMessage(Message.raw("[Skills] XP must be greater than zero."));
+			context.sendMessage(Message.raw("[Skills] Example: /skillxp MINING 25"));
 			return;
 		}
 
@@ -99,5 +116,21 @@ public class SkillXpCommand extends AbstractPlayerCommand {
 	private String formatSkillName(@Nonnull SkillType skillType) {
 		String lowered = skillType.name().toLowerCase(Locale.ROOT);
 		return Character.toUpperCase(lowered.charAt(0)) + lowered.substring(1);
+	}
+
+	private boolean isHelpToken(String raw) {
+		if (raw == null) {
+			return false;
+		}
+		String normalized = raw.trim().toLowerCase(Locale.ROOT);
+		return normalized.equals("help") || normalized.equals("-h")
+				|| normalized.equals("--help") || normalized.equals("?");
+	}
+
+	private void sendHelp(@Nonnull CommandContext context) {
+		context.sendMessage(Message.raw("[Skills] Queues XP through the shared progression pipeline."));
+		context.sendMessage(Message.raw("[Skills] Usage: /skillxp <skill> <xp> [source] [--silent]"));
+		context.sendMessage(Message.raw("[Skills] Example: /skillxp MINING 25 command:test"));
+		context.sendMessage(Message.raw("[Skills] Valid skills: " + validSkillIds()));
 	}
 }

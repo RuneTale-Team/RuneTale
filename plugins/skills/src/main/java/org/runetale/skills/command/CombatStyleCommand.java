@@ -54,6 +54,11 @@ public class CombatStyleCommand extends AbstractPlayerCommand {
 		}
 
 		String rawStyle = this.styleArg.get(context).trim();
+		if (isHelpToken(rawStyle)) {
+			sendHelp(context);
+			return;
+		}
+
 		if ("ui".equalsIgnoreCase(rawStyle)) {
 			openModePage(store, ref, playerRef);
 			return;
@@ -73,6 +78,7 @@ public class CombatStyleCommand extends AbstractPlayerCommand {
 			context.sendMessage(Message.raw("[Skills] Unknown combat mode: " + rawStyle + "."));
 			context.sendMessage(Message.raw("[Skills] Valid modes: " + CombatStyleType.validModeHint() + "."));
 			context.sendMessage(Message.raw("[Skills] Legacy aliases still work: attack, strength, defense."));
+			context.sendMessage(Message.raw("[Skills] Type /combatstyle help for usage examples."));
 			return;
 		}
 
@@ -97,5 +103,21 @@ public class CombatStyleCommand extends AbstractPlayerCommand {
 				ref,
 				store,
 				new CombatStylePage(playerRef, this.combatStyleService));
+	}
+
+	private boolean isHelpToken(String raw) {
+		if (raw == null) {
+			return false;
+		}
+		String normalized = raw.trim().toLowerCase(Locale.ROOT);
+		return normalized.equals("help") || normalized.equals("-h")
+				|| normalized.equals("--help") || normalized.equals("?");
+	}
+
+	private void sendHelp(@Nonnull CommandContext context) {
+		context.sendMessage(Message.raw("[Skills] Sets your melee XP routing mode."));
+		context.sendMessage(Message.raw("[Skills] Usage: /combatstyle <mode|ui|current>"));
+		context.sendMessage(Message.raw("[Skills] Modes: " + CombatStyleType.validModeHint()));
+		context.sendMessage(Message.raw("[Skills] Examples: /combatstyle aggressive, /combatstyle ui"));
 	}
 }

@@ -36,6 +36,7 @@ This plugin implements an OSRS-inspired, data-driven skills runtime with a centr
 ## `/skill` command semantics
 
 - Scope: self-only (`AbstractPlayerCommand`), no arguments.
+- Help: `/skill help` (also supports `-h`, `--help`, `?`).
 - Output: one header line plus one line per `SkillType` entry.
 - Per-skill values:
   - Uses `PlayerSkillProfileComponent#getLevel(...)` and `getExperience(...)`.
@@ -47,6 +48,7 @@ This plugin implements an OSRS-inspired, data-driven skills runtime with a centr
 ## `/skillxp` debug command semantics
 
 - Scope: self-only (`AbstractPlayerCommand`), intended for debug/admin usage.
+- Help: `/skillxp help` (also supports `-h`, `--help`, `?`).
 - Required args:
   - `skill` (strictly parsed skill id, e.g. `MINING`)
   - `xp` (must be `> 0`)

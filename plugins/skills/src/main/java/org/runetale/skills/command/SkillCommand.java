@@ -5,6 +5,8 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
+import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -23,11 +25,13 @@ public class SkillCommand extends AbstractPlayerCommand {
 
 	private static final int MAX_LEVEL = 99;
 	private final XpService xpService;
+	private final OptionalArg<String> actionArg;
 
 	public SkillCommand(@Nonnull XpService xpService) {
 		super("skill", "Displays your skill levels and XP.");
 		this.setPermissionGroup(GameMode.Adventure);
 		this.xpService = xpService;
+		this.actionArg = this.withOptionalArg("action", "Use 'help' to show command usage.", ArgTypes.STRING);
 	}
 
 	@Override
@@ -37,6 +41,18 @@ public class SkillCommand extends AbstractPlayerCommand {
 			@Nonnull Ref<EntityStore> ref,
 			@Nonnull PlayerRef playerRef,
 			@Nonnull World world) {
+		if (this.actionArg.provided(context)) {
+			String action = this.actionArg.get(context);
+			if (isHelpToken(action)) {
+				sendHelp(playerRef);
+				return;
+			}
+
+			playerRef.sendMessage(Message.raw("[Skills] Unknown argument: " + action + "."));
+			sendHelp(playerRef);
+			return;
+		}
+
 		if (PlayerSkillProfileComponent.getComponentType() == null) {
 			playerRef.sendMessage(Message.raw("Skills profile is currently unavailable."));
 			return;
@@ -112,5 +128,20 @@ public class SkillCommand extends AbstractPlayerCommand {
 	private String formatSkillName(@Nonnull SkillType skillType) {
 		String lowered = skillType.name().toLowerCase(Locale.ROOT);
 		return Character.toUpperCase(lowered.charAt(0)) + lowered.substring(1);
+	}
+
+	private boolean isHelpToken(String raw) {
+		if (raw == null) {
+			return false;
+		}
+		String normalized = raw.trim().toLowerCase(Locale.ROOT);
+		return normalized.equals("help") || normalized.equals("-h")
+				|| normalized.equals("--help") || normalized.equals("?");
+	}
+
+	private void sendHelp(@Nonnull PlayerRef playerRef) {
+		playerRef.sendMessage(Message.raw("[Skills] Shows your current skill progression."));
+		playerRef.sendMessage(Message.raw("[Skills] Usage: /skill"));
+		playerRef.sendMessage(Message.raw("[Skills] Help: /skill help"));
 	}
 }
