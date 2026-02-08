@@ -18,7 +18,6 @@ import org.runetale.skills.progression.system.SkillXpGrantSystem;
 import org.runetale.skills.service.CombatStyleService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
-import org.runetale.skills.service.SkillNodeRuntimeService;
 import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
@@ -58,11 +57,6 @@ public class SkillsPlugin extends JavaPlugin {
      * Service that resolves data-driven skill-node assets for broken blocks.
      */
     private SkillNodeLookupService nodeLookupService;
-
-    /**
-     * Runtime service responsible for node depletion and timed respawn tracking.
-     */
-    private SkillNodeRuntimeService nodeRuntimeService;
 
     /**
      * Service that evaluates held-tool requirements against configured tiers.
@@ -185,7 +179,6 @@ public class SkillsPlugin extends JavaPlugin {
         LOGGER.log(Level.INFO, "[Skills] Registering services...");
         this.xpService = new XpService();
         this.nodeLookupService = new SkillNodeLookupService();
-        this.nodeRuntimeService = new SkillNodeRuntimeService();
         this.toolRequirementEvaluator = new ToolRequirementEvaluator();
         this.sessionStatsService = new SkillSessionStatsService();
         this.combatStyleService = new CombatStyleService();
@@ -252,14 +245,12 @@ public class SkillsPlugin extends JavaPlugin {
         // Keep custom XP toasts transient and auto-expiring.
         this.getEntityStoreRegistry().registerSystem(new SkillXpToastHudExpirySystem(this.skillXpToastHudService));
 
-        // Then process block-break events with requirement checks, XP, and depletion
-        // logic.
+        // Then process block-break events with requirement checks and XP grants.
         this.getEntityStoreRegistry().registerSystem(
                 new SkillNodeBreakBlockSystem(
                         this.playerSkillProfileComponentType,
                         this.xpDispatchService,
                         this.nodeLookupService,
-                        this.nodeRuntimeService,
                         this.toolRequirementEvaluator));
 
         LOGGER.log(Level.INFO, "[Skills] Systems registered.");
@@ -278,7 +269,6 @@ public class SkillsPlugin extends JavaPlugin {
         this.playerSkillProfileComponentType = null;
         this.xpService = null;
         this.nodeLookupService = null;
-        this.nodeRuntimeService = null;
         this.toolRequirementEvaluator = null;
         this.sessionStatsService = null;
         this.combatStyleService = null;

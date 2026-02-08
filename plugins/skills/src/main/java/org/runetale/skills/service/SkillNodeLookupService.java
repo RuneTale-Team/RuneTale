@@ -199,20 +199,17 @@ public class SkillNodeLookupService {
 		ToolTier requiredToolTier = ToolTier.fromString(value(properties, "requiredToolTier", ToolTier.NONE.name()));
 		String requiredToolKeyword = value(properties, "requiredToolKeyword", "axe");
 		double experienceReward = doubleValue(properties, "experienceReward", 0.0D);
-		double depletionChance = clamp01(doubleValue(properties, "depletionChance", 1.0D));
-		boolean depletes = booleanValue(properties, "depletes", true);
-		int respawnSeconds = Math.max(0, integerValue(properties, "respawnSeconds", 5));
 
 		SkillNodeDefinition definition = new SkillNodeDefinition(id, label, skillType, primaryBlockId, requiredSkillLevel,
-				requiredToolTier, requiredToolKeyword, experienceReward, depletionChance, depletes, respawnSeconds);
+				requiredToolTier, requiredToolKeyword, experienceReward);
 		register(definition, blockIds);
 
 		LOGGER.log(Level.INFO,
 				String.format(
-						"[Skills] Loaded node resource=%s id=%s skill=%s blocks=%s level=%d tier=%s keyword=%s xp=%.2f depleteChance=%.2f respawn=%ds",
+						"[Skills] Loaded node resource=%s id=%s skill=%s blocks=%s level=%d tier=%s keyword=%s xp=%.2f",
 						resourcePath, id, skillType, blockIds, requiredSkillLevel, requiredToolTier,
 						requiredToolKeyword,
-						experienceReward, depletionChance, respawnSeconds));
+						experienceReward));
 		return true;
 	}
 
@@ -222,11 +219,10 @@ public class SkillNodeLookupService {
 	 */
 	private void registerFallbackDefaults() {
 		register(new SkillNodeDefinition("oak_tree", SkillType.WOODCUTTING, "OakLog", 1, ToolTier.WOOD,
-				"Tool_Hatchet", 25.0D,
-				1.0D, true, 8));
+				"Tool_Hatchet", 25.0D));
 		register(new SkillNodeDefinition("birch_tree", SkillType.WOODCUTTING, "BirchLog", 15, ToolTier.IRON,
 				"Tool_Hatchet",
-				37.5D, 1.0D, true, 10));
+				37.5D));
 	}
 
 	/**
@@ -352,14 +348,6 @@ public class SkillNodeLookupService {
 		}
 	}
 
-	private static boolean booleanValue(@Nonnull Properties properties, @Nonnull String key, boolean defaultValue) {
-		String raw = properties.getProperty(key);
-		if (raw == null || raw.isBlank()) {
-			return defaultValue;
-		}
-		return Boolean.parseBoolean(raw.trim());
-	}
-
 	@Nonnull
 	private static List<String> resolveBlockIds(@Nonnull Properties properties) {
 		String rawBlockIds = properties.getProperty("blockIds");
@@ -380,10 +368,6 @@ public class SkillNodeLookupService {
 		}
 
 		return List.copyOf(parsed);
-	}
-
-	private static double clamp01(double value) {
-		return Math.max(0.0D, Math.min(1.0D, value));
 	}
 
 	@Nonnull

@@ -20,19 +20,17 @@ import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.SkillNodeLookupService;
-import org.runetale.skills.service.SkillNodeRuntimeService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Locale;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Handles block-break gathering flow:
- * lookup -> requirements -> XP dispatch -> optional depletion state.
+ * lookup -> requirements -> XP dispatch.
  */
 public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
 
@@ -41,7 +39,6 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final SkillXpDispatchService skillXpDispatchService;
 	private final SkillNodeLookupService nodeLookupService;
-	private final SkillNodeRuntimeService nodeRuntimeService;
 	private final ToolRequirementEvaluator toolRequirementEvaluator;
 	private final Query<EntityStore> query;
 
@@ -49,13 +46,11 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull SkillXpDispatchService skillXpDispatchService,
 			@Nonnull SkillNodeLookupService nodeLookupService,
-			@Nonnull SkillNodeRuntimeService nodeRuntimeService,
 			@Nonnull ToolRequirementEvaluator toolRequirementEvaluator) {
 		super(BreakBlockEvent.class);
 		this.profileComponentType = profileComponentType;
 		this.skillXpDispatchService = skillXpDispatchService;
 		this.nodeLookupService = nodeLookupService;
-		this.nodeRuntimeService = nodeRuntimeService;
 		this.toolRequirementEvaluator = toolRequirementEvaluator;
 		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
 	}
@@ -112,13 +107,6 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			return;
 		}
 
-		String worldId = store.getExternalData().getWorld().getName();
-		if (this.nodeRuntimeService.isDepleted(worldId, event.getTargetBlock(), node)) {
-			event.setCancelled(true);
-			sendPlayerNotification(playerRef, "[Skills] This node is depleted. Try again in a bit.", NotificationStyle.Danger);
-			return;
-		}
-
 		this.skillXpDispatchService.grantSkillXp(
 				commandBuffer,
 				ref,
@@ -126,17 +114,6 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 				node.getExperienceReward(),
 				"node:" + node.getId(),
 				true);
-
-		if (node.isDepletes()) {
-			// Depletion remains deterministic from data: each successful gather rolls
-			// against per-node chance.
-			double roll = ThreadLocalRandom.current().nextDouble();
-			double chance = node.getDepletionChance();
-			boolean willDeplete = roll <= chance;
-			if (willDeplete) {
-				this.nodeRuntimeService.markDepleted(worldId, event.getTargetBlock(), node);
-			}
-		}
 	}
 
 	@Nonnull

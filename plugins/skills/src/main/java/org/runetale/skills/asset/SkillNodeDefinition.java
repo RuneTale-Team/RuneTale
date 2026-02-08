@@ -44,15 +44,6 @@ public class SkillNodeDefinition {
 			.append(new KeyedCodec<>("ExperienceReward", Codec.DOUBLE), (o, i) -> o.experienceReward = i,
 					SkillNodeDefinition::getExperienceReward)
 			.add()
-			.append(new KeyedCodec<>("DepletionChance", Codec.DOUBLE), (o, i) -> o.depletionChance = i,
-					SkillNodeDefinition::getDepletionChance)
-			.add()
-			.append(new KeyedCodec<>("Depletes", Codec.BOOLEAN), (o, i) -> o.depletes = i,
-					SkillNodeDefinition::isDepletes)
-			.add()
-			.append(new KeyedCodec<>("RespawnSeconds", Codec.INTEGER), (o, i) -> o.respawnSeconds = i,
-					SkillNodeDefinition::getRespawnSeconds)
-			.add()
 			.build();
 
 	private String id = "unknown";
@@ -63,17 +54,6 @@ public class SkillNodeDefinition {
 	private ToolTier requiredToolTier = ToolTier.NONE;
 	private String requiredToolKeyword = "axe";
 	private double experienceReward = 0.0D;
-	/**
-	 * Probability (0.0..1.0) that this node depletes on a successful gather.
-	 *
-	 * <p>
-	 * A value of 1.0 means always deplete; 0.0 means never deplete. This keeps
-	 * OSRS-like depletion behavior data-driven without hardcoding chance logic in
-	 * event systems.
-	 */
-	private double depletionChance = 1.0D;
-	private boolean depletes = true;
-	private int respawnSeconds = 5;
 
 	/**
 	 * Codec constructor.
@@ -82,15 +62,13 @@ public class SkillNodeDefinition {
 	}
 
 	public SkillNodeDefinition(String id, SkillType skillType, String blockId, int requiredSkillLevel,
-			ToolTier requiredToolTier, String requiredToolKeyword, double experienceReward,
-			double depletionChance, boolean depletes, int respawnSeconds) {
+			ToolTier requiredToolTier, String requiredToolKeyword, double experienceReward) {
 		this(id, "", skillType, blockId, requiredSkillLevel, requiredToolTier, requiredToolKeyword,
-				experienceReward, depletionChance, depletes, respawnSeconds);
+				experienceReward);
 	}
 
 	public SkillNodeDefinition(String id, String label, SkillType skillType, String blockId, int requiredSkillLevel,
-			ToolTier requiredToolTier, String requiredToolKeyword, double experienceReward,
-			double depletionChance, boolean depletes, int respawnSeconds) {
+			ToolTier requiredToolTier, String requiredToolKeyword, double experienceReward) {
 		this.id = id;
 		this.label = label;
 		this.skillType = skillType;
@@ -99,9 +77,6 @@ public class SkillNodeDefinition {
 		this.requiredToolTier = requiredToolTier;
 		this.requiredToolKeyword = requiredToolKeyword;
 		this.experienceReward = experienceReward;
-		this.depletionChance = depletionChance;
-		this.depletes = depletes;
-		this.respawnSeconds = respawnSeconds;
 	}
 
 	public String getId() {
@@ -134,20 +109,5 @@ public class SkillNodeDefinition {
 
 	public double getExperienceReward() {
 		return experienceReward;
-	}
-
-	/**
-	 * Returns depletion chance clamped to [0.0, 1.0] for defensive runtime use.
-	 */
-	public double getDepletionChance() {
-		return Math.max(0.0D, Math.min(1.0D, depletionChance));
-	}
-
-	public boolean isDepletes() {
-		return depletes;
-	}
-
-	public int getRespawnSeconds() {
-		return respawnSeconds;
 	}
 }

@@ -12,23 +12,20 @@ This plugin implements an OSRS-inspired, data-driven skills runtime with a centr
 6. On block break:
     - Resolve the broken block to a skill node definition.
     - Enforce skill-level and held-tool requirements.
-    - Prevent gathering if the node is currently depleted.
     - Queue XP grant through the shared progression pipeline.
-    - Mark node depleted with timed respawn tracking when configured.
 
 ## Core pieces
 
 - `SkillType`: skill identity enum.
 - `PlayerSkillProfileComponent`: persistent per-player map of skill progress.
 - `SkillProgress`: per-skill XP + level state.
-- `OsrsXpService`: XP thresholds and level calculation.
+- `XpService`: XP thresholds and level calculation.
 - `SkillXpDispatchService`: API/service entrypoint to enqueue XP grants from any source.
 - `SkillProgressionService`: single source of truth for XP+level mutations.
 - `SkillXpGrantSystem`: ECS event system that applies queued XP grants and handles feedback.
-- `SkillNodeDefinition`: data model for node requirements/rewards/depletion.
+- `SkillNodeDefinition`: data model for node requirements/rewards.
 - `SkillNodeLookupService`: lookup hooks + default node bootstrap.
 - `ToolRequirementEvaluator`: keyword + tier validation from held `ItemStack`.
-- `SkillNodeRuntimeService`: in-memory depletion/respawn state map.
 - `EnsurePlayerSkillProfileSystem`: auto-add missing profile components.
 - `SkillNodeBreakBlockSystem`: main break-block rules and XP progression.
 - `SkillCommand`: prints `SkillType.values()` as `level` + `xp` for the executing player.
@@ -64,7 +61,7 @@ This plugin implements an OSRS-inspired, data-driven skills runtime with a centr
 
 Skills gameplay outcomes now surface in player chat (`[Skills] ...`) for normal interactions:
 
-- requirement failures (skill level/tool/depleted node)
+- requirement failures (skill level/tool)
 - XP gain after successful gather
 - level-up notifications
 
@@ -83,7 +80,6 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ## Notes / assumptions
 
 - Node definitions are loaded from classpath resources under `src/main/resources/Skills/Nodes/**/*.properties` via `index.list`; in-memory defaults remain as a fail-safe fallback only.
-- World identity for depletion keys currently uses `world.getName()`.
 - Unknown blocks remain a no-op path (fail-safe behavior).
 
 ## Testing Guide
@@ -110,15 +106,9 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
    Expected: gather succeeds, XP is awarded, level recalculates from cumulative XP.
 4. Repeat successful gathers until a level-up boundary is crossed.
    Expected: log shows level `before -> after` change.
-5. Test depletion/respawn:
-   - use a node with `depletes=true` and noticeable `depletionChance`,
-   - trigger depletion,
-   - retry immediately,
-   - retry after `respawnSeconds`.
-     Expected: denied while depleted, allowed after respawn window.
-6. Run `/skill` on a player with no prior gathering progress.
+5. Run `/skill` on a player with no prior gathering progress.
    Expected: every declared `SkillType` is listed with `level=1 xp=0`.
-7. Gain XP in at least one skill, then run `/skill` again.
+6. Gain XP in at least one skill, then run `/skill` again.
    Expected: that skill reflects updated `level/xp`, while untrained skills remain defaulted.
 
 ### 3) Debug logs to watch
@@ -129,11 +119,6 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
   - `Tool requirement check: item=... detected=... required=... success=...`
 - XP + level updates:
   - `Applied XP grant source=... skill=... gain=... totalXp=... level=...`
-- Depletion lifecycle:
-  - `Depletion roll: ... roll=... chance=... result=...`
-  - `Node depleted: key=...`
-  - `Node still depleted: key=...`
-  - `Node respawned: key=...`
 - Resource bootstrap:
   - `Node resource bootstrap completed with N definition(s)`
   - warnings for missing/empty index or node resources.
@@ -147,7 +132,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 3. Keep keys aligned with current loader schema:
    - `id`, `skill`, `blockIds` (preferred, comma-separated) or `blockId` (backward-compatible fallback),
    - `requiredSkillLevel`, `requiredToolKeyword`, `requiredToolTier`,
-   - `experienceReward`, `depletionChance`, `depletes`, `respawnSeconds`.
+   - `experienceReward`.
 4. Rebuild and verify log line: `Loaded node resource=... id=... skill=...`.
 
 ### Add more nodes for an existing skill
@@ -161,7 +146,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 1. Add the identity to `SkillType`.
 2. Author one or more node resources with `skill=<NEW_SKILL>` and include them in `index.list`.
 3. Ensure your content (blocks/tools) can satisfy the same runtime checks already used by break handling.
-4. Rebuild and test requirement + XP + depletion paths exactly as in the Testing Guide.
+4. Rebuild and test requirement + XP paths exactly as in the Testing Guide.
 
 Runtime wiring expectation: no new system/service registration is required for basic gather-style skills as long as they fit the existing node schema and `SkillType` enum.
 
@@ -192,11 +177,6 @@ Runtime wiring expectation: no new system/service registration is required for b
   - Verify awarded XP equals node `experienceReward` (rounded by existing XP service behavior).
   - Verify updated level is computed from cumulative XP using OSRS-style thresholds.
   - Verify XP/level mutations are persisted back to the player profile component.
-
-- [ ] **Depletion/respawn behavior**
-  - Verify depletion roll uses node `depletionChance` in `[0.0, 1.0]`.
-  - Verify node enters depleted state only when roll succeeds and `depletes=true`.
-  - Verify node becomes gatherable again after `respawnSeconds`.
 
 - [ ] **Extensibility for a second skill**
   - Add a second-skill node resource set (e.g., Mining) using the same `Skills/Nodes/index.list` + properties schema.
