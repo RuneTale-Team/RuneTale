@@ -1,0 +1,175 @@
+$C = "../Common.ui";
+
+@TitleStyle = LabelStyle(
+  FontSize: 30,
+  TextColor: #f2f6ff,
+  RenderBold: true,
+  FontName: "Secondary",
+  VerticalAlignment: Center
+);
+
+@SubtleStyle = LabelStyle(
+  FontSize: 15,
+  TextColor: #a9bfdc,
+  VerticalAlignment: Center
+);
+
+@SectionStyle = LabelStyle(
+  FontSize: 18,
+  TextColor: #e8f0ff,
+  RenderBold: true,
+  RenderUppercase: true,
+  FontName: "Secondary",
+  VerticalAlignment: Center
+);
+
+@ModeButtonStyle = TextButtonStyle(
+  Default: (
+    Background: #263a52,
+    LabelStyle: (FontSize: 16, TextColor: #e3eeff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Hovered: (
+    Background: #304a69,
+    LabelStyle: (FontSize: 16, TextColor: #f7fbff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Pressed: (
+    Background: #22354c,
+    LabelStyle: (FontSize: 16, TextColor: #cfdef6, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  )
+);
+
+@ModeDescStyle = LabelStyle(
+  FontSize: 13,
+  TextColor: #93acc9,
+  VerticalAlignment: Center
+);
+
+@CloseButtonStyle = TextButtonStyle(
+  Default: (
+    Background: #1f3045,
+    LabelStyle: (FontSize: 14, TextColor: #d9e8ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Hovered: (
+    Background: #293e58,
+    LabelStyle: (FontSize: 14, TextColor: #f2f8ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Pressed: (
+    Background: #1a2a3c,
+    LabelStyle: (FontSize: 14, TextColor: #c8d8ef, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  )
+);
+
+Group {
+  Anchor: (Width: 900, Height: 600);
+  LayoutMode: Top;
+  Padding: (Full: 16);
+  Background: #0a1320(0.94);
+
+  Group {
+    Anchor: (Height: 120);
+    LayoutMode: Top;
+    Padding: (Left: 14, Right: 14, Top: 10, Bottom: 10);
+    Background: #111f33;
+
+    Label {
+      Text: "Combat XP Modes";
+      Anchor: (Height: 42);
+      Style: @TitleStyle;
+    }
+
+    Label #CurrentModeValue {
+      Text: "Accurate";
+      Anchor: (Height: 34);
+      Style: @SectionStyle;
+    }
+
+    Label #CurrentModeDesc {
+      Text: "Melee XP -> Attack";
+      Anchor: (Height: 24);
+      Style: @SubtleStyle;
+    }
+  }
+
+  Group { Anchor: (Height: 10); }
+
+  Label {
+    Text: "Choose Mode";
+    Anchor: (Height: 24);
+    Style: @SectionStyle;
+  }
+
+  Group { Anchor: (Height: 8); }
+
+  Group {
+    LayoutMode: Top;
+    FlexWeight: 1;
+
+    TextButton #ModeAccurate {
+      Text: "Accurate";
+      Anchor: (Height: 54, Bottom: 8);
+      Style: @ModeButtonStyle;
+    }
+
+    Label #ModeAccurateDesc {
+      Text: "Melee XP -> Attack";
+      Anchor: (Height: 22, Bottom: 8);
+      Style: @ModeDescStyle;
+    }
+
+    TextButton #ModeAggressive {
+      Text: "Aggressive";
+      Anchor: (Height: 54, Bottom: 8);
+      Style: @ModeButtonStyle;
+    }
+
+    Label #ModeAggressiveDesc {
+      Text: "Melee XP -> Strength";
+      Anchor: (Height: 22, Bottom: 8);
+      Style: @ModeDescStyle;
+    }
+
+    TextButton #ModeDefensive {
+      Text: "Defensive";
+      Anchor: (Height: 54, Bottom: 8);
+      Style: @ModeButtonStyle;
+    }
+
+    Label #ModeDefensiveDesc {
+      Text: "Melee XP -> Defense";
+      Anchor: (Height: 22, Bottom: 8);
+      Style: @ModeDescStyle;
+    }
+
+    TextButton #ModeControlled {
+      Text: "Controlled";
+      Anchor: (Height: 54, Bottom: 8);
+      Style: @ModeButtonStyle;
+    }
+
+    Label #ModeControlledDesc {
+      Text: "Melee XP -> Attack/Strength/Defense split";
+      Anchor: (Height: 22);
+      Style: @ModeDescStyle;
+    }
+  }
+
+  Group { Anchor: (Height: 12); }
+
+  Group {
+    LayoutMode: Left;
+
+    TextButton #CloseButton {
+      Text: "Close";
+      Anchor: (Width: 180, Height: 42);
+      Style: @CloseButtonStyle;
+    }
+
+    Group { Anchor: (Width: 12); }
+
+    Label {
+      Text: "Tip: /combatstyle <mode> also works in chat.";
+      Anchor: (Height: 42);
+      Style: @SubtleStyle;
+    }
+  }
+}

@@ -17,7 +17,7 @@ public class CombatStyleService {
 	@Nonnull
 	public CombatStyleType getCombatStyle(@Nonnull UUID playerId) {
 		CombatStyleType style = this.styleByPlayer.get(playerId);
-		return style == null ? CombatStyleType.ATTACK : style;
+		return style == null ? CombatStyleType.ACCURATE : style;
 	}
 
 	public void setCombatStyle(@Nonnull UUID playerId, @Nonnull CombatStyleType style) {

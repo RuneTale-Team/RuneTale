@@ -8,16 +8,16 @@ import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.domain.CombatStyleType;
+import org.runetale.skills.page.CombatStylePage;
 import org.runetale.skills.service.CombatStyleService;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 /**
  * Player command for choosing which melee skill receives combat XP.
@@ -28,9 +28,9 @@ public class CombatStyleCommand extends AbstractPlayerCommand {
 	private final CombatStyleService combatStyleService;
 
 	public CombatStyleCommand(@Nonnull CombatStyleService combatStyleService) {
-		super("combatstyle", "Sets your melee combat XP style (attack, strength, defense).");
+		super("combatstyle", "Sets your melee XP mode (accurate/aggressive/defensive/controlled). Use /combatstyle ui.");
 		this.setPermissionGroup(GameMode.Adventure);
-		this.styleArg = this.withOptionalArg("style", "attack|strength|defense", ArgTypes.STRING);
+		this.styleArg = this.withOptionalArg("mode", "accurate|aggressive|defensive|controlled|ui|current", ArgTypes.STRING);
 		this.combatStyleService = combatStyleService;
 	}
 
@@ -44,39 +44,58 @@ public class CombatStyleCommand extends AbstractPlayerCommand {
 
 		CombatStyleType currentStyle = this.combatStyleService.getCombatStyle(playerRef.getUuid());
 		if (!this.styleArg.provided(context)) {
+			openModePage(store, ref, playerRef);
 			context.sendMessage(Message.raw(String.format(
 					Locale.ROOT,
-					"[Skills] Current melee combat style: %s.",
-					formatStyleName(currentStyle))));
-			context.sendMessage(Message.raw("[Skills] Usage: /combatstyle <attack|strength|defense>."));
+					"[Skills] Current melee mode: %s (%s).",
+					currentStyle.getDisplayName(),
+					currentStyle.describeMeleeXpRouting())));
 			return;
 		}
 
-		String rawStyle = this.styleArg.get(context);
+		String rawStyle = this.styleArg.get(context).trim();
+		if ("ui".equalsIgnoreCase(rawStyle)) {
+			openModePage(store, ref, playerRef);
+			return;
+		}
+
+		if ("current".equalsIgnoreCase(rawStyle)) {
+			context.sendMessage(Message.raw(String.format(
+					Locale.ROOT,
+					"[Skills] Current melee mode: %s (%s).",
+					currentStyle.getDisplayName(),
+					currentStyle.describeMeleeXpRouting())));
+			return;
+		}
+
 		CombatStyleType parsedStyle = CombatStyleType.tryParse(rawStyle);
 		if (parsedStyle == null) {
-			context.sendMessage(Message.raw("[Skills] Unknown combat style: " + rawStyle + "."));
-			context.sendMessage(Message.raw("[Skills] Valid styles: " + validStyles() + "."));
+			context.sendMessage(Message.raw("[Skills] Unknown combat mode: " + rawStyle + "."));
+			context.sendMessage(Message.raw("[Skills] Valid modes: " + CombatStyleType.validModeHint() + "."));
+			context.sendMessage(Message.raw("[Skills] Legacy aliases still work: attack, strength, defense."));
 			return;
 		}
 
 		this.combatStyleService.setCombatStyle(playerRef.getUuid(), parsedStyle);
 		context.sendMessage(Message.raw(String.format(
 				Locale.ROOT,
-				"[Skills] Melee combat style set to %s.",
-				formatStyleName(parsedStyle))));
+				"[Skills] Melee mode set to %s (%s).",
+				parsedStyle.getDisplayName(),
+				parsedStyle.describeMeleeXpRouting())));
 	}
 
-	@Nonnull
-	private String validStyles() {
-		return Arrays.stream(CombatStyleType.values())
-				.map(value -> value.name().toLowerCase(Locale.ROOT))
-				.collect(Collectors.joining(", "));
-	}
+	private void openModePage(
+			@Nonnull Store<EntityStore> store,
+			@Nonnull Ref<EntityStore> ref,
+			@Nonnull PlayerRef playerRef) {
+		Player player = store.getComponent(ref, Player.getComponentType());
+		if (player == null) {
+			return;
+		}
 
-	@Nonnull
-	private String formatStyleName(@Nonnull CombatStyleType style) {
-		String lowered = style.name().toLowerCase(Locale.ROOT);
-		return Character.toUpperCase(lowered.charAt(0)) + lowered.substring(1);
+		player.getPageManager().openCustomPage(
+				ref,
+				store,
+				new CombatStylePage(playerRef, this.combatStyleService));
 	}
 }
