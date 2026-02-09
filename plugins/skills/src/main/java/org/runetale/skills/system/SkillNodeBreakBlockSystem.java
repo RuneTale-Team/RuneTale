@@ -96,6 +96,8 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		RequirementCheckResult toolCheck = this.toolRequirementEvaluator.evaluate(event.getItemInHand(),
 				node.getRequiredToolKeyword(), node.getRequiredToolTier());
 		if (!toolCheck.isSuccess()) {
+			// decided not to cancel the break event, because OSRS doesn't either.
+			/*
 			event.setCancelled(true);
 			sendPlayerNotification(playerRef,
 					String.format("[Skills] Tool tier %s/%s (current/required) for %s.",
@@ -103,6 +105,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 							node.getRequiredToolTier().name().toLowerCase(Locale.ROOT),
 							node.getRequiredToolKeyword()),
 					NotificationStyle.Warning);
+			*/
 			return;
 		}
 
