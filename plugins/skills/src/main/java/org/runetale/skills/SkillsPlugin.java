@@ -271,7 +271,9 @@ public class SkillsPlugin extends JavaPlugin {
 
         // Unlock recipes when a player levels up in a skill.
         this.getEntityStoreRegistry().registerSystem(
-                new CraftingRecipeUnlockSystem(this.craftingRecipeTagService));
+                new CraftingRecipeUnlockSystem(
+                        this.playerSkillProfileComponentType,
+                        this.craftingRecipeTagService));
 
         // Sync recipe unlocks on player join for catch-up.
         this.getEntityStoreRegistry().registerSystem(

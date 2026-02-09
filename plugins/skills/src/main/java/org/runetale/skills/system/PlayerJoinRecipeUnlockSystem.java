@@ -14,11 +14,11 @@ import com.hypixel.hytale.builtin.crafting.CraftingPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
-import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
-import java.util.Optional;
+import java.util.List;
 
 /**
  * Syncs crafting recipe unlocks when a player joins the server.
@@ -63,15 +63,19 @@ public class PlayerJoinRecipeUnlockSystem extends RefSystem<EntityStore> {
 
 		int unlocked = 0;
 		for (CraftingRecipe recipe : CraftingRecipe.getAssetMap().getAssetMap().values()) {
-			Optional<SkillType> skillOpt = this.craftingRecipeTagService.getSkillRequired(recipe);
-			if (skillOpt.isEmpty()) {
+			List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(recipe);
+			if (requirements.isEmpty()) {
 				continue;
 			}
 
-			SkillType skill = skillOpt.get();
-			int requiredLevel = this.craftingRecipeTagService.getCraftingLevelRequired(recipe);
-			int playerLevel = profile.getLevel(skill);
-			if (playerLevel < requiredLevel) {
+			boolean allMet = true;
+			for (SkillRequirement req : requirements) {
+				if (profile.getLevel(req.skillType()) < req.requiredLevel()) {
+					allMet = false;
+					break;
+				}
+			}
+			if (!allMet) {
 				continue;
 			}
 

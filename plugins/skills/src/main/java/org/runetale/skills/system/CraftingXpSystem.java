@@ -13,16 +13,19 @@ import com.hypixel.hytale.server.core.event.events.ecs.CraftRecipeEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
-import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
  * Grants skill XP when a player successfully crafts a recipe tagged with
- * skill XP rewards.
+ * skill XP rewards. XP is granted to all skills listed in the recipe's
+ * {@code SkillsRequired} tag.
  */
 public class CraftingXpSystem extends EntityEventSystem<EntityStore, CraftRecipeEvent.Post> {
 
@@ -52,8 +55,8 @@ public class CraftingXpSystem extends EntityEventSystem<EntityStore, CraftRecipe
 			return;
 		}
 
-		Optional<SkillType> skillOpt = this.craftingRecipeTagService.getSkillRequired(recipe);
-		if (skillOpt.isEmpty()) {
+		List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(recipe);
+		if (requirements.isEmpty()) {
 			return;
 		}
 
@@ -62,14 +65,15 @@ public class CraftingXpSystem extends EntityEventSystem<EntityStore, CraftRecipe
 			return;
 		}
 
-		SkillType skill = skillOpt.get();
 		double totalXp = xpOpt.get() * event.getQuantity();
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
-		String source = "craft:" + skill.name().toLowerCase(java.util.Locale.ROOT) + ":" + recipe.getId();
 
-		this.skillXpDispatchService.grantSkillXp(commandBuffer, ref, skill, totalXp, source, true);
-		LOGGER.atFine().log("Granted %.1f %s XP for crafting %s (qty=%d)",
-				totalXp, skill, recipe.getId(), event.getQuantity());
+		for (SkillRequirement req : requirements) {
+			String source = "craft:" + req.skillType().name().toLowerCase(Locale.ROOT) + ":" + recipe.getId();
+			this.skillXpDispatchService.grantSkillXp(commandBuffer, ref, req.skillType(), totalXp, source, true);
+			LOGGER.atFine().log("Granted %.1f %s XP for crafting %s (qty=%d)",
+					totalXp, req.skillType(), recipe.getId(), event.getQuantity());
+		}
 	}
 
 	@Nonnull
