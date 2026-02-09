@@ -3,6 +3,7 @@ package org.runetale.skills;
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -27,15 +28,13 @@ import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
 
 import javax.annotation.Nonnull;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * SkillsPlugin - A Hytale server plugin.
  */
 public class SkillsPlugin extends JavaPlugin {
 
-    private static final Logger LOGGER = Logger.getLogger(SkillsPlugin.class.getName());
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     /**
      * Singleton plugin instance for simple static access from component helper
@@ -124,7 +123,7 @@ public class SkillsPlugin extends JavaPlugin {
             @Nonnull String source,
             boolean notifyPlayer) {
         if (this.xpDispatchService == null) {
-            LOGGER.log(Level.WARNING, "Rejected XP grant because dispatch service is unavailable.");
+            LOGGER.atWarning().log("Rejected XP grant because dispatch service is unavailable.");
             return false;
         }
         return this.xpDispatchService.grantSkillXp(accessor, playerRef, skillId, experience, source, notifyPlayer);
@@ -141,7 +140,7 @@ public class SkillsPlugin extends JavaPlugin {
             @Nonnull String source,
             boolean notifyPlayer) {
         if (this.xpDispatchService == null) {
-            LOGGER.log(Level.WARNING, "Rejected XP grant because dispatch service is unavailable.");
+            LOGGER.atWarning().log("Rejected XP grant because dispatch service is unavailable.");
             return false;
         }
         return this.xpDispatchService.grantSkillXp(accessor, playerRef, skillType, experience, source, notifyPlayer);
@@ -149,7 +148,7 @@ public class SkillsPlugin extends JavaPlugin {
 
     @Override
     protected void setup() {
-        LOGGER.log(Level.INFO, "Setting up skills runtime framework...");
+        LOGGER.atInfo().log("Setting up skills runtime framework...");
 
         // Deterministic setup ordering is intentional and documented by this method
         // sequence.
@@ -168,7 +167,7 @@ public class SkillsPlugin extends JavaPlugin {
                         this.sessionStatsService));
         registerSystems();
 
-        LOGGER.log(Level.INFO, "Skills runtime setup complete.");
+        LOGGER.atInfo().log("Skills runtime setup complete.");
     }
 
     /**
@@ -176,7 +175,7 @@ public class SkillsPlugin extends JavaPlugin {
      * component/system wiring.
      */
     private void registerServices() {
-        LOGGER.log(Level.INFO, "[Skills] Registering services...");
+        LOGGER.atInfo().log("[Skills] Registering services...");
         this.xpService = new XpService();
         this.nodeLookupService = new SkillNodeLookupService();
         this.toolRequirementEvaluator = new ToolRequirementEvaluator();
@@ -184,7 +183,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.combatStyleService = new CombatStyleService();
         this.skillXpToastHudService = new SkillXpToastHudService();
         this.xpDispatchService = new SkillXpDispatchService();
-        LOGGER.log(Level.INFO, "[Skills] Services registered.");
+        LOGGER.atInfo().log("[Skills] Services registered.");
     }
 
     /**
@@ -197,37 +196,37 @@ public class SkillsPlugin extends JavaPlugin {
      * logging.
      */
     private void registerCodecs() {
-        LOGGER.log(Level.INFO, "[Skills] Registering codecs...");
-        LOGGER.log(Level.FINE, "[Skills] No codec-map registrations required for current woodcutting runtime.");
-        LOGGER.log(Level.INFO, "[Skills] Codecs registered.");
+        LOGGER.atInfo().log("[Skills] Registering codecs...");
+        LOGGER.atFine().log("[Skills] No codec-map registrations required for current woodcutting runtime.");
+        LOGGER.atInfo().log("[Skills] Codecs registered.");
     }
 
     /**
      * Registers data-driven skill-node assets that define gathering behavior.
      */
     private void registerAssets() {
-        LOGGER.log(Level.INFO, "[Skills] Registering asset lookup hooks...");
+        LOGGER.atInfo().log("[Skills] Registering asset lookup hooks...");
         this.nodeLookupService.initializeDefaults();
-        LOGGER.log(Level.INFO, "[Skills] Asset lookup hooks registered.");
+        LOGGER.atInfo().log("[Skills] Asset lookup hooks registered.");
     }
 
     /**
      * Registers ECS components in deterministic order.
      */
     private void registerComponents() {
-        LOGGER.log(Level.INFO, "[Skills] Registering components...");
+        LOGGER.atInfo().log("[Skills] Registering components...");
         this.playerSkillProfileComponentType = this.getEntityStoreRegistry()
                 .registerComponent(PlayerSkillProfileComponent.class, "PlayerSkillProfile",
                         PlayerSkillProfileComponent.CODEC);
         this.progressionService = new SkillProgressionService(this.playerSkillProfileComponentType, this.xpService);
-        LOGGER.log(Level.INFO, "[Skills] Components registered.");
+        LOGGER.atInfo().log("[Skills] Components registered.");
     }
 
     /**
      * Registers ECS systems in deterministic order.
      */
     private void registerSystems() {
-        LOGGER.log(Level.INFO, "[Skills] Registering systems...");
+        LOGGER.atInfo().log("[Skills] Registering systems...");
 
         // First ensure all players receive a profile component for persistence
         // correctness.
@@ -253,17 +252,17 @@ public class SkillsPlugin extends JavaPlugin {
                         this.nodeLookupService,
                         this.toolRequirementEvaluator));
 
-        LOGGER.log(Level.INFO, "[Skills] Systems registered.");
+        LOGGER.atInfo().log("[Skills] Systems registered.");
     }
 
     @Override
     protected void start() {
-        LOGGER.log(Level.INFO, "Started skills plugin.");
+        LOGGER.atInfo().log("Started skills plugin.");
     }
 
     @Override
     protected void shutdown() {
-        LOGGER.log(Level.INFO, "Shutting down skills plugin...");
+        LOGGER.atInfo().log("Shutting down skills plugin...");
 
         // Clear explicit singleton/state references for clean hot reload behavior.
         this.playerSkillProfileComponentType = null;

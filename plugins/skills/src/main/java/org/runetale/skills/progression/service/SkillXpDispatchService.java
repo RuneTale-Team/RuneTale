@@ -2,21 +2,20 @@ package org.runetale.skills.progression.service;
 
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.event.SkillXpGrantEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Dispatches XP grant requests through ECS events.
  */
 public class SkillXpDispatchService {
 
-	private static final Logger LOGGER = Logger.getLogger(SkillXpDispatchService.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
 	public boolean grantSkillXp(
 			@Nonnull ComponentAccessor<EntityStore> accessor,
@@ -44,7 +43,7 @@ public class SkillXpDispatchService {
 			boolean notifyPlayer) {
 		SkillType skillType = SkillType.tryParseStrict(skillId);
 		if (skillType == null) {
-			LOGGER.log(Level.WARNING, String.format("Rejected XP grant for unknown skillId=%s", skillId));
+			LOGGER.atWarning().log("Rejected XP grant for unknown skillId=%s", skillId);
 			return false;
 		}
 

@@ -1,14 +1,13 @@
 package org.runetale.skills.service;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.hypixel.hytale.logger.HytaleLogger;
 
 /**
  * OSRS-inspired nonlinear XP/level math service.
  */
 public class XpService {
 
-	private static final Logger LOGGER = Logger.getLogger(XpService.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 	private static final int MAX_LEVEL = 99;
 	private static final int[] XP_THRESHOLDS = buildThresholds();
 
@@ -18,7 +17,7 @@ public class XpService {
 	public long xpForLevel(int level) {
 		int clamped = Math.max(1, Math.min(MAX_LEVEL, level));
 		long threshold = XP_THRESHOLDS[clamped];
-		LOGGER.log(Level.FINER, String.format("xpForLevel(%d) -> %d", clamped, threshold));
+		LOGGER.atFiner().log("xpForLevel(%d) -> %d", clamped, threshold);
 		return threshold;
 	}
 
@@ -35,7 +34,7 @@ public class XpService {
 				break;
 			}
 		}
-		LOGGER.log(Level.FINER, String.format("levelForXp(%d) -> %d", safeXp, level));
+		LOGGER.atFiner().log("levelForXp(%d) -> %d", safeXp, level);
 		return level;
 	}
 
@@ -46,7 +45,7 @@ public class XpService {
 		long safeCurrent = Math.max(0L, currentXp);
 		long gain = Math.max(0L, Math.round(gainedXp));
 		long updated = safeCurrent + gain;
-		LOGGER.log(Level.FINE, String.format("XP mutation: current=%d gain=%d updated=%d", safeCurrent, gain, updated));
+		LOGGER.atFine().log("XP mutation: current=%d gain=%d updated=%d", safeCurrent, gain, updated);
 		return updated;
 	}
 

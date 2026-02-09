@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
@@ -25,8 +26,6 @@ import org.runetale.skills.service.ToolRequirementEvaluator;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Handles block-break gathering flow:
@@ -34,7 +33,7 @@ import java.util.logging.Logger;
  */
 public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
 
-	private static final Logger LOGGER = Logger.getLogger(SkillNodeBreakBlockSystem.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final SkillXpDispatchService skillXpDispatchService;
@@ -77,7 +76,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 		PlayerSkillProfileComponent profile = commandBuffer.getComponent(ref, this.profileComponentType);
 		if (profile == null) {
-			LOGGER.log(Level.WARNING,
+			LOGGER.atWarning().log(
 					"Player skill profile missing during break event; skipping skill processing for safety.");
 			return;
 		}
@@ -132,7 +131,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			try {
 				NotificationUtil.sendNotification(playerRef.getPacketHandler(), Message.raw(text), style);
 			} catch (Exception e) {
-				LOGGER.log(Level.FINE, "Failed to send skills notification; falling back to chat message.", e);
+				LOGGER.atFine().withCause(e).log("Failed to send skills notification; falling back to chat message.");
 				playerRef.sendMessage(Message.raw(text));
 			}
 		}

@@ -1,5 +1,6 @@
 package org.runetale.skills.service;
 
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.interface_.CustomHud;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -12,15 +13,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Renders a top-center, icon-based XP toast via CustomHud commands.
  */
 public class SkillXpToastHudService {
 
-	private static final Logger LOGGER = Logger.getLogger(SkillXpToastHudService.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
 	private static final String HUD_DOCUMENT_PATH = "SkillsPlugin/SkillXpToastHud.ui";
 	private static final String HUD_DOCUMENT_PATH_LEVEL_UP = "SkillsPlugin/SkillXpToastHudLevelUp.ui";
@@ -119,7 +118,7 @@ public class SkillXpToastHudService {
 		try {
 			playerRef.getPacketHandler().writeNoCache(new CustomHud(false, commandBuilder.getCommands()));
 		} catch (Exception e) {
-			LOGGER.log(Level.FINE, "Failed to update custom XP toast HUD.", e);
+			LOGGER.atFine().withCause(e).log("Failed to update custom XP toast HUD.");
 		}
 	}
 

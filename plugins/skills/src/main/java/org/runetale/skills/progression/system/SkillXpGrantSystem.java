@@ -6,6 +6,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -19,15 +20,13 @@ import org.runetale.skills.service.SkillSessionStatsService;
 
 import javax.annotation.Nonnull;
 import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Applies dispatched XP grant events to player skill profiles.
  */
 public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGrantEvent> {
 
-	private static final Logger LOGGER = Logger.getLogger(SkillXpGrantSystem.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
 	private final SkillProgressionService progressionService;
 	private final SkillSessionStatsService sessionStatsService;
@@ -67,15 +66,12 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 		}
 
 		this.sessionStatsService.recordGain(playerRef.getUuid(), result.getSkillType(), result.getGainedExperience());
-		LOGGER.log(
-				Level.FINE,
-				String.format(
-						"Applied XP grant source=%s skill=%s gain=%d totalXp=%d level=%d",
-						event.getSource(),
-						result.getSkillType(),
-						result.getGainedExperience(),
-						result.getUpdatedExperience(),
-						result.getUpdatedLevel()));
+		LOGGER.atFine().log("Applied XP grant source=%s skill=%s gain=%d totalXp=%d level=%d",
+				event.getSource(),
+				result.getSkillType(),
+				result.getGainedExperience(),
+				result.getUpdatedExperience(),
+				result.getUpdatedLevel());
 
 		if (!event.shouldNotifyPlayer()) {
 			return;

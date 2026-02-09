@@ -1,5 +1,6 @@
 package org.runetale.skills.service;
 
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.ToolTier;
@@ -8,15 +9,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Locale;
 import java.util.regex.Pattern;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Evaluates held-tool constraints from break-event item-in-hand data.
  */
 public class ToolRequirementEvaluator {
 
-	private static final Logger LOGGER = Logger.getLogger(ToolRequirementEvaluator.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 	private static final Pattern NON_ALNUM = Pattern.compile("[^a-z0-9]+");
 
 	/**
@@ -26,7 +25,7 @@ public class ToolRequirementEvaluator {
 	public RequirementCheckResult evaluate(@Nullable ItemStack heldItem, @Nonnull String requiredToolKeyword,
 			@Nonnull ToolTier minimumTier) {
 		if (heldItem == null || heldItem.isEmpty()) {
-			LOGGER.log(Level.FINE, "Tool requirement failed: no held item");
+			LOGGER.atFine().log("Tool requirement failed: no held item");
 			return RequirementCheckResult.failure(ToolTier.NONE, "<empty>");
 		}
 
@@ -35,15 +34,14 @@ public class ToolRequirementEvaluator {
 		String normalizedKeyword = normalizeToken(requiredToolKeyword);
 
 		if (!matchesToolFamily(normalizedItemId, normalizedKeyword)) {
-			LOGGER.log(Level.FINE,
-					String.format("Tool requirement failed: item=%s missing keyword=%s", itemId, requiredToolKeyword));
+			LOGGER.atFine().log("Tool requirement failed: item=%s missing keyword=%s", itemId, requiredToolKeyword);
 			return RequirementCheckResult.failure(ToolTier.NONE, itemId);
 		}
 
 		ToolTier detected = detectTier(normalizedItemId);
 		boolean success = detected.rank() >= minimumTier.rank();
-		LOGGER.log(Level.FINE, String.format("Tool requirement check: item=%s detected=%s required=%s success=%s",
-				itemId, detected, minimumTier, success));
+		LOGGER.atFine().log("Tool requirement check: item=%s detected=%s required=%s success=%s",
+				itemId, detected, minimumTier, success);
 		return success ? RequirementCheckResult.success(detected, itemId)
 				: RequirementCheckResult.failure(detected, itemId);
 	}
