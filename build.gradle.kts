@@ -107,6 +107,7 @@ tasks.register<Delete>("cleanDeployedPluginBundles") {
 
 tasks.register<Zip>("bundlePluginJars") {
     dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
+    dependsOn(pluginProjects.map { it.tasks.named("jar") })
 
     archiveBaseName.set("${rootProject.name}-plugin-jars")
     archiveVersion.set(project.version.toString())
