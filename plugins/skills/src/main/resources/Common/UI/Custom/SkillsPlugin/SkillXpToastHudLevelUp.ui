@@ -1,0 +1,50 @@
+@PrimaryLabelStyle = LabelStyle(
+  FontSize: 19,
+  TextColor: #f4fbff,
+  RenderBold: true,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  FontName: "Secondary"
+);
+
+@SecondaryLabelStyle = LabelStyle(
+  FontSize: 14,
+  TextColor: #9bb6d5,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center
+);
+
+Group #SkillsXpToastRoot {
+  Anchor: (Width: 372, Height: 68, Top: 72);
+  Background: #27476d(0.92);
+
+  Group #ToastInner {
+    Anchor: (Full: 1);
+    LayoutMode: Left;
+    Padding: (Left: 8, Right: 12, Top: 7, Bottom: 7);
+    Background: #0f1f34(0.94);
+
+    Group #ToastIcon {
+      Anchor: (Width: 54, Height: 54);
+      Background: "SkillsPlugin/Assets/Icons/icon_unknown.png";
+    }
+
+    Group { Anchor: (Width: 12); }
+
+    Group {
+      FlexWeight: 1;
+      LayoutMode: Middle;
+
+      Label #ToastPrimary {
+        Text: "+0 XP";
+        Style: @PrimaryLabelStyle;
+      }
+
+      Label #ToastSecondary {
+        Text: "Skill";
+        Anchor: (Top: 2);
+        Style: @SecondaryLabelStyle;
+      }
+    }
+  }
+}
