@@ -53,7 +53,7 @@ public class XpService {
 		int[] thresholds = new int[MAX_LEVEL + 1];
 		int points = 0;
 		for (int level = 1; level <= MAX_LEVEL; level++) {
-			points += Math.floor((double) level + 300.0 * Math.pow(2.0, (double) level / 7.0));
+			points += (int) Math.floor((double) level + 300.0 * Math.pow(2.0, (double) level / 7.0));
 			if (level == 1) {
 				thresholds[level] = 0;
 			} else {
