@@ -16,7 +16,8 @@ public enum SkillType {
 	DEFENSE,
 	RANGED,
 	WOODCUTTING,
-	MINING;
+	MINING,
+	SMITHING;
 
 	/**
 	 * Parses a skill identity from resource/config text in a strict,

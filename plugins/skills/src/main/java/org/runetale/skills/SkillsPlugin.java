@@ -17,13 +17,17 @@ import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
 import org.runetale.skills.service.CombatStyleService;
+import org.runetale.skills.service.CraftingRecipeTagService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
 import org.runetale.skills.system.CombatDamageXpSystem;
+import org.runetale.skills.system.CraftingRecipeUnlockSystem;
+import org.runetale.skills.system.CraftingXpSystem;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
+import org.runetale.skills.system.PlayerJoinRecipeUnlockSystem;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
 
@@ -86,6 +90,11 @@ public class SkillsPlugin extends JavaPlugin {
      * Dispatch service used by systems/APIs to enqueue XP grants.
      */
     private SkillXpDispatchService xpDispatchService;
+
+    /**
+     * Stateless utility for extracting skill tags from crafting recipes.
+     */
+    private CraftingRecipeTagService craftingRecipeTagService;
 
     public SkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -183,6 +192,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.combatStyleService = new CombatStyleService();
         this.skillXpToastHudService = new SkillXpToastHudService();
         this.xpDispatchService = new SkillXpDispatchService();
+        this.craftingRecipeTagService = new CraftingRecipeTagService();
         LOGGER.atInfo().log("[Skills] Services registered.");
     }
 
@@ -252,6 +262,23 @@ public class SkillsPlugin extends JavaPlugin {
                         this.nodeLookupService,
                         this.toolRequirementEvaluator));
 
+        // Grant XP from crafting recipes tagged with skill XP rewards.
+        this.getEntityStoreRegistry().registerSystem(
+                new CraftingXpSystem(
+                        this.playerSkillProfileComponentType,
+                        this.xpDispatchService,
+                        this.craftingRecipeTagService));
+
+        // Unlock recipes when a player levels up in a skill.
+        this.getEntityStoreRegistry().registerSystem(
+                new CraftingRecipeUnlockSystem(this.craftingRecipeTagService));
+
+        // Sync recipe unlocks on player join for catch-up.
+        this.getEntityStoreRegistry().registerSystem(
+                new PlayerJoinRecipeUnlockSystem(
+                        this.playerSkillProfileComponentType,
+                        this.craftingRecipeTagService));
+
         LOGGER.atInfo().log("[Skills] Systems registered.");
     }
 
@@ -274,6 +301,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.skillXpToastHudService = null;
         this.progressionService = null;
         this.xpDispatchService = null;
+        this.craftingRecipeTagService = null;
 
         instance = null;
     }

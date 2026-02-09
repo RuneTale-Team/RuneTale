@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.EventTitleUtil;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.domain.SkillXpGrantResult;
+import org.runetale.skills.progression.event.SkillLevelUpEvent;
 import org.runetale.skills.progression.event.SkillXpGrantEvent;
 import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.service.SkillXpToastHudService;
@@ -89,6 +90,9 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 					Message.raw(formatSkillName(result.getSkillType()) + " Level Up!"),
 					Message.raw("Now level " + result.getUpdatedLevel()),
 					true);
+
+			commandBuffer.invoke(ref, new SkillLevelUpEvent(
+					result.getSkillType(), result.getPreviousLevel(), result.getUpdatedLevel()));
 		}
 	}
 
