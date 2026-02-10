@@ -1,0 +1,79 @@
+@CardNameStyle = LabelStyle(
+  FontSize: 16,
+  TextColor: #eaf3ff,
+  RenderBold: true,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  FontName: "Secondary"
+);
+
+@CardMetaStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #b2c8e5,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  Wrap: true
+);
+
+@CardXpStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #48d185,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  RenderBold: true
+);
+
+@CardStatusStyle = LabelStyle(
+  FontSize: 11,
+  TextColor: #5a6a7f,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center
+);
+
+Group {
+  Anchor: (Height: 110, Bottom: 10);
+  FlexWeight: 1;
+  Padding: (Full: 10);
+  Background: #1a2a3e;
+
+  Group {
+    LayoutMode: Top;
+    FlexWeight: 1;
+
+    Label #CardName {
+      Text: "";
+      Anchor: (Height: 24);
+      Style: @CardNameStyle;
+    }
+
+    Label #CardIngredients {
+      Text: "";
+      Anchor: (Height: 30);
+      Style: @CardMetaStyle;
+    }
+
+    Group {
+      LayoutMode: Left;
+
+      Label #CardXp {
+        Text: "";
+        Anchor: (Height: 18);
+        Style: @CardXpStyle;
+      }
+
+      Group { Anchor: (Width: 10); }
+
+      Label #CardStatus {
+        Text: "";
+        Anchor: (Height: 18);
+        Style: @CardStatusStyle;
+      }
+    }
+  }
+
+  Group #LockOverlay {
+    Anchor: (Full: 1);
+    Background: #0a1320(0.5);
+    Visible: false;
+  }
+}

@@ -1,0 +1,80 @@
+@RecipeNameStyle = LabelStyle(
+  FontSize: 16,
+  TextColor: #eaf3ff,
+  RenderBold: true,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  FontName: "Secondary"
+);
+
+@RecipeMetaStyle = LabelStyle(
+  FontSize: 13,
+  TextColor: #b2c8e5,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center
+);
+
+@RecipeXpStyle = LabelStyle(
+  FontSize: 13,
+  TextColor: #48d185,
+  HorizontalAlignment: End,
+  VerticalAlignment: Center,
+  RenderBold: true
+);
+
+@RecipeStatusStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #5a6a7f,
+  HorizontalAlignment: End,
+  VerticalAlignment: Center
+);
+
+Group {
+  Anchor: (Height: 80, Bottom: 6);
+  Padding: (Left: 12, Right: 12, Top: 8, Bottom: 8);
+  Background: #1a2a3e;
+
+  Group {
+    LayoutMode: Left;
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+
+      Label #RecipeName {
+        Text: "";
+        Anchor: (Height: 24);
+        Style: @RecipeNameStyle;
+      }
+
+      Label #RecipeIngredients {
+        Text: "";
+        Anchor: (Height: 20);
+        Style: @RecipeMetaStyle;
+      }
+
+      Label #RecipeStatus {
+        Text: "";
+        Anchor: (Height: 18);
+        Style: @RecipeStatusStyle;
+      }
+    }
+
+    Group {
+      Anchor: (Width: 100);
+      LayoutMode: Top;
+
+      Label #RecipeXp {
+        Text: "";
+        Anchor: (Height: 28, Top: 8);
+        Style: @RecipeXpStyle;
+      }
+    }
+  }
+
+  Group #LockOverlay {
+    Anchor: (Full: 1);
+    Background: #0a1320(0.5);
+    Visible: false;
+  }
+}

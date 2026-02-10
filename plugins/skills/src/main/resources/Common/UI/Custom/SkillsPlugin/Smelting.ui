@@ -1,0 +1,238 @@
+$C = "../Common.ui";
+
+@TitleStyle = LabelStyle(
+  FontSize: 30,
+  TextColor: #f2f6ff,
+  RenderBold: true,
+  FontName: "Secondary",
+  VerticalAlignment: Center
+);
+
+@SubtleStyle = LabelStyle(
+  FontSize: 15,
+  TextColor: #a9bfdc,
+  VerticalAlignment: Center
+);
+
+@SectionStyle = LabelStyle(
+  FontSize: 18,
+  TextColor: #e8f0ff,
+  RenderBold: true,
+  RenderUppercase: true,
+  FontName: "Secondary",
+  VerticalAlignment: Center
+);
+
+@SectionSubtle = LabelStyle(
+  FontSize: 13,
+  TextColor: #7f93ac,
+  VerticalAlignment: Center,
+  RenderUppercase: true,
+  LetterSpacing: 1
+);
+
+@TierTabStyle = TextButtonStyle(
+  Default: (
+    Background: #122439,
+    LabelStyle: (FontSize: 15, TextColor: #d7e7ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+  ),
+  Hovered: (
+    Background: #1a3150,
+    LabelStyle: (FontSize: 15, TextColor: #f7fbff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+  ),
+  Pressed: (
+    Background: #162b46,
+    LabelStyle: (FontSize: 15, TextColor: #cfdef6, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+  )
+);
+
+@StartCraftingStyle = TextButtonStyle(
+  Default: (
+    Background: #1d3a5c,
+    LabelStyle: (FontSize: 16, TextColor: #e3eeff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Hovered: (
+    Background: #2a4f78,
+    LabelStyle: (FontSize: 16, TextColor: #f7fbff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Pressed: (
+    Background: #17304d,
+    LabelStyle: (FontSize: 16, TextColor: #cfdef6, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  )
+);
+
+Group {
+  Anchor: (Width: 1040, Height: 680);
+  LayoutMode: Top;
+  Padding: (Full: 16);
+  Background: #0a1320(0.94);
+
+  Group {
+    Anchor: (Height: 80);
+    LayoutMode: Left;
+    Padding: (Left: 14, Right: 14, Top: 10, Bottom: 10);
+    Background: #111f33;
+
+    Group {
+      Anchor: (Width: 48, Height: 48, Top: 6);
+      Background: #2d4564;
+      LayoutMode: Middle;
+
+      Group {
+        Anchor: (Width: 32, Height: 32);
+        Background: "SkillsPlugin/Assets/Icons/icon_smithing.png";
+      }
+    }
+
+    Group { Anchor: (Width: 14); }
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+
+      Label {
+        Text: "Smelting";
+        Anchor: (Height: 38);
+        Style: @TitleStyle;
+      }
+
+      Label {
+        Text: "Smelt ores into bars at the furnace";
+        Anchor: (Height: 24);
+        Style: @SubtleStyle;
+      }
+    }
+  }
+
+  Group { Anchor: (Height: 10); }
+
+  Group {
+    LayoutMode: Left;
+    FlexWeight: 1;
+
+    Group {
+      Anchor: (Width: 200);
+      LayoutMode: Top;
+      Padding: (Full: 10);
+      Background: #122235;
+
+      Label {
+        Text: "Material Tiers";
+        Anchor: (Height: 18);
+        Style: @SectionSubtle;
+      }
+
+      Group { Anchor: (Height: 8); }
+
+      TextButton #TierBronze {
+        Text: "Bronze";
+        Anchor: (Height: 40, Bottom: 4);
+        Padding: (Left: 12);
+        Style: @TierTabStyle;
+      }
+
+      TextButton #TierIron {
+        Text: "Iron";
+        Anchor: (Height: 40, Bottom: 4);
+        Padding: (Left: 12);
+        Style: @TierTabStyle;
+      }
+
+      TextButton #TierSilver {
+        Text: "Silver";
+        Anchor: (Height: 40, Bottom: 4);
+        Padding: (Left: 12);
+        Style: @TierTabStyle;
+      }
+
+      TextButton #TierSteel {
+        Text: "Steel";
+        Anchor: (Height: 40, Bottom: 4);
+        Padding: (Left: 12);
+        Style: @TierTabStyle;
+      }
+
+      TextButton #TierGold {
+        Text: "Gold";
+        Anchor: (Height: 40, Bottom: 4);
+        Padding: (Left: 12);
+        Style: @TierTabStyle;
+      }
+
+      TextButton #TierMithril {
+        Text: "Mithril";
+        Anchor: (Height: 40, Bottom: 4);
+        Padding: (Left: 12);
+        Style: @TierTabStyle;
+      }
+
+      TextButton #TierAdamantite {
+        Text: "Adamantite";
+        Anchor: (Height: 40, Bottom: 4);
+        Padding: (Left: 12);
+        Style: @TierTabStyle;
+      }
+
+      TextButton #TierRunite {
+        Text: "Runite";
+        Anchor: (Height: 40, Bottom: 4);
+        Padding: (Left: 12);
+        Style: @TierTabStyle;
+      }
+
+      Group { FlexWeight: 1; }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #263a52;
+      }
+
+      Group { Anchor: (Height: 8); }
+
+      TextButton #StartCraftingButton {
+        Text: "Start Crafting";
+        Anchor: (Height: 48);
+        Style: @StartCraftingStyle;
+      }
+    }
+
+    Group { Anchor: (Width: 10); }
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+      Padding: (Full: 12);
+      Background: #122235;
+
+      Label {
+        Text: "Recipes";
+        Anchor: (Height: 18);
+        Style: @SectionSubtle;
+      }
+
+      Group { Anchor: (Height: 6); }
+
+      Label #SectionTitle {
+        Text: "Bronze Bars";
+        Anchor: (Height: 30);
+        Style: @SectionStyle;
+      }
+
+      Group { Anchor: (Height: 10); }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #263a52;
+      }
+
+      Group { Anchor: (Height: 10); }
+
+      Group #RecipeList {
+        LayoutMode: TopScrolling;
+        FlexWeight: 1;
+        ScrollbarStyle: $C.@DefaultScrollbarStyle;
+        KeepScrollPosition: true;
+      }
+    }
+  }
+}

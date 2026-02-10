@@ -7,12 +7,15 @@ import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import org.runetale.skills.command.CombatStyleCommand;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.SkillsPageCommand;
 import org.runetale.skills.command.debug.SkillXpCommand;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.interaction.OpenSmeltingUIInteraction;
+import org.runetale.skills.interaction.OpenSmithingUIInteraction;
 import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
@@ -121,6 +124,10 @@ public class SkillsPlugin extends JavaPlugin {
         return this.xpDispatchService;
     }
 
+    public CraftingRecipeTagService getCraftingRecipeTagService() {
+        return this.craftingRecipeTagService;
+    }
+
     /**
      * Public plugin API: queue an XP grant by strict skill id.
      */
@@ -207,7 +214,10 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private void registerCodecs() {
         LOGGER.atInfo().log("[Skills] Registering codecs...");
-        LOGGER.atFine().log("[Skills] No codec-map registrations required for current woodcutting runtime.");
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenSmeltingUIInteraction.TYPE_NAME, OpenSmeltingUIInteraction.class, OpenSmeltingUIInteraction.CODEC);
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenSmithingUIInteraction.TYPE_NAME, OpenSmithingUIInteraction.class, OpenSmithingUIInteraction.CODEC);
         LOGGER.atInfo().log("[Skills] Codecs registered.");
     }
 
