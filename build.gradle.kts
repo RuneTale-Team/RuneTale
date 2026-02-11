@@ -53,8 +53,11 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     dependencies {
         "compileOnly"("com.hypixel.hytale:Server:+")
 
-        "testImplementation"(platform("org.junit:junit-bom:5.10.2"))
+        "testImplementation"(platform("org.junit:junit-bom:5.14.2"))
         "testImplementation"("org.junit.jupiter:junit-jupiter")
+        "testImplementation"("org.mockito:mockito-core:5.21.0")
+        "testImplementation"("org.mockito:mockito-junit-jupiter:5.21.0")
+        "testImplementation"("org.assertj:assertj-core:3.27.7")
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
     }
 
