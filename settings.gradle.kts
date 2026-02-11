@@ -8,4 +8,5 @@
 
 rootProject.name = "RuneTale"
 
+include(":platform:testing-core")
 include(":plugins:skills")
