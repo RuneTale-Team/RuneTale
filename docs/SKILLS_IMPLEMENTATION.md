@@ -150,6 +150,97 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 Runtime wiring expectation: no new system/service registration is required for basic gather-style skills as long as they fit the existing node schema and `SkillType` enum.
 
+### Add a timed crafting page (new crafting skill)
+
+Use this pattern for skills like Cooking/Crafting/Fletching that need custom recipe selection, quantity controls, and timed craft progress.
+
+1. Create a new page class under `org.runetale.skills.page` that extends `AbstractTimedCraftingPage<TEventData>`.
+2. Reuse `TimedCraftingEventData` for the event payload class and codec (`TimedCraftingEventData.createCodec(...)`).
+3. Provide page constants (`UI_PATH`, template selectors, bench id, and fixed craft duration).
+4. In `renderPage(...)`, call shared helpers:
+   - `CraftingPageSupport.syncQuantityControls(...)`
+   - `CraftingPageSupport.configureOutputSlot(...)`
+   - `CraftingPageSupport.configureIngredientSlots(...)`
+   - `CraftingPageSupport.syncSelectedRecipePreview(...)`
+5. Bind recipe selection rows/cards with `EventData.of("RecipeId", recipe.getId())`.
+6. Use `CraftingPageSupport.updateCraftButtonState(...)` for consistent craft button behavior.
+7. Implement `finishCraft(...)` by calling `CraftingPageSupport.executeCraft(...)`.
+8. Register/open the new page from your interaction entrypoint (system/command).
+9. Ensure the bench id and bench categories map to your recipe assets.
+10. Confirm `CraftingPageProgressSystem` is registered (already done in `SkillsPlugin`).
+
+#### Timed crafting implementation checklist
+
+- [ ] Page extends `AbstractTimedCraftingPage`.
+- [ ] Event data extends `TimedCraftingEventData`.
+- [ ] UI has required selectors:
+  - `#StartCraftingButton`
+  - `#CraftProgressBar`, `#CraftProgressLabel`
+  - quantity controls: `#Qty1`, `#Qty5`, `#Qty10`, `#QtyAll`, `#QtyCustomInput`, `#QtyCustomApply`
+- [ ] Recipe list/grid emits `RecipeId` selection events.
+- [ ] `renderPage(...)` drives tier state, quantity state, recipe collection, selected preview, craft button state.
+- [ ] `finishCraft(...)` emits success notification/context tags.
+- [ ] Build passes and in-game confirms: selection, x1/x5/x10/all/custom, timed queue, XP grant, lock/material states.
+
+#### Template skeleton
+
+```java
+public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCraftingPage.EventData> {
+
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+    private static final String UI_PATH = "SkillsPlugin/ExampleCrafting.ui";
+    private static final long CRAFT_DURATION_MILLIS = 3000L;
+
+    public ExampleCraftingPage(
+            @Nonnull PlayerRef playerRef,
+            @Nonnull BlockPosition blockPosition,
+            @Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
+            @Nonnull CraftingRecipeTagService craftingRecipeTagService) {
+        super(
+                playerRef,
+                blockPosition,
+                profileComponentType,
+                craftingRecipeTagService,
+                UI_PATH,
+                "example-crafting",
+                "Crafting",
+                CRAFT_DURATION_MILLIS,
+                EventData.CODEC);
+    }
+
+    @Override
+    protected boolean finishCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull String recipeId) {
+        return CraftingPageSupport.executeCraft(
+                ref,
+                store,
+                recipeId,
+                profileComponentType(),
+                craftingRecipeTagService(),
+                LOGGER,
+                "Crafted",
+                "example-craft");
+    }
+
+    @Override
+    protected void renderPage(
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull Store<EntityStore> store,
+            @Nonnull UICommandBuilder commandBuilder,
+            @Nonnull UIEventBuilder eventBuilder) {
+        // Render tier state, quantity controls, recipe list, selected preview, and craft button state.
+    }
+
+    @Override
+    protected @Nonnull HytaleLogger getLogger() {
+        return LOGGER;
+    }
+
+    public static class EventData extends TimedCraftingEventData {
+        public static final BuilderCodec<EventData> CODEC = TimedCraftingEventData.createCodec(EventData.class, EventData::new);
+    }
+}
+```
+
 ### Tool tier / keyword mapping guidance
 
 - Keep node `requiredToolKeyword` aligned with item-id fragments (e.g. `axe`) because tool family checks are substring-based.
