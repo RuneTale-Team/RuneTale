@@ -241,6 +241,38 @@ final class CraftingPageSupport {
 		return maxCraftable;
 	}
 
+	static int syncQuantityControls(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nonnull TimedCraftingPageState craftingState,
+			@Nullable Player player,
+			@Nullable String selectedRecipeId) {
+		int displayedCraftCount = craftingState.getSelectedCraftQuantity();
+		if (craftingState.isCraftAllSelected() && selectedRecipeId != null) {
+			CraftingRecipe allRecipe = CraftingRecipe.getAssetMap().getAsset(selectedRecipeId);
+			if (allRecipe != null) {
+				displayedCraftCount = Math.max(
+						1,
+						getMaxCraftableCount(player, allRecipe, TimedCraftingPageState.MAX_CRAFT_COUNT));
+			}
+		}
+		craftingState.setDisplayedCraftQuantity(displayedCraftCount);
+
+		int selectedCraftQuantity = craftingState.getSelectedCraftQuantity();
+		boolean craftAllSelected = craftingState.isCraftAllSelected();
+		boolean craftingInProgress = craftingState.isCraftingInProgress();
+		commandBuilder.set("#Qty1Selected.Visible", !craftAllSelected && selectedCraftQuantity == 1);
+		commandBuilder.set("#Qty5Selected.Visible", !craftAllSelected && selectedCraftQuantity == 5);
+		commandBuilder.set("#Qty10Selected.Visible", !craftAllSelected && selectedCraftQuantity == 10);
+		commandBuilder.set("#QtyAllSelected.Visible", craftAllSelected);
+		commandBuilder.set("#Qty1.Disabled", craftingInProgress);
+		commandBuilder.set("#Qty5.Disabled", craftingInProgress);
+		commandBuilder.set("#Qty10.Disabled", craftingInProgress);
+		commandBuilder.set("#QtyAll.Disabled", craftingInProgress);
+		commandBuilder.set("#QtyCustomApply.Disabled", craftingInProgress);
+		commandBuilder.set("#QtyCustomInput.Value", String.valueOf(selectedCraftQuantity));
+		return selectedCraftQuantity;
+	}
+
 	private static int maxCraftableForMaterial(@Nonnull ItemContainer container, @Nonnull MaterialQuantity material, int maxCap) {
 		int perCraft = Math.max(1, material.getQuantity());
 

@@ -247,28 +247,11 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			commandBuilder.set(selector + "Selected.Visible", selected);
 		}
 
-		int displayedCraftCount = this.craftingState.getSelectedCraftQuantity();
-		if (this.craftingState.isCraftAllSelected() && this.selectedRecipeId != null) {
-			CraftingRecipe allRecipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
-			if (allRecipe != null) {
-				displayedCraftCount = Math.max(1, CraftingPageSupport.getMaxCraftableCount(player, allRecipe, TimedCraftingPageState.MAX_CRAFT_COUNT));
-			}
-		}
-		this.craftingState.setDisplayedCraftQuantity(displayedCraftCount);
-
-		int selectedCraftQuantity = this.craftingState.getSelectedCraftQuantity();
-		boolean craftAllSelected = this.craftingState.isCraftAllSelected();
-		boolean craftingInProgress = this.craftingState.isCraftingInProgress();
-		commandBuilder.set("#Qty1Selected.Visible", !craftAllSelected && selectedCraftQuantity == 1);
-		commandBuilder.set("#Qty5Selected.Visible", !craftAllSelected && selectedCraftQuantity == 5);
-		commandBuilder.set("#Qty10Selected.Visible", !craftAllSelected && selectedCraftQuantity == 10);
-		commandBuilder.set("#QtyAllSelected.Visible", craftAllSelected);
-		commandBuilder.set("#Qty1.Disabled", craftingInProgress);
-		commandBuilder.set("#Qty5.Disabled", craftingInProgress);
-		commandBuilder.set("#Qty10.Disabled", craftingInProgress);
-		commandBuilder.set("#QtyAll.Disabled", craftingInProgress);
-		commandBuilder.set("#QtyCustomApply.Disabled", craftingInProgress);
-		commandBuilder.set("#QtyCustomInput.Value", String.valueOf(selectedCraftQuantity));
+		int selectedCraftQuantity = CraftingPageSupport.syncQuantityControls(
+				commandBuilder,
+				this.craftingState,
+				player,
+				this.selectedRecipeId);
 
 		// Update section title
 		commandBuilder.set("#SectionTitle.Text", this.selectedTier.getSectionTitle("Equipment"));
