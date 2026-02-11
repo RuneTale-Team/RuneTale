@@ -22,6 +22,7 @@ Reusable JUnit extensions and annotations.
 
 - `@WithDeterministicEnvironment` sets locale/timezone to deterministic defaults
 - `@WithHytaleLogger` configures the `java.util.logging.manager` property for Hytale logger compatibility
+- `@ContractTest` tags tests with `contract` for selective execution
 
 ### `:platform:testing-ecs`
 
@@ -67,4 +68,11 @@ Run only framework module tests:
 
 ```bash
 ./gradlew :platform:testing-core:test :platform:testing-junit:test :platform:testing-ecs:test
+```
+
+Run only contract tests:
+
+```bash
+./gradlew :plugins:skills:contractTest
+./gradlew :platform:testing-core:contractTest :platform:testing-junit:contractTest :platform:testing-ecs:contractTest
 ```
