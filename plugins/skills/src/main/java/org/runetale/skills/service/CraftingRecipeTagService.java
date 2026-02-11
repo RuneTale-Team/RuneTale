@@ -17,12 +17,12 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Stateless utility that extracts custom skill tags from crafting recipe assets.
+	 * Stateless utility that extracts custom skill tags from crafted output items.
  *
- * <p>
- * Recipes define skill integration through Tags in their asset JSON:
- * {@code XpOnSuccessfulCraft}, {@code SkillsRequired}, {@code SkillLevelsRequired}.
- */
+	 * <p>
+	 * Output item assets define skill integration through Tags in their asset JSON:
+	 * {@code XpOnSuccessfulCraft}, {@code SkillsRequired}, {@code SkillLevelsRequired}.
+	 */
 public class CraftingRecipeTagService {
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
@@ -100,14 +100,29 @@ public class CraftingRecipeTagService {
 
 	@Nullable
 	private String[] getRawTagValues(@Nonnull CraftingRecipe recipe, @Nonnull String tagKey) {
-		MaterialQuantity primaryOutput = recipe.getPrimaryOutput();
-		if (primaryOutput == null || primaryOutput.getItemId() == null || primaryOutput.getItemId().isBlank()) {
+		Map<String, String[]> rawTags = getOutputItemRawTags(recipe);
+		if (rawTags == null) {
 			return null;
 		}
 
-		Item outputItem = Item.getAssetMap().getAsset(primaryOutput.getItemId());
+		return rawTags.get(tagKey);
+	}
+
+	@Nullable
+	private Map<String, String[]> getOutputItemRawTags(@Nonnull CraftingRecipe recipe) {
+		MaterialQuantity primaryOutput = recipe.getPrimaryOutput();
+		if (primaryOutput == null) {
+			return null;
+		}
+
+		String itemId = primaryOutput.getItemId();
+		if (itemId == null || itemId.isBlank()) {
+			return null;
+		}
+
+		Item outputItem = Item.getAssetMap().getAsset(itemId);
 		if (outputItem == null) {
-			LOGGER.atWarning().log("Output item asset not found for recipe %s: %s", recipe.getId(), primaryOutput.getItemId());
+			LOGGER.atFine().log("Output item asset not found for recipe %s: %s", recipe.getId(), itemId);
 			return null;
 		}
 
@@ -116,7 +131,6 @@ public class CraftingRecipeTagService {
 			return null;
 		}
 
-		Map<String, String[]> rawTags = data.getRawTags();
-		return rawTags.get(tagKey);
+		return data.getRawTags();
 	}
 }

@@ -54,7 +54,7 @@ public final class OpenSmithingUIInteraction extends SimpleInstantInteraction {
 			return;
 		}
 
-		PlayerRef playerRef = player.getPlayerRef();
+		PlayerRef playerRef = commandBuffer.getComponent(ctx.getEntity(), PlayerRef.getComponentType());
 		if (playerRef == null) {
 			ctx.getState().state = InteractionState.Failed;
 			return;
