@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.ToolTier;
+import org.runetale.testing.fixtures.SkillsNodeFixtures;
 import org.runetale.testing.junit.ContractTest;
 
 import java.util.List;
@@ -21,7 +22,7 @@ class SkillNodeLookupServiceContractTest {
 
 		SkillNodeDefinition oak = service.findByBlockId("  wood_oak_trunk  ");
 		assertThat(oak).isNotNull();
-		assertThat(oak.getId()).isEqualTo("woodcutting_oak_tree");
+		assertThat(oak.getId()).isEqualTo(SkillsNodeFixtures.OAK_NODE_ID);
 		assertThat(oak.getSkillType()).isEqualTo(SkillType.WOODCUTTING);
 		assertThat(oak.getRequiredToolTier()).isEqualTo(ToolTier.NONE);
 	}
