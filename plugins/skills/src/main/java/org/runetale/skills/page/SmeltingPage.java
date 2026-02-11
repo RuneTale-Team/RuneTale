@@ -59,6 +59,14 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 	@Nullable
 	private String selectedRecipeId;
 
+	private boolean craftingInProgress;
+	private long craftingStartedAtMillis;
+	private long craftingDurationMillis;
+	private int lastProgressPercent = -1;
+
+	@Nullable
+	private String craftingRecipeId;
+
 	public SmeltingPage(
 			@Nonnull PlayerRef playerRef,
 			@Nonnull BlockPosition blockPosition,
@@ -95,16 +103,16 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 
 		// Handle craft action
 		if ("Craft".equalsIgnoreCase(data.action)) {
-			executeCraft(ref, store);
+			startCraft(ref, store);
 		}
 
 		// Handle recipe selection
-		if (data.recipeId != null) {
+		if (!this.craftingInProgress && data.recipeId != null) {
 			this.selectedRecipeId = data.recipeId;
 		}
 
 		// Handle tier change — clears selection
-		if (data.tier != null) {
+		if (!this.craftingInProgress && data.tier != null) {
 			SmithingMaterialTier parsed = CraftingPageSupport.parseTier(data.tier);
 			if (parsed != null) {
 				this.selectedTier = parsed;
@@ -120,19 +128,102 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 
 	@Override
 	public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+		this.craftingInProgress = false;
+		this.craftingRecipeId = null;
+		this.lastProgressPercent = -1;
 		CraftingPageSupport.clearBenchBinding(ref, store);
 	}
 
-	private void executeCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+	private void finishCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull String recipeId) {
 		CraftingPageSupport.executeCraft(
 				ref,
 				store,
-				this.selectedRecipeId,
+				recipeId,
 				this.profileComponentType,
 				this.craftingRecipeTagService,
 				LOGGER,
 				"Smelted",
 				"smelt");
+	}
+
+	private void startCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+		if (this.craftingInProgress || this.selectedRecipeId == null) {
+			return;
+		}
+
+		CraftingRecipe selectedRecipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
+		if (selectedRecipe == null) {
+			return;
+		}
+
+		PlayerSkillProfileComponent profile = store.getComponent(ref, this.profileComponentType);
+		Player player = store.getComponent(ref, Player.getComponentType());
+		if (profile == null || player == null) {
+			return;
+		}
+
+		int smithingLevel = profile.getLevel(SkillType.SMITHING);
+		List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(selectedRecipe);
+		int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
+		if (smithingLevel < requiredLevel || !CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe)) {
+			return;
+		}
+
+		this.craftingInProgress = true;
+		this.craftingRecipeId = selectedRecipe.getId();
+		this.craftingStartedAtMillis = System.currentTimeMillis();
+		this.craftingDurationMillis = Math.max(250L, Math.round(selectedRecipe.getTimeSeconds() * 1000.0F));
+		this.lastProgressPercent = -1;
+	}
+
+	public void tickProgress(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, float deltaTime) {
+		if (!this.craftingInProgress || this.craftingRecipeId == null) {
+			return;
+		}
+
+		float progress = getCraftProgress();
+		int progressPercent = Math.min(100, Math.max(0, (int) Math.floor(progress * 100.0F)));
+		if (progressPercent == this.lastProgressPercent && progressPercent < 100) {
+			return;
+		}
+		this.lastProgressPercent = progressPercent;
+
+		if (progress >= 1.0F) {
+			String recipeId = this.craftingRecipeId;
+			this.craftingInProgress = false;
+			this.craftingRecipeId = null;
+			this.lastProgressPercent = -1;
+			finishCraft(ref, store, recipeId);
+
+			UICommandBuilder commandBuilder = new UICommandBuilder();
+			UIEventBuilder eventBuilder = new UIEventBuilder();
+			render(ref, store, commandBuilder, eventBuilder);
+			this.sendUpdate(commandBuilder, eventBuilder, false);
+			return;
+		}
+
+		UICommandBuilder commandBuilder = new UICommandBuilder();
+		appendProgressUi(commandBuilder);
+		this.sendUpdate(commandBuilder, false);
+	}
+
+	private float getCraftProgress() {
+		if (!this.craftingInProgress || this.craftingDurationMillis <= 0L) {
+			return 0.0F;
+		}
+		long elapsed = Math.max(0L, System.currentTimeMillis() - this.craftingStartedAtMillis);
+		return Math.min(1.0F, elapsed / (float) this.craftingDurationMillis);
+	}
+
+	private void appendProgressUi(@Nonnull UICommandBuilder commandBuilder) {
+		float progress = this.craftingInProgress ? getCraftProgress() : 0.0F;
+		int progressPercent = Math.min(100, Math.max(0, (int) Math.floor(progress * 100.0F)));
+		commandBuilder.set("#CraftProgressBar.Value", progress);
+		commandBuilder.set(
+				"#CraftProgressLabel.Text",
+				this.craftingInProgress
+						? String.format(Locale.ROOT, "Smelting... %d%%", progressPercent)
+						: "Ready");
 	}
 
 	private void render(
@@ -193,7 +284,6 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 
 			// Ingredients
 			CraftingPageSupport.configureIngredientSlots(commandBuilder, selector, recipe);
-			String ingredients = CraftingPageSupport.formatIngredients(recipe);
 			commandBuilder.set(selector + " #RecipeIngredients.TextSpans", CraftingPageSupport.formatIngredientsLabel(recipe));
 
 			// XP reward
@@ -267,9 +357,14 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 				? null
 				: CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
 		boolean canCraftSelected = selectedRecipe != null && CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe);
-		if (!CraftingPageSupport.updateCraftButtonState(commandBuilder, selectedRecipe, canCraftSelected)) {
+		if (this.craftingInProgress) {
+			commandBuilder.set("#StartCraftingButton.Text", "Smelting...");
+			commandBuilder.set("#StartCraftingButton.Disabled", true);
+		} else if (!CraftingPageSupport.updateCraftButtonState(commandBuilder, selectedRecipe, canCraftSelected)) {
 			this.selectedRecipeId = null;
 		}
+
+		appendProgressUi(commandBuilder);
 	}
 
 	@Nonnull

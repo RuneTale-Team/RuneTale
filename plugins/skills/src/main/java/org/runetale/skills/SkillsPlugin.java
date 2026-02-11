@@ -28,6 +28,7 @@ import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
 import org.runetale.skills.system.CombatDamageXpSystem;
 import org.runetale.skills.system.CraftingRecipeUnlockSystem;
+import org.runetale.skills.system.CraftingPageProgressSystem;
 import org.runetale.skills.system.CraftingXpSystem;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
 import org.runetale.skills.system.PlayerJoinRecipeUnlockSystem;
@@ -263,6 +264,9 @@ public class SkillsPlugin extends JavaPlugin {
 
         // Keep custom XP toasts transient and auto-expiring.
         this.getEntityStoreRegistry().registerSystem(new SkillXpToastHudExpirySystem(this.skillXpToastHudService));
+
+        // Drive timed progress updates for custom smithing/smelting pages.
+        this.getEntityStoreRegistry().registerSystem(new CraftingPageProgressSystem());
 
         // Then process block-break events with requirement checks and XP grants.
         this.getEntityStoreRegistry().registerSystem(

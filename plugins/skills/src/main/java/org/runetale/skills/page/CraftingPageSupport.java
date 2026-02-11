@@ -226,29 +226,6 @@ final class CraftingPageSupport {
 	}
 
 	@Nonnull
-	static String formatIngredients(@Nonnull CraftingRecipe recipe) {
-		MaterialQuantity[] inputs = recipe.getInput();
-		if (inputs == null || inputs.length == 0) {
-			return "No ingredients";
-		}
-
-		StringBuilder builder = new StringBuilder();
-		for (int i = 0; i < inputs.length; i++) {
-			if (i > 0) {
-				builder.append(", ");
-			}
-			MaterialQuantity input = inputs[i];
-			int quantity = input.getQuantity();
-			String name = getMaterialDisplayName(input);
-			if (quantity > 1) {
-				builder.append(quantity).append("x ");
-			}
-			builder.append(name);
-		}
-		return builder.toString();
-	}
-
-	@Nonnull
 	static Message formatIngredientsLabel(@Nonnull CraftingRecipe recipe) {
 		MaterialQuantity[] inputs = recipe.getInput();
 		if (inputs == null || inputs.length == 0) {
@@ -372,21 +349,6 @@ final class CraftingPageSupport {
 		commandBuilder.set("#StartCraftingButton.TextSpans", Message.join(Message.raw("Craft "), getRecipeOutputLabel(selectedRecipe)));
 		commandBuilder.set("#StartCraftingButton.Disabled", false);
 		return true;
-	}
-
-	@Nonnull
-	private static String getMaterialDisplayName(@Nonnull MaterialQuantity material) {
-		String itemId = material.getItemId();
-		if (itemId != null && !itemId.isBlank()) {
-			return getItemDisplayName(itemId);
-		}
-
-		String resourceTypeId = material.getResourceTypeId();
-		if (resourceTypeId != null && !resourceTypeId.isBlank()) {
-			return formatDisplayId(resourceTypeId);
-		}
-
-		return "Unknown";
 	}
 
 	@Nonnull

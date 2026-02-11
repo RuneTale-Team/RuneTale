@@ -339,20 +339,17 @@ Group {
 
       Group { Anchor: (Height: 12); }
 
-      Label {
-        Text: "Furnace ready";
+      Label #CraftProgressLabel {
+        Text: "Ready";
         Anchor: (Height: 18);
         Style: @SubtleStyle;
       }
 
-      Group {
+      ProgressBar #CraftProgressBar {
+        Value: 0;
         Anchor: (Height: 8, Top: 6, Bottom: 10);
         Background: (TexturePath: "Assets/UI/ProgressBar.png", Border: 3);
-
-        Group {
-          Anchor: (Left: 1, Top: 1, Bottom: 1, Right: 80);
-          Background: (TexturePath: "Assets/UI/ProgressBarFill.png");
-        }
+        BarTexturePath: "Assets/UI/ProgressBarFill.png";
       }
 
       TextButton #StartCraftingButton {
