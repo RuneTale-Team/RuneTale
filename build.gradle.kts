@@ -52,6 +52,8 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
 
     dependencies {
         "compileOnly"("com.hypixel.hytale:Server:+")
+        "testCompileOnly"("com.hypixel.hytale:Server:+")
+        "testRuntimeOnly"("com.hypixel.hytale:Server:+")
         "testImplementation"(project(":platform:testing-core"))
         "testImplementation"(project(":platform:testing-ecs"))
         "testImplementation"(project(":platform:testing-junit"))
@@ -67,6 +69,7 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
 
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
+        systemProperty("java.util.logging.manager", "com.hypixel.hytale.logger.backend.HytaleLogManager")
     }
 
     // Produce a single distributable jar per plugin (no “-all” classifier)
