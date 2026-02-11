@@ -414,7 +414,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	@Nonnull
 	private String skillIconTexturePath(@Nullable SkillType skill) {
 		String id = skill == null ? "unknown" : skill.name().toLowerCase(Locale.ROOT);
-		return "SkillsPlugin/Assets/Icons/icon_" + id + ".png";
+		return "Assets/Icons/icon_" + id + ".png";
 	}
 
 	private long xpProgressCurrent(int level, long totalXp) {

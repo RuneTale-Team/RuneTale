@@ -43,7 +43,7 @@ Button {
 
       Group #SubcommandIcon {
         Anchor: (Width: 32, Height: 32);
-        Background: "SkillsPlugin/Assets/Icons/icon_unknown.png";
+        Background: "Assets/Icons/icon_unknown.png";
       }
     }
 

@@ -49,9 +49,6 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 10); }";
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
 
-	private static final String COLOR_SELECTED = "#243a56";
-	private static final String COLOR_NORMAL = "#1a2a3e";
-
 	private final BlockPosition blockPosition;
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final CraftingRecipeTagService craftingRecipeTagService;
@@ -150,8 +147,8 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 		for (SmithingMaterialTier tier : SmithingMaterialTier.values()) {
 			String selector = "#Tier" + tier.getDisplayName();
 			boolean selected = tier == this.selectedTier;
-			commandBuilder.set(selector + ".Text",
-					tier.getDisplayName() + (selected ? " [Selected]" : ""));
+			commandBuilder.set(selector + ".Text", tier.getDisplayName());
+			commandBuilder.set(selector + "Indicator.Visible", selected);
 		}
 
 		// Update section title
@@ -179,7 +176,7 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 
 			// Highlight selected recipe
 			boolean isSelected = recipe.getId().equals(this.selectedRecipeId);
-			commandBuilder.set(cardSelector + ".Background", isSelected ? COLOR_SELECTED : COLOR_NORMAL);
+			commandBuilder.set(cardSelector + " #SelectedFrame.Visible", isSelected);
 
 			// Bind click to select this recipe
 			eventBuilder.addEventBinding(
@@ -221,6 +218,7 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			commandBuilder.set("#RecipeGrid[0][0] #CardIngredients.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #CardXp.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #CardStatus.Text", "");
+			commandBuilder.set("#RecipeGrid[0][0] #SelectedFrame.Visible", false);
 			commandBuilder.set("#RecipeGrid[0][0] #LockOverlay.Visible", false);
 		}
 

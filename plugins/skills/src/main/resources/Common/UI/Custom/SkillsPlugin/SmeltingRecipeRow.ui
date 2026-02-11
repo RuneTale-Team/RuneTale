@@ -1,6 +1,6 @@
 @RecipeNameStyle = LabelStyle(
-  FontSize: 15,
-  TextColor: #eef6ff,
+  FontSize: 16,
+  TextColor: #dde8f5,
   RenderBold: true,
   HorizontalAlignment: Start,
   VerticalAlignment: Center,
@@ -9,7 +9,7 @@
 
 @RecipeMetaStyle = LabelStyle(
   FontSize: 12,
-  TextColor: #a8bacd,
+  TextColor: #8ea4bb,
   HorizontalAlignment: Start,
   VerticalAlignment: Center,
   Wrap: true
@@ -17,7 +17,7 @@
 
 @RecipeXpStyle = LabelStyle(
   FontSize: 12,
-  TextColor: #87d56c,
+  TextColor: #53d891,
   HorizontalAlignment: End,
   VerticalAlignment: Center,
   RenderBold: true
@@ -25,28 +25,28 @@
 
 @RecipeStatusStyle = LabelStyle(
   FontSize: 11,
-  TextColor: #7f95aa,
+  TextColor: #99afc6,
   HorizontalAlignment: End,
   VerticalAlignment: Center
 );
 
 @SelectOverlayStyle = TextButtonStyle(
   Default: (Background: #00000000, LabelStyle: (FontSize: 1, TextColor: #00000000)),
-  Hovered: (Background: #ffffff(0.04), LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Hovered: (Background: #ffffff(0.03), LabelStyle: (FontSize: 1, TextColor: #00000000)),
   Pressed: (Background: #ffffff(0.08), LabelStyle: (FontSize: 1, TextColor: #00000000))
 );
 
 Group {
-  Anchor: (Height: 88, Bottom: 6);
-  Padding: (Left: 10, Right: 10, Top: 8, Bottom: 8);
-  Background: #1a2a3e;
+  Anchor: (Height: 94, Bottom: 8);
+  Padding: (Left: 11, Right: 11, Top: 8, Bottom: 8);
+  Background: (TexturePath: "Assets/UI/RecipeCatalogueItemPatch.png", Border: 22);
 
   Group {
     LayoutMode: Left;
 
     Group {
-      Anchor: (Width: 64, Height: 64, Right: 8);
-      Background: #2d3c4d;
+      Anchor: (Width: 72, Height: 72, Right: 10);
+      Background: (TexturePath: "Assets/UI/Slot.png");
     }
 
     Group {
@@ -61,13 +61,13 @@ Group {
 
       Label #RecipeIngredients {
         Text: "";
-        Anchor: (Height: 20);
+        Anchor: (Height: 20, Top: 1);
         Style: @RecipeMetaStyle;
       }
 
       Label #RecipeStatus {
         Text: "";
-        Anchor: (Height: 16, Top: 2);
+        Anchor: (Height: 16, Top: 6);
         Style: @RecipeStatusStyle;
       }
     }
@@ -78,15 +78,21 @@ Group {
 
       Label #RecipeXp {
         Text: "";
-        Anchor: (Height: 22, Top: 8);
+        Anchor: (Height: 22, Top: 9);
         Style: @RecipeXpStyle;
       }
     }
   }
 
+  Group #SelectedFrame {
+    Anchor: (Full: 1);
+    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22);
+    Visible: false;
+  }
+
   Group #LockOverlay {
     Anchor: (Full: 1);
-    Background: #0b1118(0.6);
+    Background: #05101a(0.58);
     Visible: false;
   }
 

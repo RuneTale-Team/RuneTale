@@ -40,9 +40,9 @@ This document explains how the Skills custom UI is wired, where assets live, and
   - `icon_<skill>.png`
   - Example: `WOODCUTTING` -> `icon_woodcutting.png`
 - Place icons in plugin resources:
-  - `plugins/skills/src/main/resources/Common/UI/Custom/SkillsPlugin/Assets/Icons/`
+  - `plugins/skills/src/main/resources/Common/UI/Custom/Assets/Icons/`
 - Referenced runtime path format:
-  - `SkillsPlugin/Assets/Icons/icon_<skill>.png`
+  - `Assets/Icons/icon_<skill>.png`
 
 ## Node definition labels
 - Node files live in:
@@ -55,7 +55,7 @@ This document explains how the Skills custom UI is wired, where assets live, and
 ## Add a new skill (checklist)
 1. Add enum value in `plugins/skills/src/main/java/org/runetale/skills/domain/SkillType.java`.
 2. Add skill gameplay data (XP profile, node definitions, etc.).
-3. Add icon file named `icon_<skill>.png` under `Common/UI/Custom/SkillsPlugin/Assets/Icons/`.
+3. Add icon file named `icon_<skill>.png` under `Common/UI/Custom/Assets/Icons/`.
 4. Ensure commands/systems include the new skill where needed.
 5. Deploy and verify:
    - `./gradlew deployPluginsToRun`

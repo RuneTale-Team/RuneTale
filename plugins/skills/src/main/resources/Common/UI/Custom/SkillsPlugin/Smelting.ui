@@ -1,31 +1,32 @@
 $C = "../Common.ui";
 
 @HeaderTitleStyle = LabelStyle(
-  FontSize: 30,
-  TextColor: #eef6ff,
+  FontSize: 28,
+  TextColor: #e4edf8,
   RenderBold: true,
   FontName: "Secondary",
   VerticalAlignment: Center
 );
 
 @HeaderMetaStyle = LabelStyle(
-  FontSize: 14,
-  TextColor: #9eb4c8,
+  FontSize: 13,
+  TextColor: #94a8c1,
   VerticalAlignment: Center
 );
 
 @PanelTitleStyle = LabelStyle(
   FontSize: 15,
-  TextColor: #d6e3ef,
+  TextColor: #cfd6e0,
   RenderUppercase: true,
   RenderBold: true,
   LetterSpacing: 1,
+  FontName: "Secondary",
   VerticalAlignment: Center
 );
 
 @SectionTitleStyle = LabelStyle(
-  FontSize: 20,
-  TextColor: #f1f7ff,
+  FontSize: 21,
+  TextColor: #f2f6fb,
   RenderBold: true,
   FontName: "Secondary",
   VerticalAlignment: Center
@@ -33,60 +34,79 @@ $C = "../Common.ui";
 
 @SubtleStyle = LabelStyle(
   FontSize: 12,
-  TextColor: #869cb0,
+  TextColor: #8198b0,
   VerticalAlignment: Center
 );
 
 @TierTabStyle = TextButtonStyle(
   Default: (
-    Background: #202a36,
-    LabelStyle: (FontSize: 14, TextColor: #d6e3ef, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+    Background: (TexturePath: "Assets/UI/Secondary.png", Border: 12),
+    LabelStyle: (FontSize: 14, TextColor: #bdcbd3, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
   ),
   Hovered: (
-    Background: #2a3644,
-    LabelStyle: (FontSize: 14, TextColor: #f3f9ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+    Background: (TexturePath: "Assets/UI/Secondary_Hovered.png", Border: 12),
+    LabelStyle: (FontSize: 14, TextColor: #d7e4ea, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
   ),
   Pressed: (
-    Background: #1a232f,
-    LabelStyle: (FontSize: 14, TextColor: #c4d5e4, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+    Background: (TexturePath: "Assets/UI/Secondary_Pressed.png", Border: 12),
+    LabelStyle: (FontSize: 14, TextColor: #9fb0bb, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+  ),
+  Disabled: (
+    Background: (TexturePath: "Assets/UI/Disabled.png", Border: 12),
+    LabelStyle: (FontSize: 14, TextColor: #73818f, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
   )
 );
 
 @CraftButtonStyle = TextButtonStyle(
   Default: (
-    Background: #3d522a,
-    LabelStyle: (FontSize: 15, TextColor: #f1ffd9, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: (TexturePath: "Assets/UI/Primary.png", VerticalBorder: 12, HorizontalBorder: 80),
+    LabelStyle: (FontSize: 14, TextColor: #bfcdd5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   ),
   Hovered: (
-    Background: #4a6530,
-    LabelStyle: (FontSize: 15, TextColor: #f8ffe9, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: (TexturePath: "Assets/UI/Primary_Hovered.png", VerticalBorder: 12, HorizontalBorder: 80),
+    LabelStyle: (FontSize: 14, TextColor: #d4dde4, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   ),
   Pressed: (
-    Background: #344722,
-    LabelStyle: (FontSize: 15, TextColor: #ddeebf, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: (TexturePath: "Assets/UI/Primary_Pressed.png", VerticalBorder: 12, HorizontalBorder: 80),
+    LabelStyle: (FontSize: 14, TextColor: #aebcc5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Disabled: (
+    Background: (TexturePath: "Assets/UI/Disabled.png", VerticalBorder: 12, HorizontalBorder: 80),
+    LabelStyle: (FontSize: 14, TextColor: #748190, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   )
 );
+
+@TierSelectionPip = Group {
+  Anchor: (Width: 8, Height: 28, Left: 2, Right: 6);
+  Background: #57a2f6;
+  Visible: false;
+};
 
 Group {
   Anchor: (Width: 1040, Height: 690);
   LayoutMode: Top;
-  Padding: (Full: 16);
-  Background: #0b1118(0.95);
+  Padding: (Left: 13, Right: 13, Top: 10, Bottom: 10);
+  Background: #08121d(0.98);
 
   Group {
-    Anchor: (Height: 88);
+    Anchor: (Full: 1);
+    Background: (TexturePath: "Assets/UI/ContainerPatch.png", Border: 46);
+  }
+
+  Group {
+    Anchor: (Height: 68);
     LayoutMode: Left;
-    Padding: (Left: 14, Right: 14, Top: 12, Bottom: 12);
-    Background: #18222e;
+    Padding: (Left: 14, Right: 14, Top: 10, Bottom: 10);
+    Background: (TexturePath: "Assets/UI/ContainerHeaderNoRunes.png", HorizontalBorder: 35, VerticalBorder: 0);
 
     Group {
-      Anchor: (Width: 48, Height: 48, Top: 4);
-      Background: #273b4f;
+      Anchor: (Width: 44, Height: 44, Top: 2);
+      Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
       LayoutMode: Middle;
 
       Group {
         Anchor: (Width: 32, Height: 32);
-        Background: "SkillsPlugin/Assets/Icons/icon_smithing.png";
+        Background: "Assets/Icons/icon_smithing.png";
       }
     }
 
@@ -117,80 +137,141 @@ Group {
     FlexWeight: 1;
 
     Group {
-      Anchor: (Width: 220);
+      Anchor: (Width: 238);
       LayoutMode: Top;
-      Padding: (Full: 12);
-      Background: #18222e;
+      Padding: (Full: 10);
+      Background: (TexturePath: "Assets/UI/ContainerPanelPatch.png", Border: 8);
 
       Label {
         Text: "Fuel and Tier";
-        Anchor: (Height: 22);
+        Anchor: (Height: 35, Horizontal: 8);
         Style: @PanelTitleStyle;
+      }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #1b2533;
       }
 
       Group { Anchor: (Height: 10); }
 
-      TextButton #TierBronze {
-        Text: "Bronze";
-        Anchor: (Height: 38, Bottom: 5);
-        Padding: (Left: 12);
-        Style: @TierTabStyle;
+      Group {
+        Anchor: (Height: 38, Bottom: 6);
+        LayoutMode: Left;
+
+        @TierSelectionPip #TierBronzeIndicator {}
+
+        TextButton #TierBronze {
+          Text: "Bronze";
+          FlexWeight: 1;
+          Padding: (Left: 12);
+          Style: @TierTabStyle;
+        }
       }
 
-      TextButton #TierIron {
-        Text: "Iron";
-        Anchor: (Height: 38, Bottom: 5);
-        Padding: (Left: 12);
-        Style: @TierTabStyle;
+      Group {
+        Anchor: (Height: 38, Bottom: 6);
+        LayoutMode: Left;
+
+        @TierSelectionPip #TierIronIndicator {}
+
+        TextButton #TierIron {
+          Text: "Iron";
+          FlexWeight: 1;
+          Padding: (Left: 12);
+          Style: @TierTabStyle;
+        }
       }
 
-      TextButton #TierSilver {
-        Text: "Silver";
-        Anchor: (Height: 38, Bottom: 5);
-        Padding: (Left: 12);
-        Style: @TierTabStyle;
+      Group {
+        Anchor: (Height: 38, Bottom: 6);
+        LayoutMode: Left;
+
+        @TierSelectionPip #TierSilverIndicator {}
+
+        TextButton #TierSilver {
+          Text: "Silver";
+          FlexWeight: 1;
+          Padding: (Left: 12);
+          Style: @TierTabStyle;
+        }
       }
 
-      TextButton #TierSteel {
-        Text: "Steel";
-        Anchor: (Height: 38, Bottom: 5);
-        Padding: (Left: 12);
-        Style: @TierTabStyle;
+      Group {
+        Anchor: (Height: 38, Bottom: 6);
+        LayoutMode: Left;
+
+        @TierSelectionPip #TierSteelIndicator {}
+
+        TextButton #TierSteel {
+          Text: "Steel";
+          FlexWeight: 1;
+          Padding: (Left: 12);
+          Style: @TierTabStyle;
+        }
       }
 
-      TextButton #TierGold {
-        Text: "Gold";
-        Anchor: (Height: 38, Bottom: 5);
-        Padding: (Left: 12);
-        Style: @TierTabStyle;
+      Group {
+        Anchor: (Height: 38, Bottom: 6);
+        LayoutMode: Left;
+
+        @TierSelectionPip #TierGoldIndicator {}
+
+        TextButton #TierGold {
+          Text: "Gold";
+          FlexWeight: 1;
+          Padding: (Left: 12);
+          Style: @TierTabStyle;
+        }
       }
 
-      TextButton #TierMithril {
-        Text: "Mithril";
-        Anchor: (Height: 38, Bottom: 5);
-        Padding: (Left: 12);
-        Style: @TierTabStyle;
+      Group {
+        Anchor: (Height: 38, Bottom: 6);
+        LayoutMode: Left;
+
+        @TierSelectionPip #TierMithrilIndicator {}
+
+        TextButton #TierMithril {
+          Text: "Mithril";
+          FlexWeight: 1;
+          Padding: (Left: 12);
+          Style: @TierTabStyle;
+        }
       }
 
-      TextButton #TierAdamantite {
-        Text: "Adamantite";
-        Anchor: (Height: 38, Bottom: 5);
-        Padding: (Left: 12);
-        Style: @TierTabStyle;
+      Group {
+        Anchor: (Height: 38, Bottom: 6);
+        LayoutMode: Left;
+
+        @TierSelectionPip #TierAdamantiteIndicator {}
+
+        TextButton #TierAdamantite {
+          Text: "Adamantite";
+          FlexWeight: 1;
+          Padding: (Left: 12);
+          Style: @TierTabStyle;
+        }
       }
 
-      TextButton #TierRunite {
-        Text: "Runite";
-        Anchor: (Height: 38, Bottom: 5);
-        Padding: (Left: 12);
-        Style: @TierTabStyle;
+      Group {
+        Anchor: (Height: 38, Bottom: 6);
+        LayoutMode: Left;
+
+        @TierSelectionPip #TierRuniteIndicator {}
+
+        TextButton #TierRunite {
+          Text: "Runite";
+          FlexWeight: 1;
+          Padding: (Left: 12);
+          Style: @TierTabStyle;
+        }
       }
 
       Group { FlexWeight: 1; }
 
       Group {
         Anchor: (Height: 1);
-        Background: #293645;
+        Background: #1b2533;
       }
 
       Group { Anchor: (Height: 10); }
@@ -202,12 +283,12 @@ Group {
       }
 
       Group {
-        Anchor: (Height: 16, Top: 6, Bottom: 8);
-        Background: #10171f;
+        Anchor: (Height: 8, Top: 6, Bottom: 10);
+        Background: (TexturePath: "Assets/UI/ProgressBar.png", Border: 3);
 
         Group {
-          Anchor: (Left: 2, Top: 2, Bottom: 2, Right: 70);
-          Background: #d1792f;
+          Anchor: (Left: 1, Top: 1, Bottom: 1, Right: 80);
+          Background: (TexturePath: "Assets/UI/ProgressBarFill.png");
         }
       }
 
@@ -223,13 +304,18 @@ Group {
     Group {
       LayoutMode: Top;
       FlexWeight: 1;
-      Padding: (Full: 12);
-      Background: #18222e;
+      Padding: (Full: 10);
+      Background: (TexturePath: "Assets/UI/ContainerPanelPatch.png", Border: 8);
 
       Label {
         Text: "Input";
-        Anchor: (Height: 20);
+        Anchor: (Height: 35, Horizontal: 8);
         Style: @PanelTitleStyle;
+      }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #1b2533;
       }
 
       Group { Anchor: (Height: 6); }
@@ -244,7 +330,7 @@ Group {
 
       Group {
         Anchor: (Height: 1);
-        Background: #293645;
+        Background: #2b3542;
       }
 
       Group { Anchor: (Height: 10); }
@@ -260,27 +346,32 @@ Group {
     Group { Anchor: (Width: 10); }
 
     Group {
-      Anchor: (Width: 200);
+      Anchor: (Width: 224);
       LayoutMode: Top;
-      Padding: (Full: 12);
-      Background: #18222e;
+      Padding: (Full: 10);
+      Background: (TexturePath: "Assets/UI/ContainerPanelPatch.png", Border: 8);
 
       Label {
         Text: "Output";
-        Anchor: (Height: 20);
+        Anchor: (Height: 35, Horizontal: 8);
         Style: @PanelTitleStyle;
+      }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #1b2533;
       }
 
       Group { Anchor: (Height: 10); }
 
       Group {
-        Anchor: (Height: 120);
-        Background: #111922;
+        Anchor: (Height: 156);
+        Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
         LayoutMode: Middle;
 
         Group {
-          Anchor: (Width: 72, Height: 72);
-          Background: #2b3645;
+          Anchor: (Width: 64, Height: 64);
+          Background: (TexturePath: "Assets/UI/Slot.png");
         }
       }
 
@@ -296,7 +387,7 @@ Group {
 
       Group {
         Anchor: (Height: 1);
-        Background: #293645;
+        Background: #2b3542;
       }
 
       Group { Anchor: (Height: 10); }
@@ -308,4 +399,5 @@ Group {
       }
     }
   }
+
 }

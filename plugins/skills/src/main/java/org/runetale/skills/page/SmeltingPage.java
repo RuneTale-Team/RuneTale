@@ -48,9 +48,6 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 	private static final String RECIPE_ROW_TEMPLATE = "SkillsPlugin/SmeltingRecipeRow.ui";
 	private static final String BENCH_ID = "RuneTale_Furnace";
 
-	private static final String COLOR_SELECTED = "#243a56";
-	private static final String COLOR_NORMAL = "#1a2a3e";
-
 	private final BlockPosition blockPosition;
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final CraftingRecipeTagService craftingRecipeTagService;
@@ -149,8 +146,8 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 		for (SmithingMaterialTier tier : SmithingMaterialTier.values()) {
 			String selector = "#Tier" + tier.getDisplayName();
 			boolean selected = tier == this.selectedTier;
-			commandBuilder.set(selector + ".Text",
-					tier.getDisplayName() + (selected ? " [Selected]" : ""));
+			commandBuilder.set(selector + ".Text", tier.getDisplayName());
+			commandBuilder.set(selector + "Indicator.Visible", selected);
 		}
 
 		// Update section title
@@ -168,7 +165,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 
 			// Highlight selected recipe
 			boolean isSelected = recipe.getId().equals(this.selectedRecipeId);
-			commandBuilder.set(selector + ".Background", isSelected ? COLOR_SELECTED : COLOR_NORMAL);
+			commandBuilder.set(selector + " #SelectedFrame.Visible", isSelected);
 
 			// Bind click to select this recipe
 			eventBuilder.addEventBinding(
@@ -209,6 +206,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			commandBuilder.set("#RecipeList[0] #RecipeIngredients.Text", "");
 			commandBuilder.set("#RecipeList[0] #RecipeXp.Text", "");
 			commandBuilder.set("#RecipeList[0] #RecipeStatus.Text", "");
+			commandBuilder.set("#RecipeList[0] #SelectedFrame.Visible", false);
 			commandBuilder.set("#RecipeList[0] #LockOverlay.Visible", false);
 		}
 
