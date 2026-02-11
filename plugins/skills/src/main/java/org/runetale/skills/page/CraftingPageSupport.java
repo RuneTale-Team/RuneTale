@@ -49,6 +49,34 @@ final class CraftingPageSupport {
 		}
 	}
 
+	static void bindQuantityControls(@Nonnull UIEventBuilder eventBuilder) {
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#Qty1",
+				EventData.of("Quantity", "1"),
+				false);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#Qty5",
+				EventData.of("Quantity", "5"),
+				false);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#Qty10",
+				EventData.of("Quantity", "10"),
+				false);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#QtyAll",
+				EventData.of("Quantity", "ALL"),
+				false);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#QtyCustomApply",
+				EventData.of("Action", "SetQuantity").append("@QuantityInput", "#QtyCustomInput.Value"),
+				false);
+	}
+
 	@Nullable
 	static SmithingMaterialTier parseTier(@Nullable String raw) {
 		if (raw == null || raw.isBlank()) {
