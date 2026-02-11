@@ -80,6 +80,22 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     }
 }
 
+// Shared conventions for testing framework modules (":platform:testing-*")
+configure(subprojects.filter { it.path.startsWith(":platform:testing-") }) {
+    plugins.withType<JavaPlugin> {
+        dependencies {
+            "testImplementation"(platform("org.junit:junit-bom:5.14.2"))
+            "testImplementation"("org.junit.jupiter:junit-jupiter")
+            "testImplementation"("org.assertj:assertj-core:3.27.7")
+            "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+        }
+
+        tasks.withType<Test>().configureEach {
+            useJUnitPlatform()
+        }
+    }
+}
+
 // All plugin subprojects (":plugins:*")
 val pluginProjects = subprojects.filter { it.path.startsWith(":plugins:") }
 
