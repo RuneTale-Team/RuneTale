@@ -6,11 +6,13 @@ import org.junit.jupiter.api.Test;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.event.SkillXpGrantEvent;
 import org.runetale.testing.ecs.RecordingComponentAccessor;
+import org.runetale.testing.junit.ContractTest;
 import org.runetale.testing.junit.WithHytaleLogger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@ContractTest
 @WithHytaleLogger
 class SkillXpDispatchServiceContractTest {
 

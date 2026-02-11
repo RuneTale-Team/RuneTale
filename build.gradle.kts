@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Zip
 
 plugins {
@@ -40,6 +41,17 @@ subprojects {
         extensions.configure<JavaPluginExtension> {
             toolchain {
                 languageVersion.set(JavaLanguageVersion.of(25))
+            }
+        }
+
+        val sourceSets = extensions.getByType<SourceSetContainer>()
+        tasks.register<Test>("contractTest") {
+            group = "verification"
+            description = "Runs contract-tagged tests."
+            testClassesDirs = sourceSets.named("test").get().output.classesDirs
+            classpath = sourceSets.named("test").get().runtimeClasspath
+            useJUnitPlatform {
+                includeTags("contract")
             }
         }
     }

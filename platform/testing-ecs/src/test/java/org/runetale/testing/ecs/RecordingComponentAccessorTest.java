@@ -3,9 +3,11 @@ package org.runetale.testing.ecs;
 import com.hypixel.hytale.component.system.EcsEvent;
 import com.hypixel.hytale.component.Ref;
 import org.junit.jupiter.api.Test;
+import org.runetale.testing.junit.ContractTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ContractTest
 class RecordingComponentAccessorTest {
 
 	@Test

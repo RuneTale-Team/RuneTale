@@ -4,11 +4,13 @@ import com.hypixel.hytale.component.Component;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import org.junit.jupiter.api.Test;
+import org.runetale.testing.junit.ContractTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
+@ContractTest
 class InMemoryComponentAccessorTest {
 
 	@Test

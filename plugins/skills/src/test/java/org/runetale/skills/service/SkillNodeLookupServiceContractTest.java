@@ -4,11 +4,13 @@ import org.junit.jupiter.api.Test;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.ToolTier;
+import org.runetale.testing.junit.ContractTest;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ContractTest
 class SkillNodeLookupServiceContractTest {
 
 	@Test

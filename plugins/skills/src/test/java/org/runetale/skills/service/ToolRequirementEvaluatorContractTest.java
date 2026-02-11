@@ -3,11 +3,13 @@ package org.runetale.skills.service;
 import org.junit.jupiter.api.Test;
 import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.ToolTier;
+import org.runetale.testing.junit.ContractTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@ContractTest
 class ToolRequirementEvaluatorContractTest {
 
 	@Test

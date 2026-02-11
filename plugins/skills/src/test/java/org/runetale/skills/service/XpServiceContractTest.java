@@ -1,9 +1,11 @@
 package org.runetale.skills.service;
 
 import org.junit.jupiter.api.Test;
+import org.runetale.testing.junit.ContractTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ContractTest
 class XpServiceContractTest {
 
 	@Test

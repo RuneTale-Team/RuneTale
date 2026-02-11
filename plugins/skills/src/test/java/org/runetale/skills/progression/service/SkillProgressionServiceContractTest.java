@@ -9,11 +9,13 @@ import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.domain.SkillXpGrantResult;
 import org.runetale.skills.service.XpService;
 import org.runetale.testing.ecs.InMemoryComponentAccessor;
+import org.runetale.testing.junit.ContractTest;
 import org.runetale.testing.core.TestConstructors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@ContractTest
 class SkillProgressionServiceContractTest {
 
 	@Test

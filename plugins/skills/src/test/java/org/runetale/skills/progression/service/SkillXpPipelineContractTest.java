@@ -11,10 +11,12 @@ import org.runetale.skills.progression.event.SkillXpGrantEvent;
 import org.runetale.skills.service.XpService;
 import org.runetale.testing.core.TestConstructors;
 import org.runetale.testing.ecs.InMemoryComponentAccessor;
+import org.runetale.testing.junit.ContractTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@ContractTest
 class SkillXpPipelineContractTest {
 
 	@Test
