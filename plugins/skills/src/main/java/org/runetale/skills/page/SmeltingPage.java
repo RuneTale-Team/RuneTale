@@ -154,7 +154,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			return;
 		}
 
-		CraftingRecipe selectedRecipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
+		CraftingRecipe selectedRecipe = CraftingPageSupport.resolveRecipe(this.selectedRecipeId);
 		if (selectedRecipe == null) {
 			return;
 		}
@@ -279,16 +279,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			// Output name
 			commandBuilder.set(selector + " #RecipeName.TextSpans", CraftingPageSupport.getRecipeOutputLabel(recipe));
 
-			String outputItemId = CraftingPageSupport.getPrimaryOutputItemId(recipe);
-			if (outputItemId != null) {
-				int outputQuantity = CraftingPageSupport.getPrimaryOutputQuantity(recipe);
-				commandBuilder.set(selector + " #RecipeOutputSlot.ItemId", outputItemId);
-				commandBuilder.set(selector + " #RecipeOutputSlot.Quantity", outputQuantity);
-				commandBuilder.set(selector + " #RecipeOutputSlot.ShowQuantity", outputQuantity > 1);
-				commandBuilder.set(selector + " #RecipeOutputSlot.Visible", true);
-			} else {
-				commandBuilder.set(selector + " #RecipeOutputSlot.Visible", false);
-			}
+			CraftingPageSupport.configureOutputSlot(commandBuilder, selector + " #RecipeOutputSlot", recipe);
 
 			// Ingredients
 			CraftingPageSupport.configureIngredientSlots(commandBuilder, selector, recipe);
@@ -333,37 +324,10 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			commandBuilder.set("#RecipeList[0] #LockOverlay.Visible", false);
 		}
 
-		if (this.selectedRecipeId != null) {
-			CraftingRecipe selectedRecipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
-			if (selectedRecipe != null) {
-				String outputItemId = CraftingPageSupport.getPrimaryOutputItemId(selectedRecipe);
-				if (outputItemId != null) {
-					int outputQuantity = CraftingPageSupport.getPrimaryOutputQuantity(selectedRecipe);
-					commandBuilder.set("#SelectedOutputSlot.ItemId", outputItemId);
-					commandBuilder.set("#SelectedOutputSlot.Quantity", outputQuantity);
-					commandBuilder.set("#SelectedOutputSlot.ShowQuantity", outputQuantity > 1);
-					commandBuilder.set("#SelectedOutputSlot.Visible", true);
-					commandBuilder.set("#SelectedOutputName.TextSpans", CraftingPageSupport.getRecipeOutputLabel(selectedRecipe));
-					CraftingPageSupport.configureFlowGraph(commandBuilder, selectedRecipe);
-				} else {
-					commandBuilder.set("#SelectedOutputSlot.Visible", false);
-					commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
-					CraftingPageSupport.configureFlowGraph(commandBuilder, null);
-				}
-			} else {
-				commandBuilder.set("#SelectedOutputSlot.Visible", false);
-				commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
-				CraftingPageSupport.configureFlowGraph(commandBuilder, null);
-			}
-		} else {
-			commandBuilder.set("#SelectedOutputSlot.Visible", false);
-			commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
-			CraftingPageSupport.configureFlowGraph(commandBuilder, null);
-		}
+		CraftingRecipe selectedPreviewRecipe = CraftingPageSupport.resolveRecipe(this.selectedRecipeId);
+		CraftingPageSupport.syncSelectedRecipePreview(commandBuilder, selectedPreviewRecipe);
 
-		CraftingRecipe selectedRecipe = this.selectedRecipeId == null
-				? null
-				: CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
+		CraftingRecipe selectedRecipe = CraftingPageSupport.resolveRecipe(this.selectedRecipeId);
 		boolean selectedUnlocked = false;
 		if (selectedRecipe != null) {
 			int selectedRequiredLevel = CraftingPageSupport.getSmithingRequiredLevel(this.craftingRecipeTagService.getSkillRequirements(selectedRecipe));

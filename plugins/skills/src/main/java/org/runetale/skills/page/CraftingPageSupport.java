@@ -259,16 +259,15 @@ final class CraftingPageSupport {
 
 		int selectedCraftQuantity = craftingState.getSelectedCraftQuantity();
 		boolean craftAllSelected = craftingState.isCraftAllSelected();
-		boolean craftingInProgress = craftingState.isCraftingInProgress();
 		commandBuilder.set("#Qty1Selected.Visible", !craftAllSelected && selectedCraftQuantity == 1);
 		commandBuilder.set("#Qty5Selected.Visible", !craftAllSelected && selectedCraftQuantity == 5);
 		commandBuilder.set("#Qty10Selected.Visible", !craftAllSelected && selectedCraftQuantity == 10);
 		commandBuilder.set("#QtyAllSelected.Visible", craftAllSelected);
-		commandBuilder.set("#Qty1.Disabled", craftingInProgress);
-		commandBuilder.set("#Qty5.Disabled", craftingInProgress);
-		commandBuilder.set("#Qty10.Disabled", craftingInProgress);
-		commandBuilder.set("#QtyAll.Disabled", craftingInProgress);
-		commandBuilder.set("#QtyCustomApply.Disabled", craftingInProgress);
+		commandBuilder.set("#Qty1.Disabled", false);
+		commandBuilder.set("#Qty5.Disabled", false);
+		commandBuilder.set("#Qty10.Disabled", false);
+		commandBuilder.set("#QtyAll.Disabled", false);
+		commandBuilder.set("#QtyCustomApply.Disabled", false);
 		commandBuilder.set("#QtyCustomInput.Value", String.valueOf(selectedCraftQuantity));
 		return selectedCraftQuantity;
 	}
@@ -345,12 +344,56 @@ final class CraftingPageSupport {
 		return itemId;
 	}
 
+	@Nullable
+	static CraftingRecipe resolveRecipe(@Nullable String recipeId) {
+		if (recipeId == null || recipeId.isBlank()) {
+			return null;
+		}
+		return CraftingRecipe.getAssetMap().getAsset(recipeId);
+	}
+
 	static int getPrimaryOutputQuantity(@Nonnull CraftingRecipe recipe) {
 		MaterialQuantity[] outputs = recipe.getOutputs();
 		if (outputs == null || outputs.length == 0) {
 			return 1;
 		}
 		return Math.max(1, outputs[0].getQuantity());
+	}
+
+	static void configureOutputSlot(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nonnull String slotSelector,
+			@Nullable CraftingRecipe recipe) {
+		if (recipe == null) {
+			commandBuilder.set(slotSelector + ".Visible", false);
+			return;
+		}
+
+		String outputItemId = getPrimaryOutputItemId(recipe);
+		if (outputItemId == null) {
+			commandBuilder.set(slotSelector + ".Visible", false);
+			return;
+		}
+
+		int outputQuantity = getPrimaryOutputQuantity(recipe);
+		commandBuilder.set(slotSelector + ".ItemId", outputItemId);
+		commandBuilder.set(slotSelector + ".Quantity", outputQuantity);
+		commandBuilder.set(slotSelector + ".ShowQuantity", outputQuantity > 1);
+		commandBuilder.set(slotSelector + ".Visible", true);
+	}
+
+	static void syncSelectedRecipePreview(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nullable CraftingRecipe selectedRecipe) {
+		configureOutputSlot(commandBuilder, "#SelectedOutputSlot", selectedRecipe);
+		if (selectedRecipe != null) {
+			commandBuilder.set("#SelectedOutputName.TextSpans", getRecipeOutputLabel(selectedRecipe));
+			configureFlowGraph(commandBuilder, selectedRecipe);
+			return;
+		}
+
+		commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
+		configureFlowGraph(commandBuilder, null);
 	}
 
 	@Nonnull
