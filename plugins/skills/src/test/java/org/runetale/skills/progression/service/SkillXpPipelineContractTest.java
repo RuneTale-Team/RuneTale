@@ -9,9 +9,8 @@ import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.domain.SkillXpGrantResult;
 import org.runetale.skills.progression.event.SkillXpGrantEvent;
 import org.runetale.skills.service.XpService;
+import org.runetale.testing.core.TestConstructors;
 import org.runetale.testing.ecs.InMemoryComponentAccessor;
-
-import java.lang.reflect.Constructor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -23,7 +22,8 @@ class SkillXpPipelineContractTest {
 		SkillXpDispatchService dispatchService = new SkillXpDispatchService();
 		ComponentType<EntityStore, PlayerSkillProfileComponent> profileType = new ComponentType<>();
 		InMemoryComponentAccessor<EntityStore> accessor = new InMemoryComponentAccessor<>(null);
-		accessor.registerFactory(profileType, SkillXpPipelineContractTest::newProfileComponent);
+		accessor.registerFactory(profileType,
+				() -> TestConstructors.instantiateNoArgs(PlayerSkillProfileComponent.class));
 		Ref<EntityStore> playerRef = mock(Ref.class);
 
 		boolean dispatched = dispatchService.grantSkillXp(accessor, playerRef, SkillType.MINING, 10.4D,
@@ -46,13 +46,4 @@ class SkillXpPipelineContractTest {
 		assertThat(profile.getExperience(SkillType.MINING)).isEqualTo(10L);
 	}
 
-	private static PlayerSkillProfileComponent newProfileComponent() {
-		try {
-			Constructor<PlayerSkillProfileComponent> constructor = PlayerSkillProfileComponent.class.getDeclaredConstructor();
-			constructor.setAccessible(true);
-			return constructor.newInstance();
-		} catch (ReflectiveOperationException e) {
-			throw new IllegalStateException("Unable to create PlayerSkillProfileComponent for tests", e);
-		}
-	}
 }

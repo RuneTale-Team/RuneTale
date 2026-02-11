@@ -9,8 +9,7 @@ import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.domain.SkillXpGrantResult;
 import org.runetale.skills.service.XpService;
 import org.runetale.testing.ecs.InMemoryComponentAccessor;
-
-import java.lang.reflect.Constructor;
+import org.runetale.testing.core.TestConstructors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -21,7 +20,8 @@ class SkillProgressionServiceContractTest {
 	void grantExperienceCreatesProfileAndAppliesRoundedGain() {
 		ComponentType<EntityStore, PlayerSkillProfileComponent> profileType = new ComponentType<>();
 		InMemoryComponentAccessor<EntityStore> accessor = new InMemoryComponentAccessor<>(null);
-		accessor.registerFactory(profileType, SkillProgressionServiceContractTest::newProfileComponent);
+		accessor.registerFactory(profileType,
+				() -> TestConstructors.instantiateNoArgs(PlayerSkillProfileComponent.class));
 		Ref<EntityStore> playerRef = mock(Ref.class);
 		XpService xpService = new XpService();
 		SkillProgressionService service = new SkillProgressionService(profileType, xpService);
@@ -44,7 +44,8 @@ class SkillProgressionServiceContractTest {
 	void grantExperienceCanTriggerLevelUpFromThresholdGain() {
 		ComponentType<EntityStore, PlayerSkillProfileComponent> profileType = new ComponentType<>();
 		InMemoryComponentAccessor<EntityStore> accessor = new InMemoryComponentAccessor<>(null);
-		accessor.registerFactory(profileType, SkillProgressionServiceContractTest::newProfileComponent);
+		accessor.registerFactory(profileType,
+				() -> TestConstructors.instantiateNoArgs(PlayerSkillProfileComponent.class));
 		Ref<EntityStore> playerRef = mock(Ref.class);
 		XpService xpService = new XpService();
 		SkillProgressionService service = new SkillProgressionService(profileType, xpService);
@@ -65,7 +66,8 @@ class SkillProgressionServiceContractTest {
 	void grantExperienceWithZeroGainLeavesExistingProgressUnchanged() {
 		ComponentType<EntityStore, PlayerSkillProfileComponent> profileType = new ComponentType<>();
 		InMemoryComponentAccessor<EntityStore> accessor = new InMemoryComponentAccessor<>(null);
-		accessor.registerFactory(profileType, SkillProgressionServiceContractTest::newProfileComponent);
+		accessor.registerFactory(profileType,
+				() -> TestConstructors.instantiateNoArgs(PlayerSkillProfileComponent.class));
 		Ref<EntityStore> playerRef = mock(Ref.class);
 		XpService xpService = new XpService();
 		SkillProgressionService service = new SkillProgressionService(profileType, xpService);
@@ -83,13 +85,4 @@ class SkillProgressionServiceContractTest {
 		assertThat(profile.getLevel(SkillType.SMITHING)).isEqualTo(first.getUpdatedLevel());
 	}
 
-	private static PlayerSkillProfileComponent newProfileComponent() {
-		try {
-			Constructor<PlayerSkillProfileComponent> constructor = PlayerSkillProfileComponent.class.getDeclaredConstructor();
-			constructor.setAccessible(true);
-			return constructor.newInstance();
-		} catch (ReflectiveOperationException e) {
-			throw new IllegalStateException("Unable to create PlayerSkillProfileComponent for tests", e);
-		}
-	}
 }
