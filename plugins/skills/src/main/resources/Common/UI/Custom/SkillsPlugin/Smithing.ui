@@ -117,7 +117,7 @@ Group {
       }
 
       Label {
-        Text: "Forge weapons and armor with native-style tier tabs.";
+        Text: "Select a tier and recipe to smith.";
         Anchor: (Height: 24);
         Style: @HeaderMetaStyle;
       }
@@ -355,7 +355,7 @@ Group {
       Group { Anchor: (Height: 10); }
 
       Label {
-        Text: "Craft item to apply native ingredient checks";
+        Text: "Choose a recipe to begin.";
         Anchor: (Height: 34);
         Style: @SubtleStyle;
       }

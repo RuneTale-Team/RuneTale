@@ -117,7 +117,7 @@ Group {
       }
 
       Label {
-        Text: "Processing-style layout: pick a tier, select a bar recipe, then smelt.";
+        Text: "Select a tier and recipe to smelt.";
         Anchor: (Height: 24);
         Style: @HeaderMetaStyle;
       }
@@ -371,7 +371,7 @@ Group {
       Group { Anchor: (Height: 10); }
 
       Label {
-        Text: "Uses native Hytale crafting checks";
+        Text: "Choose a recipe to begin.";
         Anchor: (Height: 34);
         Style: (FontSize: 12, TextColor: #7f95aa, Wrap: true, VerticalAlignment: Start);
       }
