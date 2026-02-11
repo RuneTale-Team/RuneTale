@@ -333,7 +333,8 @@ final class CraftingPageSupport {
 	static boolean updateCraftButtonState(
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nullable CraftingRecipe selectedRecipe,
-			boolean hasRequiredMaterials) {
+			boolean hasRequiredMaterials,
+			int craftCount) {
 		if (selectedRecipe == null) {
 			commandBuilder.set("#StartCraftingButton.Text", "Select a Recipe");
 			commandBuilder.set("#StartCraftingButton.Disabled", true);
@@ -346,7 +347,10 @@ final class CraftingPageSupport {
 			return true;
 		}
 
-		commandBuilder.set("#StartCraftingButton.TextSpans", Message.join(Message.raw("Craft "), getRecipeOutputLabel(selectedRecipe)));
+		int normalizedCount = Math.max(1, craftCount);
+		commandBuilder.set(
+				"#StartCraftingButton.TextSpans",
+				Message.join(Message.raw("Craft x" + normalizedCount + " "), getRecipeOutputLabel(selectedRecipe)));
 		commandBuilder.set("#StartCraftingButton.Disabled", false);
 		return true;
 	}

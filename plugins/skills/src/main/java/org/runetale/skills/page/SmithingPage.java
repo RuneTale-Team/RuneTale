@@ -49,6 +49,7 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 	private static final String BENCH_ID = "RuneTale_Anvil";
 	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 10); }";
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
+	private static final long CRAFT_DURATION_MILLIS = 3000L;
 
 	private final BlockPosition blockPosition;
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
@@ -59,6 +60,9 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 
 	@Nullable
 	private String selectedRecipeId;
+	private int selectedCraftQuantity = 1;
+	private int queuedCraftCount;
+	private int totalCraftCount;
 
 	private boolean craftingInProgress;
 	private long craftingStartedAtMillis;
@@ -88,6 +92,21 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 		CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, LOGGER, "smithing");
 		commandBuilder.append(UI_PATH);
 		CraftingPageSupport.bindTierTabs(eventBuilder);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#Qty1",
+				EventData.of("Quantity", "1"),
+				false);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#Qty5",
+				EventData.of("Quantity", "5"),
+				false);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#Qty10",
+				EventData.of("Quantity", "10"),
+				false);
 		eventBuilder.addEventBinding(
 				CustomUIEventBindingType.Activating,
 				"#StartCraftingButton",
@@ -121,6 +140,13 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			}
 		}
 
+		if (!this.craftingInProgress && data.quantity != null) {
+			int parsedQuantity = parseCraftQuantity(data.quantity);
+			if (parsedQuantity > 0) {
+				this.selectedCraftQuantity = parsedQuantity;
+			}
+		}
+
 		UICommandBuilder commandBuilder = new UICommandBuilder();
 		UIEventBuilder eventBuilder = new UIEventBuilder();
 		render(ref, store, commandBuilder, eventBuilder);
@@ -132,11 +158,13 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 		this.craftingInProgress = false;
 		this.craftingRecipeId = null;
 		this.lastProgressPercent = -1;
+		this.queuedCraftCount = 0;
+		this.totalCraftCount = 0;
 		CraftingPageSupport.clearBenchBinding(ref, store);
 	}
 
-	private void finishCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull String recipeId) {
-		CraftingPageSupport.executeCraft(
+	private boolean finishCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull String recipeId) {
+		return CraftingPageSupport.executeCraft(
 				ref,
 				store,
 				recipeId,
@@ -145,6 +173,17 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 				LOGGER,
 				"Crafted",
 				"smith");
+	}
+
+	private static int parseCraftQuantity(@Nonnull String raw) {
+		try {
+			int value = Integer.parseInt(raw.trim());
+			if (value == 1 || value == 5 || value == 10) {
+				return value;
+			}
+		} catch (NumberFormatException ignored) {
+		}
+		return -1;
 	}
 
 	private void startCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
@@ -173,8 +212,10 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 		this.craftingInProgress = true;
 		this.craftingRecipeId = selectedRecipe.getId();
 		this.craftingStartedAtMillis = System.currentTimeMillis();
-		this.craftingDurationMillis = Math.max(250L, Math.round(selectedRecipe.getTimeSeconds() * 1000.0F));
+		this.craftingDurationMillis = CRAFT_DURATION_MILLIS;
 		this.lastProgressPercent = -1;
+		this.totalCraftCount = this.selectedCraftQuantity;
+		this.queuedCraftCount = this.selectedCraftQuantity;
 	}
 
 	public void tickProgress(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, float deltaTime) {
@@ -194,7 +235,28 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			this.craftingInProgress = false;
 			this.craftingRecipeId = null;
 			this.lastProgressPercent = -1;
-			finishCraft(ref, store, recipeId);
+			boolean crafted = finishCraft(ref, store, recipeId);
+			if (crafted) {
+				this.queuedCraftCount = Math.max(0, this.queuedCraftCount - 1);
+			} else {
+				this.queuedCraftCount = 0;
+			}
+
+			if (crafted && this.queuedCraftCount > 0) {
+				CraftingRecipe recipe = CraftingRecipe.getAssetMap().getAsset(recipeId);
+				Player player = store.getComponent(ref, Player.getComponentType());
+				if (recipe != null && CraftingPageSupport.hasRequiredMaterials(player, recipe)) {
+					this.craftingInProgress = true;
+					this.craftingRecipeId = recipeId;
+					this.craftingStartedAtMillis = System.currentTimeMillis();
+					this.craftingDurationMillis = CRAFT_DURATION_MILLIS;
+				}
+			}
+
+			if (!this.craftingInProgress) {
+				this.totalCraftCount = 0;
+				this.queuedCraftCount = 0;
+			}
 
 			UICommandBuilder commandBuilder = new UICommandBuilder();
 			UIEventBuilder eventBuilder = new UIEventBuilder();
@@ -219,11 +281,14 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 	private void appendProgressUi(@Nonnull UICommandBuilder commandBuilder) {
 		float progress = this.craftingInProgress ? getCraftProgress() : 0.0F;
 		int progressPercent = Math.min(100, Math.max(0, (int) Math.floor(progress * 100.0F)));
+		int currentCraftIndex = this.totalCraftCount > 0
+				? Math.max(1, (this.totalCraftCount - this.queuedCraftCount) + 1)
+				: 1;
 		commandBuilder.set("#CraftProgressBar.Value", progress);
 		commandBuilder.set(
 				"#CraftProgressLabel.Text",
 				this.craftingInProgress
-						? String.format(Locale.ROOT, "Smithing... %d%%", progressPercent)
+						? String.format(Locale.ROOT, "Smithing... %d%% (%d/%d)", progressPercent, currentCraftIndex, this.totalCraftCount)
 						: "Ready");
 	}
 
@@ -244,6 +309,13 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			commandBuilder.set(selector + "Indicator.Visible", selected);
 			commandBuilder.set(selector + "Selected.Visible", selected);
 		}
+
+		commandBuilder.set("#Qty1Selected.Visible", this.selectedCraftQuantity == 1);
+		commandBuilder.set("#Qty5Selected.Visible", this.selectedCraftQuantity == 5);
+		commandBuilder.set("#Qty10Selected.Visible", this.selectedCraftQuantity == 10);
+		commandBuilder.set("#Qty1.Disabled", this.craftingInProgress);
+		commandBuilder.set("#Qty5.Disabled", this.craftingInProgress);
+		commandBuilder.set("#Qty10.Disabled", this.craftingInProgress);
 
 		// Update section title
 		commandBuilder.set("#SectionTitle.Text", this.selectedTier.getSectionTitle("Equipment"));
@@ -368,11 +440,21 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 		CraftingRecipe selectedRecipe = this.selectedRecipeId == null
 				? null
 				: CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
-		boolean canCraftSelected = selectedRecipe != null && CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe);
+		boolean selectedUnlocked = false;
+		if (selectedRecipe != null) {
+			int selectedRequiredLevel = CraftingPageSupport.getSmithingRequiredLevel(this.craftingRecipeTagService.getSkillRequirements(selectedRecipe));
+			selectedUnlocked = smithingLevel >= selectedRequiredLevel;
+		}
+		boolean canCraftSelected = selectedRecipe != null
+				&& selectedUnlocked
+				&& CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe);
 		if (this.craftingInProgress) {
 			commandBuilder.set("#StartCraftingButton.Text", "Smithing...");
 			commandBuilder.set("#StartCraftingButton.Disabled", true);
-		} else if (!CraftingPageSupport.updateCraftButtonState(commandBuilder, selectedRecipe, canCraftSelected)) {
+		} else if (selectedRecipe != null && !selectedUnlocked) {
+			commandBuilder.set("#StartCraftingButton.Text", "Level Required");
+			commandBuilder.set("#StartCraftingButton.Disabled", true);
+		} else if (!CraftingPageSupport.updateCraftButtonState(commandBuilder, selectedRecipe, canCraftSelected, this.selectedCraftQuantity)) {
 			this.selectedRecipeId = null;
 		}
 
@@ -382,6 +464,7 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 	public static class SmithingPageEventData {
 		private static final String KEY_ACTION = "Action";
 		private static final String KEY_TIER = "Tier";
+		private static final String KEY_QUANTITY = "Quantity";
 		private static final String KEY_RECIPE_ID = "RecipeId";
 
 		public static final BuilderCodec<SmithingPageEventData> CODEC = BuilderCodec
@@ -390,12 +473,15 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 				.add()
 				.append(new KeyedCodec<>(KEY_TIER, Codec.STRING), (entry, value) -> entry.tier = value, entry -> entry.tier)
 				.add()
+				.append(new KeyedCodec<>(KEY_QUANTITY, Codec.STRING), (entry, value) -> entry.quantity = value, entry -> entry.quantity)
+				.add()
 				.append(new KeyedCodec<>(KEY_RECIPE_ID, Codec.STRING), (entry, value) -> entry.recipeId = value, entry -> entry.recipeId)
 				.add()
 				.build();
 
 		private String action;
 		private String tier;
+		private String quantity;
 		private String recipeId;
 	}
 }

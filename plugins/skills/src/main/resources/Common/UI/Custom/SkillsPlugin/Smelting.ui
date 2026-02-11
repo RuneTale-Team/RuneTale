@@ -352,6 +352,29 @@ Group {
         BarTexturePath: "Assets/UI/ProgressBarFill.png";
       }
 
+      Group {
+        Anchor: (Height: 34, Bottom: 8);
+        LayoutMode: Left;
+
+        Group {
+          Anchor: (Width: 74, Height: 34, Right: 6);
+          Group #Qty1Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
+          TextButton #Qty1 { Text: "x1"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+
+        Group {
+          Anchor: (Width: 74, Height: 34, Right: 6);
+          Group #Qty5Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
+          TextButton #Qty5 { Text: "x5"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+
+        Group {
+          Anchor: (Width: 74, Height: 34);
+          Group #Qty10Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
+          TextButton #Qty10 { Text: "x10"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+      }
+
       TextButton #StartCraftingButton {
         Text: "Select a Recipe";
         Anchor: (Height: 46);

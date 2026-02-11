@@ -2,6 +2,8 @@ package org.runetale.skills.service;
 
 import com.hypixel.hytale.assetstore.AssetExtraInfo;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.BenchRequirement;
+import com.hypixel.hytale.protocol.BenchType;
 import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
 import com.hypixel.hytale.server.core.asset.type.item.config.Item;
 import com.hypixel.hytale.server.core.inventory.MaterialQuantity;
@@ -30,6 +32,8 @@ public class CraftingRecipeTagService {
 	private static final String TAG_XP_ON_SUCCESSFUL_CRAFT = "XpOnSuccessfulCraft";
 	private static final String TAG_SKILLS_REQUIRED = "SkillsRequired";
 	private static final String TAG_SKILL_LEVELS_REQUIRED = "SkillLevelsRequired";
+	private static final String RUNETALE_ANVIL_BENCH_ID = "RuneTale_Anvil";
+	private static final String RUNETALE_FURNACE_BENCH_ID = "RuneTale_Furnace";
 
 	/**
 	 * Returns the XP reward for a successful craft, if configured.
@@ -68,6 +72,9 @@ public class CraftingRecipeTagService {
 	public List<SkillRequirement> getSkillRequirements(@Nonnull CraftingRecipe recipe) {
 		String[] skillNames = getRawTagValues(recipe, TAG_SKILLS_REQUIRED);
 		if (skillNames == null || skillNames.length == 0) {
+			if (isRuneTaleSmithingBenchRecipe(recipe)) {
+				return List.of(new SkillRequirement(SkillType.SMITHING, 1));
+			}
 			return Collections.emptyList();
 		}
 
@@ -96,6 +103,26 @@ public class CraftingRecipeTagService {
 		}
 
 		return requirements;
+	}
+
+	private boolean isRuneTaleSmithingBenchRecipe(@Nonnull CraftingRecipe recipe) {
+		BenchRequirement[] benchRequirements = recipe.getBenchRequirement();
+		if (benchRequirements == null || benchRequirements.length == 0) {
+			return false;
+		}
+
+		for (BenchRequirement benchRequirement : benchRequirements) {
+			if (benchRequirement == null || benchRequirement.type != BenchType.Crafting || benchRequirement.id == null) {
+				continue;
+			}
+
+			if (RUNETALE_ANVIL_BENCH_ID.equals(benchRequirement.id)
+					|| RUNETALE_FURNACE_BENCH_ID.equals(benchRequirement.id)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	@Nullable
