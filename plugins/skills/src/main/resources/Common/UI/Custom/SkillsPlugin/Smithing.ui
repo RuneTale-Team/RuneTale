@@ -279,6 +279,64 @@ Group {
         Style: (FontSize: 12, TextColor: #8fa3b8, Wrap: true, VerticalAlignment: Start);
       }
 
+      Group { Anchor: (Height: 8); }
+
+      Label {
+        Text: "Flow";
+        Anchor: (Height: 16);
+        Style: (FontSize: 11, TextColor: #7f95aa, RenderUppercase: true, LetterSpacing: 1);
+      }
+
+      Group {
+        Anchor: (Height: 78);
+        Padding: (Left: 8, Right: 8, Top: 6, Bottom: 6);
+        Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
+        LayoutMode: Left;
+
+        Group {
+          LayoutMode: Left;
+          FlexWeight: 1;
+
+          ItemSlot #FlowIngredientSlot0 {
+            Anchor: (Width: 34, Height: 34, Right: 4);
+            ShowQuantity: true;
+            ShowQualityBackground: false;
+            ShowDurabilityBar: false;
+            Visible: false;
+          }
+
+          ItemSlot #FlowIngredientSlot1 {
+            Anchor: (Width: 34, Height: 34, Right: 4);
+            ShowQuantity: true;
+            ShowQualityBackground: false;
+            ShowDurabilityBar: false;
+            Visible: false;
+          }
+
+          ItemSlot #FlowIngredientSlot2 {
+            Anchor: (Width: 34, Height: 34, Right: 4);
+            ShowQuantity: true;
+            ShowQualityBackground: false;
+            ShowDurabilityBar: false;
+            Visible: false;
+          }
+        }
+
+        Label {
+          Text: "->";
+          Anchor: (Width: 24, Height: 30, Top: 2);
+          Style: (FontSize: 16, TextColor: #9cb2c7, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+        }
+
+        ItemSlot #FlowOutputSlot {
+          Anchor: (Width: 40, Height: 40, Top: -1);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+      }
+
       Group { Anchor: (Height: 12); }
 
       TextButton #StartCraftingButton {

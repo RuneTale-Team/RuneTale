@@ -37,7 +37,7 @@
 );
 
 Group {
-  Anchor: (Height: 94, Bottom: 8);
+  Anchor: (Height: 104, Bottom: 8);
   Padding: (Left: 11, Right: 11, Top: 8, Bottom: 8);
   Background: (TexturePath: "Assets/UI/RecipeCatalogueItemPatch.png", Border: 22);
 
@@ -67,9 +67,38 @@ Group {
         Style: @RecipeNameStyle;
       }
 
+      Group {
+        LayoutMode: Left;
+        Anchor: (Height: 28, Top: 2);
+
+        ItemSlot #IngredientSlot0 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+
+        ItemSlot #IngredientSlot1 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+
+        ItemSlot #IngredientSlot2 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+      }
+
       Label #RecipeIngredients {
         Text: "";
-        Anchor: (Height: 20, Top: 1);
+        Anchor: (Height: 18, Top: 2);
         Style: @RecipeMetaStyle;
       }
 

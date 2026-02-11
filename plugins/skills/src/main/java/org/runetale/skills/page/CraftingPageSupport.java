@@ -11,6 +11,7 @@ import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
+import com.hypixel.hytale.server.core.asset.type.item.config.Item;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.MaterialQuantity;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 
 final class CraftingPageSupport {
+	private static final int MAX_INGREDIENT_ICONS = 3;
 
 	private CraftingPageSupport() {
 	}
@@ -161,13 +163,44 @@ final class CraftingPageSupport {
 		return crafted;
 	}
 
+	static boolean hasRequiredMaterials(@Nullable Player player, @Nonnull CraftingRecipe recipe) {
+		if (player == null) {
+			return false;
+		}
+
+		MaterialQuantity[] inputs = recipe.getInput();
+		if (inputs == null || inputs.length == 0) {
+			return true;
+		}
+
+		for (MaterialQuantity input : inputs) {
+			if (input == null) {
+				continue;
+			}
+			if (!player.getInventory().getCombinedBackpackStorageHotbar().canRemoveMaterial(input, true, true)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	@Nonnull
 	static String getRecipeOutputName(@Nonnull CraftingRecipe recipe) {
 		String itemId = getPrimaryOutputItemId(recipe);
 		if (itemId != null) {
-			return formatItemId(itemId);
+			return getItemDisplayName(itemId);
 		}
 		return recipe.getId();
+	}
+
+	@Nonnull
+	static Message getRecipeOutputLabel(@Nonnull CraftingRecipe recipe) {
+		String itemId = getPrimaryOutputItemId(recipe);
+		if (itemId != null) {
+			return getItemDisplayMessage(itemId);
+		}
+		return Message.raw(recipe.getId());
 	}
 
 	@Nullable
@@ -204,15 +237,104 @@ final class CraftingPageSupport {
 			if (i > 0) {
 				builder.append(", ");
 			}
-			String itemId = inputs[i].getItemId();
-			int quantity = inputs[i].getQuantity();
-			String name = itemId != null ? formatItemId(itemId) : "Unknown";
+			MaterialQuantity input = inputs[i];
+			int quantity = input.getQuantity();
+			String name = getMaterialDisplayName(input);
 			if (quantity > 1) {
 				builder.append(quantity).append("x ");
 			}
 			builder.append(name);
 		}
 		return builder.toString();
+	}
+
+	@Nonnull
+	static Message formatIngredientsLabel(@Nonnull CraftingRecipe recipe) {
+		MaterialQuantity[] inputs = recipe.getInput();
+		if (inputs == null || inputs.length == 0) {
+			return Message.raw("No ingredients");
+		}
+
+		Message message = Message.empty();
+		for (int i = 0; i < inputs.length; i++) {
+			MaterialQuantity input = inputs[i];
+			if (input == null) {
+				continue;
+			}
+			if (i > 0) {
+				message.insert(", ");
+			}
+
+			int quantity = Math.max(1, input.getQuantity());
+			if (quantity > 1) {
+				message.insert(quantity + "x ");
+			}
+			message.insert(getMaterialDisplayMessage(input));
+		}
+
+		return message;
+	}
+
+	static void configureIngredientSlots(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nonnull String parentSelector,
+			@Nonnull CraftingRecipe recipe) {
+		MaterialQuantity[] inputs = recipe.getInput();
+		for (int i = 0; i < MAX_INGREDIENT_ICONS; i++) {
+			String slotSelector = parentSelector + " #IngredientSlot" + i;
+			if (inputs != null && i < inputs.length && inputs[i] != null && inputs[i].getItemId() != null) {
+				String itemId = inputs[i].getItemId();
+				if (itemId != null && !itemId.isBlank()) {
+					int quantity = Math.max(1, inputs[i].getQuantity());
+					commandBuilder.set(slotSelector + ".ItemId", itemId);
+					commandBuilder.set(slotSelector + ".Quantity", quantity);
+					commandBuilder.set(slotSelector + ".ShowQuantity", quantity > 1);
+					commandBuilder.set(slotSelector + ".Visible", true);
+					continue;
+				}
+			}
+			commandBuilder.set(slotSelector + ".Visible", false);
+		}
+	}
+
+	static void configureFlowGraph(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nullable CraftingRecipe recipe) {
+		if (recipe == null) {
+			for (int i = 0; i < MAX_INGREDIENT_ICONS; i++) {
+				commandBuilder.set("#FlowIngredientSlot" + i + ".Visible", false);
+			}
+			commandBuilder.set("#FlowOutputSlot.Visible", false);
+			return;
+		}
+
+		MaterialQuantity[] inputs = recipe.getInput();
+		for (int i = 0; i < MAX_INGREDIENT_ICONS; i++) {
+			String slotSelector = "#FlowIngredientSlot" + i;
+			if (inputs != null && i < inputs.length && inputs[i] != null) {
+				String itemId = inputs[i].getItemId();
+				if (itemId != null && !itemId.isBlank()) {
+					int quantity = Math.max(1, inputs[i].getQuantity());
+					commandBuilder.set(slotSelector + ".ItemId", itemId);
+					commandBuilder.set(slotSelector + ".Quantity", quantity);
+					commandBuilder.set(slotSelector + ".ShowQuantity", quantity > 1);
+					commandBuilder.set(slotSelector + ".Visible", true);
+					continue;
+				}
+			}
+			commandBuilder.set(slotSelector + ".Visible", false);
+		}
+
+		String outputItemId = getPrimaryOutputItemId(recipe);
+		if (outputItemId != null) {
+			int outputQuantity = getPrimaryOutputQuantity(recipe);
+			commandBuilder.set("#FlowOutputSlot.ItemId", outputItemId);
+			commandBuilder.set("#FlowOutputSlot.Quantity", outputQuantity);
+			commandBuilder.set("#FlowOutputSlot.ShowQuantity", outputQuantity > 1);
+			commandBuilder.set("#FlowOutputSlot.Visible", true);
+		} else {
+			commandBuilder.set("#FlowOutputSlot.Visible", false);
+		}
 	}
 
 	@Nonnull
@@ -231,23 +353,133 @@ final class CraftingPageSupport {
 		return 1;
 	}
 
-	static boolean updateCraftButtonLabel(@Nonnull UICommandBuilder commandBuilder, @Nullable String selectedRecipeId) {
-		if (selectedRecipeId != null) {
-			CraftingRecipe selectedRecipe = CraftingRecipe.getAssetMap().getAsset(selectedRecipeId);
-			if (selectedRecipe != null) {
-				commandBuilder.set("#StartCraftingButton.Text", "Craft " + getRecipeOutputName(selectedRecipe));
-				return true;
-			}
+	static boolean updateCraftButtonState(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nullable CraftingRecipe selectedRecipe,
+			boolean hasRequiredMaterials) {
+		if (selectedRecipe == null) {
+			commandBuilder.set("#StartCraftingButton.Text", "Select a Recipe");
+			commandBuilder.set("#StartCraftingButton.Disabled", true);
+			return false;
 		}
 
-		commandBuilder.set("#StartCraftingButton.Text", "Select a Recipe");
-		return false;
+		if (!hasRequiredMaterials) {
+			commandBuilder.set("#StartCraftingButton.Text", "Materials Required");
+			commandBuilder.set("#StartCraftingButton.Disabled", true);
+			return true;
+		}
+
+		commandBuilder.set("#StartCraftingButton.TextSpans", Message.join(Message.raw("Craft "), getRecipeOutputLabel(selectedRecipe)));
+		commandBuilder.set("#StartCraftingButton.Disabled", false);
+		return true;
 	}
 
 	@Nonnull
-	private static String formatItemId(@Nonnull String itemId) {
-		int colonIndex = itemId.lastIndexOf(':');
-		String name = colonIndex >= 0 ? itemId.substring(colonIndex + 1) : itemId;
-		return name.replace('_', ' ');
+	private static String getMaterialDisplayName(@Nonnull MaterialQuantity material) {
+		String itemId = material.getItemId();
+		if (itemId != null && !itemId.isBlank()) {
+			return getItemDisplayName(itemId);
+		}
+
+		String resourceTypeId = material.getResourceTypeId();
+		if (resourceTypeId != null && !resourceTypeId.isBlank()) {
+			return formatDisplayId(resourceTypeId);
+		}
+
+		return "Unknown";
+	}
+
+	@Nonnull
+	private static Message getMaterialDisplayMessage(@Nonnull MaterialQuantity material) {
+		String itemId = material.getItemId();
+		if (itemId != null && !itemId.isBlank()) {
+			return getItemDisplayMessage(itemId);
+		}
+
+		String resourceTypeId = material.getResourceTypeId();
+		if (resourceTypeId != null && !resourceTypeId.isBlank()) {
+			return Message.raw(formatDisplayId(resourceTypeId));
+		}
+
+		return Message.raw("Unknown");
+	}
+
+	@Nonnull
+	static String getItemDisplayName(@Nonnull String itemId) {
+		Item item = Item.getAssetMap().getAsset(itemId);
+		if (item == null) {
+			return formatDisplayId(itemId);
+		}
+
+		String translationKey = item.getTranslationKey();
+		String translatedId = extractItemIdFromTranslationKey(translationKey);
+		if (translatedId != null) {
+			return formatDisplayId(translatedId);
+		}
+
+		String assetId = item.getId();
+		if (assetId != null && !assetId.isBlank()) {
+			return formatDisplayId(assetId);
+		}
+
+		return formatDisplayId(itemId);
+	}
+
+	@Nonnull
+	static Message getItemDisplayMessage(@Nonnull String itemId) {
+		Item item = Item.getAssetMap().getAsset(itemId);
+		if (item == null) {
+			return Message.raw(formatDisplayId(itemId));
+		}
+
+		String translationKey = item.getTranslationKey();
+		if (translationKey != null && !translationKey.isBlank()) {
+			return Message.translation(translationKey);
+		}
+
+		String assetId = item.getId();
+		if (assetId != null && !assetId.isBlank()) {
+			return Message.raw(formatDisplayId(assetId));
+		}
+
+		return Message.raw(formatDisplayId(itemId));
+	}
+
+	@Nullable
+	private static String extractItemIdFromTranslationKey(@Nullable String translationKey) {
+		if (translationKey == null || translationKey.isBlank()) {
+			return null;
+		}
+
+		if (translationKey.startsWith("server.items.") && translationKey.endsWith(".name")) {
+			return translationKey.substring("server.items.".length(), translationKey.length() - ".name".length());
+		}
+
+		return null;
+	}
+
+	@Nonnull
+	private static String formatDisplayId(@Nonnull String rawId) {
+		int colonIndex = rawId.lastIndexOf(':');
+		String normalized = colonIndex >= 0 ? rawId.substring(colonIndex + 1) : rawId;
+		normalized = normalized.replace('_', ' ').replace('-', ' ');
+		return toTitleCase(normalized);
+	}
+
+	@Nonnull
+	private static String toTitleCase(@Nonnull String text) {
+		String lower = text.toLowerCase(Locale.ROOT);
+		String[] parts = lower.split("\\s+");
+		StringBuilder builder = new StringBuilder();
+		for (String part : parts) {
+			if (part.isBlank()) {
+				continue;
+			}
+			if (builder.length() > 0) {
+				builder.append(' ');
+			}
+			builder.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+		}
+		return builder.length() > 0 ? builder.toString() : text;
 	}
 }

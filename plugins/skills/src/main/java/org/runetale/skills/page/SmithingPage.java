@@ -13,6 +13,7 @@ import com.hypixel.hytale.protocol.BlockPosition;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.inventory.MaterialQuantity;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
@@ -141,6 +142,7 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder) {
 		PlayerSkillProfileComponent profile = store.getComponent(ref, this.profileComponentType);
+		Player player = store.getComponent(ref, Player.getComponentType());
 		int smithingLevel = profile == null ? 1 : profile.getLevel(SkillType.SMITHING);
 
 		// Update tier tab selection state
@@ -187,8 +189,7 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 					false);
 
 			// Output name
-			String outputName = CraftingPageSupport.getRecipeOutputName(recipe);
-			commandBuilder.set(cardSelector + " #CardName.Text", outputName);
+			commandBuilder.set(cardSelector + " #CardName.TextSpans", CraftingPageSupport.getRecipeOutputLabel(recipe));
 
 			String outputItemId = CraftingPageSupport.getPrimaryOutputItemId(recipe);
 			if (outputItemId != null) {
@@ -202,8 +203,9 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			}
 
 			// Ingredients
+			CraftingPageSupport.configureIngredientSlots(commandBuilder, cardSelector, recipe);
 			String ingredients = CraftingPageSupport.formatIngredients(recipe);
-			commandBuilder.set(cardSelector + " #CardIngredients.Text", ingredients);
+			commandBuilder.set(cardSelector + " #CardIngredients.TextSpans", CraftingPageSupport.formatIngredientsLabel(recipe));
 
 			// XP reward
 			String xpText = CraftingPageSupport.getXpText(recipe, this.craftingRecipeTagService);
@@ -213,13 +215,20 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(recipe);
 			int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
 			boolean unlocked = smithingLevel >= requiredLevel;
+			boolean hasMaterials = CraftingPageSupport.hasRequiredMaterials(player, recipe);
 
-			if (unlocked) {
-				commandBuilder.set(cardSelector + " #CardStatus.Text", "Unlocked");
-				commandBuilder.set(cardSelector + " #LockOverlay.Visible", false);
-			} else {
+			if (!unlocked) {
 				commandBuilder.set(cardSelector + " #CardStatus.Text", "Requires Lv " + requiredLevel + " Smithing");
+				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#d7a6a6");
 				commandBuilder.set(cardSelector + " #LockOverlay.Visible", true);
+			} else if (!hasMaterials) {
+				commandBuilder.set(cardSelector + " #CardStatus.Text", "Materials required");
+				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#d8c187");
+				commandBuilder.set(cardSelector + " #LockOverlay.Visible", true);
+			} else {
+				commandBuilder.set(cardSelector + " #CardStatus.Text", "Unlocked");
+				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#99afc6");
+				commandBuilder.set(cardSelector + " #LockOverlay.Visible", false);
 			}
 		}
 
@@ -231,6 +240,9 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			commandBuilder.set("#RecipeGrid[0][0] #CardXp.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #CardStatus.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #CardOutputSlot.Visible", false);
+			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot0.Visible", false);
+			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot1.Visible", false);
+			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot2.Visible", false);
 			commandBuilder.set("#RecipeGrid[0][0] #SelectedFrame.Visible", false);
 			commandBuilder.set("#RecipeGrid[0][0] #LockOverlay.Visible", false);
 		}
@@ -245,21 +257,29 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 					commandBuilder.set("#SelectedOutputSlot.Quantity", outputQuantity);
 					commandBuilder.set("#SelectedOutputSlot.ShowQuantity", outputQuantity > 1);
 					commandBuilder.set("#SelectedOutputSlot.Visible", true);
-					commandBuilder.set("#SelectedOutputName.Text", CraftingPageSupport.getRecipeOutputName(selectedRecipe));
+					commandBuilder.set("#SelectedOutputName.TextSpans", CraftingPageSupport.getRecipeOutputLabel(selectedRecipe));
+					CraftingPageSupport.configureFlowGraph(commandBuilder, selectedRecipe);
 				} else {
 					commandBuilder.set("#SelectedOutputSlot.Visible", false);
 					commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
+					CraftingPageSupport.configureFlowGraph(commandBuilder, null);
 				}
 			} else {
 				commandBuilder.set("#SelectedOutputSlot.Visible", false);
 				commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
+				CraftingPageSupport.configureFlowGraph(commandBuilder, null);
 			}
 		} else {
 			commandBuilder.set("#SelectedOutputSlot.Visible", false);
 			commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
+			CraftingPageSupport.configureFlowGraph(commandBuilder, null);
 		}
 
-		if (!CraftingPageSupport.updateCraftButtonLabel(commandBuilder, this.selectedRecipeId)) {
+		CraftingRecipe selectedRecipe = this.selectedRecipeId == null
+				? null
+				: CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
+		boolean canCraftSelected = selectedRecipe != null && CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe);
+		if (!CraftingPageSupport.updateCraftButtonState(commandBuilder, selectedRecipe, canCraftSelected)) {
 			this.selectedRecipeId = null;
 		}
 	}

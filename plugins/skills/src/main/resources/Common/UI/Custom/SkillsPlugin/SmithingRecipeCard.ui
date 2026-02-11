@@ -37,7 +37,7 @@
 );
 
 Group {
-  Anchor: (Height: 126, Bottom: 10);
+  Anchor: (Height: 136, Bottom: 10);
   FlexWeight: 1;
   Padding: (Full: 11);
   Background: (TexturePath: "Assets/UI/RecipeCatalogueItemPatch.png", Border: 22);
@@ -69,9 +69,38 @@ Group {
         Style: @CardNameStyle;
       }
 
+      Group {
+        LayoutMode: Left;
+        Anchor: (Height: 28, Top: 2);
+
+        ItemSlot #IngredientSlot0 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+
+        ItemSlot #IngredientSlot1 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+
+        ItemSlot #IngredientSlot2 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+      }
+
       Label #CardIngredients {
         Text: "";
-        Anchor: (Height: 34);
+        Anchor: (Height: 22, Top: 2);
         Style: @CardMetaStyle;
       }
 
