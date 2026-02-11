@@ -146,6 +146,15 @@ tasks.register<Delete>("cleanDeployedPluginBundles") {
     }
 }
 
+tasks.register("contractTest") {
+    group = "verification"
+    description = "Runs contract-tagged tests across all Java subprojects."
+    val contractProjects = subprojects.filter {
+        it.path.startsWith(":plugins:") || it.path.startsWith(":platform:testing-")
+    }
+    dependsOn(contractProjects.map { it.tasks.named("contractTest") })
+}
+
 val skillsConfigResourceDir = layout.projectDirectory.dir("plugins/skills/src/main/resources/Skills")
 
 tasks.register<Zip>("bundlePluginJars") {

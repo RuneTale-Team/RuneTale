@@ -73,6 +73,7 @@ Run only framework module tests:
 Run only contract tests:
 
 ```bash
+./gradlew contractTest
 ./gradlew :plugins:skills:contractTest
 ./gradlew :platform:testing-core:contractTest :platform:testing-junit:contractTest :platform:testing-ecs:contractTest
 ```
