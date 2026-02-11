@@ -7,20 +7,19 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.core.util.EventTitleUtil;
-import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.domain.SkillXpGrantResult;
-import org.runetale.skills.progression.event.SkillLevelUpEvent;
+import org.runetale.skills.progression.service.CommandBufferPlayerRefResolver;
 import org.runetale.skills.progression.event.SkillXpGrantEvent;
+import org.runetale.skills.progression.service.EventTitleSkillLevelUpAnnouncer;
+import org.runetale.skills.progression.service.PlayerRefResolver;
+import org.runetale.skills.progression.service.SkillXpGrantFeedbackService;
 import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.service.SkillSessionStatsService;
 
 import javax.annotation.Nonnull;
-import java.util.Locale;
 
 /**
  * Applies dispatched XP grant events to player skill profiles.
@@ -31,18 +30,44 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 
 	private final SkillProgressionService progressionService;
 	private final SkillSessionStatsService sessionStatsService;
-	private final SkillXpToastHudService skillXpToastHudService;
+	private final SkillXpGrantFeedbackService skillXpGrantFeedbackService;
+	private final PlayerRefResolver playerRefResolver;
 	private final Query<EntityStore> query;
 
 	public SkillXpGrantSystem(
 			@Nonnull SkillProgressionService progressionService,
 			@Nonnull SkillSessionStatsService sessionStatsService,
 			@Nonnull SkillXpToastHudService skillXpToastHudService) {
+		this(
+				progressionService,
+				sessionStatsService,
+				new SkillXpGrantFeedbackService(skillXpToastHudService, new EventTitleSkillLevelUpAnnouncer()));
+	}
+
+	public SkillXpGrantSystem(
+			@Nonnull SkillProgressionService progressionService,
+			@Nonnull SkillSessionStatsService sessionStatsService,
+			@Nonnull SkillXpGrantFeedbackService skillXpGrantFeedbackService) {
+		this(
+				progressionService,
+				sessionStatsService,
+				skillXpGrantFeedbackService,
+				new CommandBufferPlayerRefResolver(),
+				Query.and(PlayerRef.getComponentType()));
+	}
+
+	public SkillXpGrantSystem(
+			@Nonnull SkillProgressionService progressionService,
+			@Nonnull SkillSessionStatsService sessionStatsService,
+			@Nonnull SkillXpGrantFeedbackService skillXpGrantFeedbackService,
+			@Nonnull PlayerRefResolver playerRefResolver,
+			@Nonnull Query<EntityStore> query) {
 		super(SkillXpGrantEvent.class);
 		this.progressionService = progressionService;
 		this.sessionStatsService = sessionStatsService;
-		this.skillXpToastHudService = skillXpToastHudService;
-		this.query = Query.and(PlayerRef.getComponentType());
+		this.skillXpGrantFeedbackService = skillXpGrantFeedbackService;
+		this.playerRefResolver = playerRefResolver;
+		this.query = query;
 	}
 
 	@Override
@@ -61,7 +86,7 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 			return;
 		}
 
-		PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
+		PlayerRef playerRef = this.playerRefResolver.resolve(commandBuffer, ref);
 		if (playerRef == null) {
 			return;
 		}
@@ -74,37 +99,12 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 				result.getUpdatedExperience(),
 				result.getUpdatedLevel());
 
-		if (!event.shouldNotifyPlayer()) {
-			return;
-		}
-
-		this.skillXpToastHudService.showXpToast(
-				playerRef,
-				result.getSkillType(),
-				result.getGainedExperience(),
-				result.isLevelUp());
-
-		if (result.isLevelUp()) {
-			EventTitleUtil.showEventTitleToPlayer(
-					playerRef,
-					Message.raw(formatSkillName(result.getSkillType()) + " Level Up!"),
-					Message.raw("Now level " + result.getUpdatedLevel()),
-					true);
-
-			commandBuffer.invoke(ref, new SkillLevelUpEvent(
-					result.getSkillType(), result.getPreviousLevel(), result.getUpdatedLevel()));
-		}
+		this.skillXpGrantFeedbackService.apply(commandBuffer, ref, playerRef, event, result);
 	}
 
 	@Nonnull
 	@Override
 	public Query<EntityStore> getQuery() {
 		return this.query;
-	}
-
-	@Nonnull
-	private String formatSkillName(@Nonnull SkillType skill) {
-		String lowered = skill.name().toLowerCase(Locale.ROOT);
-		return Character.toUpperCase(lowered.charAt(0)) + lowered.substring(1);
 	}
 }
