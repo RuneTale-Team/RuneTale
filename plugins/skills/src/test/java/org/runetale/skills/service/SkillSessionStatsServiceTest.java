@@ -3,11 +3,13 @@ package org.runetale.skills.service;
 import org.junit.jupiter.api.Test;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.testing.core.TestPlayerIds;
+import org.runetale.testing.junit.ContractTest;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ContractTest
 class SkillSessionStatsServiceTest {
 
 	@Test
