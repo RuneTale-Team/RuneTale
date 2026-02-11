@@ -353,25 +353,48 @@ Group {
       }
 
       Group {
-        Anchor: (Height: 34, Bottom: 8);
+        Anchor: (Height: 34, Bottom: 6);
         LayoutMode: Left;
 
         Group {
-          Anchor: (Width: 74, Height: 34, Right: 6);
+          Anchor: (Width: 56, Height: 34, Right: 4);
           Group #Qty1Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
           TextButton #Qty1 { Text: "x1"; Anchor: (Full: 1); Style: @TierTabStyle; }
         }
 
         Group {
-          Anchor: (Width: 74, Height: 34, Right: 6);
+          Anchor: (Width: 56, Height: 34, Right: 4);
           Group #Qty5Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
           TextButton #Qty5 { Text: "x5"; Anchor: (Full: 1); Style: @TierTabStyle; }
         }
 
         Group {
-          Anchor: (Width: 74, Height: 34);
+          Anchor: (Width: 56, Height: 34, Right: 4);
           Group #Qty10Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
           TextButton #Qty10 { Text: "x10"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+
+        Group {
+          Anchor: (Width: 66, Height: 34);
+          Group #QtyAllSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
+          TextButton #QtyAll { Text: "All"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+      }
+
+      Group {
+        Anchor: (Height: 32, Bottom: 8);
+        LayoutMode: Left;
+
+        $C.@TextField #QtyCustomInput {
+          Anchor: (Width: 170, Height: 32, Right: 6);
+          Value: "1";
+          PlaceholderText: "Craft X";
+        }
+
+        TextButton #QtyCustomApply {
+          Text: "Set";
+          Anchor: (Width: 58, Height: 32);
+          Style: @TierTabStyle;
         }
       }
 

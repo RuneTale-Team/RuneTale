@@ -14,6 +14,7 @@ import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
 import com.hypixel.hytale.server.core.asset.type.item.config.Item;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.MaterialQuantity;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
@@ -183,6 +184,73 @@ final class CraftingPageSupport {
 		}
 
 		return true;
+	}
+
+	static int getMaxCraftableCount(@Nullable Player player, @Nonnull CraftingRecipe recipe, int maxCap) {
+		if (player == null) {
+			return 0;
+		}
+
+		int cap = Math.max(1, maxCap);
+		MaterialQuantity[] inputs = recipe.getInput();
+		if (inputs == null || inputs.length == 0) {
+			return cap;
+		}
+
+		ItemContainer container = player.getInventory().getCombinedBackpackStorageHotbar();
+		int maxCraftable = cap;
+		for (MaterialQuantity input : inputs) {
+			if (input == null) {
+				continue;
+			}
+			int byInput = maxCraftableForMaterial(container, input, cap);
+			maxCraftable = Math.min(maxCraftable, byInput);
+			if (maxCraftable <= 0) {
+				return 0;
+			}
+		}
+
+		return maxCraftable;
+	}
+
+	private static int maxCraftableForMaterial(@Nonnull ItemContainer container, @Nonnull MaterialQuantity material, int maxCap) {
+		int perCraft = Math.max(1, material.getQuantity());
+
+		int low = 0;
+		int high = 1;
+		while (high < maxCap && canRemoveScaledMaterial(container, material, perCraft, high)) {
+			low = high;
+			high = Math.min(maxCap, high * 2);
+		}
+
+		while (low < high) {
+			int mid = low + ((high - low + 1) / 2);
+			if (canRemoveScaledMaterial(container, material, perCraft, mid)) {
+				low = mid;
+			} else {
+				high = mid - 1;
+			}
+		}
+
+		return low;
+	}
+
+	private static boolean canRemoveScaledMaterial(
+			@Nonnull ItemContainer container,
+			@Nonnull MaterialQuantity material,
+			int perCraft,
+			int craftCount) {
+		if (craftCount <= 0) {
+			return true;
+		}
+
+		long total = (long) perCraft * craftCount;
+		if (total > Integer.MAX_VALUE) {
+			return false;
+		}
+
+		MaterialQuantity required = material.clone((int) total);
+		return container.canRemoveMaterial(required, true, true);
 	}
 
 	@Nonnull

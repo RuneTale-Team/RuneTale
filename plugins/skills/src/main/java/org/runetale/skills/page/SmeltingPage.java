@@ -49,6 +49,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 	private static final String RECIPE_ROW_TEMPLATE = "SkillsPlugin/SmeltingRecipeRow.ui";
 	private static final String BENCH_ID = "RuneTale_Furnace";
 	private static final long CRAFT_DURATION_MILLIS = 3000L;
+	private static final int MAX_CRAFT_COUNT = 999;
 
 	private final BlockPosition blockPosition;
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
@@ -60,6 +61,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 	@Nullable
 	private String selectedRecipeId;
 	private int selectedCraftQuantity = 1;
+	private boolean craftAllSelected;
 	private int queuedCraftCount;
 	private int totalCraftCount;
 
@@ -108,6 +110,16 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 				false);
 		eventBuilder.addEventBinding(
 				CustomUIEventBindingType.Activating,
+				"#QtyAll",
+				EventData.of("Quantity", "ALL"),
+				false);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
+				"#QtyCustomApply",
+				EventData.of("Action", "SetQuantity").append("@QuantityInput", "#QtyCustomInput.Value"),
+				false);
+		eventBuilder.addEventBinding(
+				CustomUIEventBindingType.Activating,
 				"#StartCraftingButton",
 				EventData.of("Action", "Craft"),
 				false);
@@ -140,9 +152,22 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 		}
 
 		if (!this.craftingInProgress && data.quantity != null) {
-			int parsedQuantity = parseCraftQuantity(data.quantity);
+			if ("ALL".equalsIgnoreCase(data.quantity)) {
+				this.craftAllSelected = true;
+			} else {
+				int parsedQuantity = parseCraftQuantity(data.quantity);
+				if (parsedQuantity > 0) {
+					this.selectedCraftQuantity = parsedQuantity;
+					this.craftAllSelected = false;
+				}
+			}
+		}
+
+		if (!this.craftingInProgress && "SetQuantity".equalsIgnoreCase(data.action) && data.quantityInput != null) {
+			int parsedQuantity = parseCraftQuantity(data.quantityInput);
 			if (parsedQuantity > 0) {
 				this.selectedCraftQuantity = parsedQuantity;
+				this.craftAllSelected = false;
 			}
 		}
 
@@ -159,6 +184,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 		this.lastProgressPercent = -1;
 		this.queuedCraftCount = 0;
 		this.totalCraftCount = 0;
+		this.craftAllSelected = false;
 		CraftingPageSupport.clearBenchBinding(ref, store);
 	}
 
@@ -177,6 +203,9 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 	private static int parseCraftQuantity(@Nonnull String raw) {
 		try {
 			int value = Integer.parseInt(raw.trim());
+			if (value > 0) {
+				return Math.min(MAX_CRAFT_COUNT, value);
+			}
 			if (value == 1 || value == 5 || value == 10) {
 				return value;
 			}
@@ -208,13 +237,21 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			return;
 		}
 
+		int targetCraftCount = this.craftAllSelected
+				? CraftingPageSupport.getMaxCraftableCount(player, selectedRecipe, MAX_CRAFT_COUNT)
+				: this.selectedCraftQuantity;
+		targetCraftCount = Math.max(0, targetCraftCount);
+		if (targetCraftCount <= 0) {
+			return;
+		}
+
 		this.craftingInProgress = true;
 		this.craftingRecipeId = selectedRecipe.getId();
 		this.craftingStartedAtMillis = System.currentTimeMillis();
 		this.craftingDurationMillis = CRAFT_DURATION_MILLIS;
 		this.lastProgressPercent = -1;
-		this.totalCraftCount = this.selectedCraftQuantity;
-		this.queuedCraftCount = this.selectedCraftQuantity;
+		this.totalCraftCount = targetCraftCount;
+		this.queuedCraftCount = targetCraftCount;
 	}
 
 	public void tickProgress(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, float deltaTime) {
@@ -309,12 +346,25 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			commandBuilder.set(selector + "Selected.Visible", selected);
 		}
 
-		commandBuilder.set("#Qty1Selected.Visible", this.selectedCraftQuantity == 1);
-		commandBuilder.set("#Qty5Selected.Visible", this.selectedCraftQuantity == 5);
-		commandBuilder.set("#Qty10Selected.Visible", this.selectedCraftQuantity == 10);
+		int displayedCraftCount = this.selectedCraftQuantity;
+		if (this.craftAllSelected && this.selectedRecipeId != null) {
+			CraftingRecipe allRecipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
+			if (allRecipe != null) {
+				displayedCraftCount = Math.max(1, CraftingPageSupport.getMaxCraftableCount(player, allRecipe, MAX_CRAFT_COUNT));
+			}
+		}
+		this.selectedCraftQuantity = Math.max(1, displayedCraftCount);
+
+		commandBuilder.set("#Qty1Selected.Visible", !this.craftAllSelected && this.selectedCraftQuantity == 1);
+		commandBuilder.set("#Qty5Selected.Visible", !this.craftAllSelected && this.selectedCraftQuantity == 5);
+		commandBuilder.set("#Qty10Selected.Visible", !this.craftAllSelected && this.selectedCraftQuantity == 10);
+		commandBuilder.set("#QtyAllSelected.Visible", this.craftAllSelected);
 		commandBuilder.set("#Qty1.Disabled", this.craftingInProgress);
 		commandBuilder.set("#Qty5.Disabled", this.craftingInProgress);
 		commandBuilder.set("#Qty10.Disabled", this.craftingInProgress);
+		commandBuilder.set("#QtyAll.Disabled", this.craftingInProgress);
+		commandBuilder.set("#QtyCustomApply.Disabled", this.craftingInProgress);
+		commandBuilder.set("#QtyCustomInput.Value", String.valueOf(this.selectedCraftQuantity));
 
 		// Update section title
 		commandBuilder.set("#SectionTitle.Text", this.selectedTier.getSectionTitle("Bars"));
@@ -482,6 +532,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 		private static final String KEY_ACTION = "Action";
 		private static final String KEY_TIER = "Tier";
 		private static final String KEY_QUANTITY = "Quantity";
+		private static final String KEY_QUANTITY_INPUT = "@QuantityInput";
 		private static final String KEY_RECIPE_ID = "RecipeId";
 
 		public static final BuilderCodec<SmeltingPageEventData> CODEC = BuilderCodec
@@ -492,6 +543,8 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 				.add()
 				.append(new KeyedCodec<>(KEY_QUANTITY, Codec.STRING), (entry, value) -> entry.quantity = value, entry -> entry.quantity)
 				.add()
+				.append(new KeyedCodec<>(KEY_QUANTITY_INPUT, Codec.STRING), (entry, value) -> entry.quantityInput = value, entry -> entry.quantityInput)
+				.add()
 				.append(new KeyedCodec<>(KEY_RECIPE_ID, Codec.STRING), (entry, value) -> entry.recipeId = value, entry -> entry.recipeId)
 				.add()
 				.build();
@@ -499,6 +552,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 		private String action;
 		private String tier;
 		private String quantity;
+		private String quantityInput;
 		private String recipeId;
 	}
 }
