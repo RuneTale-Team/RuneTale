@@ -53,6 +53,7 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     dependencies {
         "compileOnly"("com.hypixel.hytale:Server:+")
         "testImplementation"(project(":platform:testing-core"))
+        "testImplementation"(project(":platform:testing-ecs"))
         "testImplementation"(project(":platform:testing-junit"))
 
         "testImplementation"(platform("org.junit:junit-bom:5.14.2"))
