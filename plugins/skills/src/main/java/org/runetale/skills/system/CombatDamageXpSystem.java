@@ -20,6 +20,7 @@ import org.runetale.skills.domain.CombatStyleType;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.CombatStyleService;
+import org.runetale.skills.service.CombatXpAllocationService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -176,7 +177,7 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 				playerRef,
 				skillType,
 				amount,
-				sourceTag.toLowerCase(Locale.ROOT),
+				sourceTag,
 				true);
 	}
 
