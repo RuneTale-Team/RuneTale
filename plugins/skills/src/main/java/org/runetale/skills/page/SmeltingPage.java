@@ -148,6 +148,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			boolean selected = tier == this.selectedTier;
 			commandBuilder.set(selector + ".Text", tier.getDisplayName());
 			commandBuilder.set(selector + "Indicator.Visible", selected);
+			commandBuilder.set(selector + "Selected.Visible", selected);
 		}
 
 		// Update section title
@@ -178,6 +179,17 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			String outputName = CraftingPageSupport.getRecipeOutputName(recipe);
 			commandBuilder.set(selector + " #RecipeName.Text", outputName);
 
+			String outputItemId = CraftingPageSupport.getPrimaryOutputItemId(recipe);
+			if (outputItemId != null) {
+				int outputQuantity = CraftingPageSupport.getPrimaryOutputQuantity(recipe);
+				commandBuilder.set(selector + " #RecipeOutputSlot.ItemId", outputItemId);
+				commandBuilder.set(selector + " #RecipeOutputSlot.Quantity", outputQuantity);
+				commandBuilder.set(selector + " #RecipeOutputSlot.ShowQuantity", outputQuantity > 1);
+				commandBuilder.set(selector + " #RecipeOutputSlot.Visible", true);
+			} else {
+				commandBuilder.set(selector + " #RecipeOutputSlot.Visible", false);
+			}
+
 			// Ingredients
 			String ingredients = CraftingPageSupport.formatIngredients(recipe);
 			commandBuilder.set(selector + " #RecipeIngredients.Text", ingredients);
@@ -206,8 +218,33 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			commandBuilder.set("#RecipeList[0] #RecipeIngredients.Text", "");
 			commandBuilder.set("#RecipeList[0] #RecipeXp.Text", "");
 			commandBuilder.set("#RecipeList[0] #RecipeStatus.Text", "");
+			commandBuilder.set("#RecipeList[0] #RecipeOutputSlot.Visible", false);
 			commandBuilder.set("#RecipeList[0] #SelectedFrame.Visible", false);
 			commandBuilder.set("#RecipeList[0] #LockOverlay.Visible", false);
+		}
+
+		if (this.selectedRecipeId != null) {
+			CraftingRecipe selectedRecipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
+			if (selectedRecipe != null) {
+				String outputItemId = CraftingPageSupport.getPrimaryOutputItemId(selectedRecipe);
+				if (outputItemId != null) {
+					int outputQuantity = CraftingPageSupport.getPrimaryOutputQuantity(selectedRecipe);
+					commandBuilder.set("#SelectedOutputSlot.ItemId", outputItemId);
+					commandBuilder.set("#SelectedOutputSlot.Quantity", outputQuantity);
+					commandBuilder.set("#SelectedOutputSlot.ShowQuantity", outputQuantity > 1);
+					commandBuilder.set("#SelectedOutputSlot.Visible", true);
+					commandBuilder.set("#SelectedOutputName.Text", CraftingPageSupport.getRecipeOutputName(selectedRecipe));
+				} else {
+					commandBuilder.set("#SelectedOutputSlot.Visible", false);
+					commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
+				}
+			} else {
+				commandBuilder.set("#SelectedOutputSlot.Visible", false);
+				commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
+			}
+		} else {
+			commandBuilder.set("#SelectedOutputSlot.Visible", false);
+			commandBuilder.set("#SelectedOutputName.Text", "Select a recipe to preview");
 		}
 
 		if (!CraftingPageSupport.updateCraftButtonLabel(commandBuilder, this.selectedRecipeId)) {

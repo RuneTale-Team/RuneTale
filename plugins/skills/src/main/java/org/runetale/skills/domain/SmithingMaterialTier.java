@@ -62,7 +62,7 @@ public enum SmithingMaterialTier {
 	 */
 	@Nonnull
 	public String getIconPath() {
-		return "Assets/Icons/icon_smithing.png";
+		return "SkillsPlugin/Assets/Icons/icon_smithing.png";
 	}
 
 	/**

@@ -163,14 +163,33 @@ final class CraftingPageSupport {
 
 	@Nonnull
 	static String getRecipeOutputName(@Nonnull CraftingRecipe recipe) {
-		MaterialQuantity[] outputs = recipe.getOutputs();
-		if (outputs != null && outputs.length > 0) {
-			String itemId = outputs[0].getItemId();
-			if (itemId != null) {
-				return formatItemId(itemId);
-			}
+		String itemId = getPrimaryOutputItemId(recipe);
+		if (itemId != null) {
+			return formatItemId(itemId);
 		}
 		return recipe.getId();
+	}
+
+	@Nullable
+	static String getPrimaryOutputItemId(@Nonnull CraftingRecipe recipe) {
+		MaterialQuantity[] outputs = recipe.getOutputs();
+		if (outputs == null || outputs.length == 0) {
+			return null;
+		}
+
+		String itemId = outputs[0].getItemId();
+		if (itemId == null || itemId.isBlank()) {
+			return null;
+		}
+		return itemId;
+	}
+
+	static int getPrimaryOutputQuantity(@Nonnull CraftingRecipe recipe) {
+		MaterialQuantity[] outputs = recipe.getOutputs();
+		if (outputs == null || outputs.length == 0) {
+			return 1;
+		}
+		return Math.max(1, outputs[0].getQuantity());
 	}
 
 	@Nonnull

@@ -42,13 +42,21 @@ Group {
   Padding: (Full: 11);
   Background: (TexturePath: "Assets/UI/RecipeCatalogueItemPatch.png", Border: 22);
 
+  Group #SelectedFrame {
+    Anchor: (Full: 1);
+    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22, Color: #ffffff(0.45));
+    Visible: false;
+  }
+
   Group {
     LayoutMode: Left;
     FlexWeight: 1;
 
-    Group {
+    ItemSlot #CardOutputSlot {
       Anchor: (Width: 72, Height: 72, Right: 10, Top: 2);
-      Background: (TexturePath: "Assets/UI/Slot.png");
+      ShowQuantity: true;
+      ShowQualityBackground: false;
+      ShowDurabilityBar: false;
     }
 
     Group {
@@ -88,15 +96,9 @@ Group {
     }
   }
 
-  Group #SelectedFrame {
-    Anchor: (Full: 1);
-    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22);
-    Visible: false;
-  }
-
   Group #LockOverlay {
     Anchor: (Full: 1);
-    Background: #05101a(0.58);
+    Background: #05101a(0.42);
     Visible: false;
   }
 

@@ -26,7 +26,7 @@ Group #SkillsXpToastRoot {
 
     Group #ToastIcon {
       Anchor: (Width: 54, Height: 54);
-      Background: "Assets/Icons/icon_unknown.png";
+      Background: "SkillsPlugin/Assets/Icons/icon_unknown.png";
     }
 
     Group { Anchor: (Width: 12); }
