@@ -1,6 +1,6 @@
 @CardNameStyle = LabelStyle(
-  FontSize: 16,
-  TextColor: #eaf3ff,
+  FontSize: 15,
+  TextColor: #fff1de,
   RenderBold: true,
   HorizontalAlignment: Start,
   VerticalAlignment: Center,
@@ -9,7 +9,7 @@
 
 @CardMetaStyle = LabelStyle(
   FontSize: 12,
-  TextColor: #b2c8e5,
+  TextColor: #d8c1a5,
   HorizontalAlignment: Start,
   VerticalAlignment: Center,
   Wrap: true
@@ -17,7 +17,7 @@
 
 @CardXpStyle = LabelStyle(
   FontSize: 12,
-  TextColor: #48d185,
+  TextColor: #b7e37a,
   HorizontalAlignment: Start,
   VerticalAlignment: Center,
   RenderBold: true
@@ -25,55 +25,78 @@
 
 @CardStatusStyle = LabelStyle(
   FontSize: 11,
-  TextColor: #5a6a7f,
+  TextColor: #b39c84,
   HorizontalAlignment: Start,
   VerticalAlignment: Center
 );
 
+@SelectOverlayStyle = TextButtonStyle(
+  Default: (Background: #00000000, LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Hovered: (Background: #ffffff(0.04), LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Pressed: (Background: #ffffff(0.08), LabelStyle: (FontSize: 1, TextColor: #00000000))
+);
+
 Group {
-  Anchor: (Height: 110, Bottom: 10);
+  Anchor: (Height: 118, Bottom: 10);
   FlexWeight: 1;
   Padding: (Full: 10);
-  Background: #1a2a3e;
+  Background: #3b2b1f;
 
   Group {
-    LayoutMode: Top;
+    LayoutMode: Left;
     FlexWeight: 1;
 
-    Label #CardName {
-      Text: "";
-      Anchor: (Height: 24);
-      Style: @CardNameStyle;
-    }
-
-    Label #CardIngredients {
-      Text: "";
-      Anchor: (Height: 30);
-      Style: @CardMetaStyle;
+    Group {
+      Anchor: (Width: 58, Height: 58, Right: 8, Top: 2);
+      Background: #5e4530;
     }
 
     Group {
-      LayoutMode: Left;
+      LayoutMode: Top;
+      FlexWeight: 1;
 
-      Label #CardXp {
+      Label #CardName {
         Text: "";
-        Anchor: (Height: 18);
-        Style: @CardXpStyle;
+        Anchor: (Height: 22);
+        Style: @CardNameStyle;
       }
 
-      Group { Anchor: (Width: 10); }
-
-      Label #CardStatus {
+      Label #CardIngredients {
         Text: "";
-        Anchor: (Height: 18);
-        Style: @CardStatusStyle;
+        Anchor: (Height: 32);
+        Style: @CardMetaStyle;
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Top: 4);
+
+        Label #CardXp {
+          Text: "";
+          Anchor: (Height: 16);
+          Style: @CardXpStyle;
+        }
+
+        Group { Anchor: (Width: 8); }
+
+        Label #CardStatus {
+          Text: "";
+          Anchor: (Height: 16);
+          Style: @CardStatusStyle;
+        }
       }
     }
   }
 
   Group #LockOverlay {
     Anchor: (Full: 1);
-    Background: #0a1320(0.5);
+    Background: #140f0a(0.62);
     Visible: false;
+  }
+
+  TextButton #SelectBtn {
+    Text: "";
+    Anchor: (Full: 1);
+    Style: @SelectOverlayStyle;
   }
 }

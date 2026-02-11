@@ -21,6 +21,7 @@ import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
 import org.runetale.skills.service.CombatStyleService;
 import org.runetale.skills.service.CraftingRecipeTagService;
+import org.runetale.skills.service.CustomCraftingService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillSessionStatsService;
@@ -99,6 +100,11 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private CraftingRecipeTagService craftingRecipeTagService;
 
+    /**
+     * Stateless service for manual crafting through custom UI pages.
+     */
+    private CustomCraftingService customCraftingService;
+
     public SkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
         instance = this;
@@ -126,6 +132,10 @@ public class SkillsPlugin extends JavaPlugin {
 
     public CraftingRecipeTagService getCraftingRecipeTagService() {
         return this.craftingRecipeTagService;
+    }
+
+    public CustomCraftingService getCustomCraftingService() {
+        return this.customCraftingService;
     }
 
     /**
@@ -200,6 +210,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.skillXpToastHudService = new SkillXpToastHudService();
         this.xpDispatchService = new SkillXpDispatchService();
         this.craftingRecipeTagService = new CraftingRecipeTagService();
+        this.customCraftingService = new CustomCraftingService();
         LOGGER.atInfo().log("[Skills] Services registered.");
     }
 
@@ -314,6 +325,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.progressionService = null;
         this.xpDispatchService = null;
         this.craftingRecipeTagService = null;
+        this.customCraftingService = null;
 
         instance = null;
     }

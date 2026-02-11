@@ -1,81 +1,87 @@
 $C = "../Common.ui";
 
-@TitleStyle = LabelStyle(
+@HeaderTitleStyle = LabelStyle(
   FontSize: 30,
-  TextColor: #f2f6ff,
+  TextColor: #eef6ff,
+  RenderBold: true,
+  FontName: "Secondary",
+  VerticalAlignment: Center
+);
+
+@HeaderMetaStyle = LabelStyle(
+  FontSize: 14,
+  TextColor: #9eb4c8,
+  VerticalAlignment: Center
+);
+
+@PanelTitleStyle = LabelStyle(
+  FontSize: 15,
+  TextColor: #d6e3ef,
+  RenderUppercase: true,
+  RenderBold: true,
+  LetterSpacing: 1,
+  VerticalAlignment: Center
+);
+
+@SectionTitleStyle = LabelStyle(
+  FontSize: 20,
+  TextColor: #f1f7ff,
   RenderBold: true,
   FontName: "Secondary",
   VerticalAlignment: Center
 );
 
 @SubtleStyle = LabelStyle(
-  FontSize: 15,
-  TextColor: #a9bfdc,
+  FontSize: 12,
+  TextColor: #869cb0,
   VerticalAlignment: Center
-);
-
-@SectionStyle = LabelStyle(
-  FontSize: 18,
-  TextColor: #e8f0ff,
-  RenderBold: true,
-  RenderUppercase: true,
-  FontName: "Secondary",
-  VerticalAlignment: Center
-);
-
-@SectionSubtle = LabelStyle(
-  FontSize: 13,
-  TextColor: #7f93ac,
-  VerticalAlignment: Center,
-  RenderUppercase: true,
-  LetterSpacing: 1
 );
 
 @TierTabStyle = TextButtonStyle(
   Default: (
-    Background: #122439,
-    LabelStyle: (FontSize: 15, TextColor: #d7e7ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+    Background: #202a36,
+    LabelStyle: (FontSize: 14, TextColor: #d6e3ef, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
   ),
   Hovered: (
-    Background: #1a3150,
-    LabelStyle: (FontSize: 15, TextColor: #f7fbff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+    Background: #2a3644,
+    LabelStyle: (FontSize: 14, TextColor: #f3f9ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
   ),
   Pressed: (
-    Background: #162b46,
-    LabelStyle: (FontSize: 15, TextColor: #cfdef6, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
+    Background: #1a232f,
+    LabelStyle: (FontSize: 14, TextColor: #c4d5e4, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center)
   )
 );
 
-@StartCraftingStyle = TextButtonStyle(
+@CraftButtonStyle = TextButtonStyle(
   Default: (
-    Background: #1d3a5c,
-    LabelStyle: (FontSize: 16, TextColor: #e3eeff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: #3d522a,
+    LabelStyle: (FontSize: 15, TextColor: #f1ffd9, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   ),
   Hovered: (
-    Background: #2a4f78,
-    LabelStyle: (FontSize: 16, TextColor: #f7fbff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: #4a6530,
+    LabelStyle: (FontSize: 15, TextColor: #f8ffe9, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   ),
   Pressed: (
-    Background: #17304d,
-    LabelStyle: (FontSize: 16, TextColor: #cfdef6, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+    Background: #344722,
+    LabelStyle: (FontSize: 15, TextColor: #ddeebf, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
   )
 );
 
 Group {
-  Anchor: (Width: 1040, Height: 680);
+  Anchor: (Width: 1040, Height: 690);
   LayoutMode: Top;
   Padding: (Full: 16);
-  Background: #0a1320(0.94);
+  Background: #0b1118(0.95);
 
   Group {
-    Anchor: (Height: 80);
+    Anchor: (Height: 88);
     LayoutMode: Left;
-    Padding: (Left: 14, Right: 14, Top: 10, Bottom: 10);
-    Background: #111f33;
+    Padding: (Left: 14, Right: 14, Top: 12, Bottom: 12);
+    Background: #18222e;
 
     Group {
-      Anchor: (Width: 48, Height: 48, Top: 6);
-      Background: #2d4564;
+      Anchor: (Width: 48, Height: 48, Top: 4);
+      Background: #273b4f;
       LayoutMode: Middle;
 
       Group {
@@ -84,22 +90,22 @@ Group {
       }
     }
 
-    Group { Anchor: (Width: 14); }
+    Group { Anchor: (Width: 12); }
 
     Group {
       LayoutMode: Top;
       FlexWeight: 1;
 
       Label {
-        Text: "Smelting";
-        Anchor: (Height: 38);
-        Style: @TitleStyle;
+        Text: "Smelting Furnace";
+        Anchor: (Height: 34);
+        Style: @HeaderTitleStyle;
       }
 
       Label {
-        Text: "Smelt ores into bars at the furnace";
+        Text: "Processing-style layout: pick a tier, select a bar recipe, then smelt.";
         Anchor: (Height: 24);
-        Style: @SubtleStyle;
+        Style: @HeaderMetaStyle;
       }
     }
   }
@@ -111,71 +117,71 @@ Group {
     FlexWeight: 1;
 
     Group {
-      Anchor: (Width: 200);
+      Anchor: (Width: 220);
       LayoutMode: Top;
-      Padding: (Full: 10);
-      Background: #122235;
+      Padding: (Full: 12);
+      Background: #18222e;
 
       Label {
-        Text: "Material Tiers";
-        Anchor: (Height: 18);
-        Style: @SectionSubtle;
+        Text: "Fuel and Tier";
+        Anchor: (Height: 22);
+        Style: @PanelTitleStyle;
       }
 
-      Group { Anchor: (Height: 8); }
+      Group { Anchor: (Height: 10); }
 
       TextButton #TierBronze {
         Text: "Bronze";
-        Anchor: (Height: 40, Bottom: 4);
+        Anchor: (Height: 38, Bottom: 5);
         Padding: (Left: 12);
         Style: @TierTabStyle;
       }
 
       TextButton #TierIron {
         Text: "Iron";
-        Anchor: (Height: 40, Bottom: 4);
+        Anchor: (Height: 38, Bottom: 5);
         Padding: (Left: 12);
         Style: @TierTabStyle;
       }
 
       TextButton #TierSilver {
         Text: "Silver";
-        Anchor: (Height: 40, Bottom: 4);
+        Anchor: (Height: 38, Bottom: 5);
         Padding: (Left: 12);
         Style: @TierTabStyle;
       }
 
       TextButton #TierSteel {
         Text: "Steel";
-        Anchor: (Height: 40, Bottom: 4);
+        Anchor: (Height: 38, Bottom: 5);
         Padding: (Left: 12);
         Style: @TierTabStyle;
       }
 
       TextButton #TierGold {
         Text: "Gold";
-        Anchor: (Height: 40, Bottom: 4);
+        Anchor: (Height: 38, Bottom: 5);
         Padding: (Left: 12);
         Style: @TierTabStyle;
       }
 
       TextButton #TierMithril {
         Text: "Mithril";
-        Anchor: (Height: 40, Bottom: 4);
+        Anchor: (Height: 38, Bottom: 5);
         Padding: (Left: 12);
         Style: @TierTabStyle;
       }
 
       TextButton #TierAdamantite {
         Text: "Adamantite";
-        Anchor: (Height: 40, Bottom: 4);
+        Anchor: (Height: 38, Bottom: 5);
         Padding: (Left: 12);
         Style: @TierTabStyle;
       }
 
       TextButton #TierRunite {
         Text: "Runite";
-        Anchor: (Height: 40, Bottom: 4);
+        Anchor: (Height: 38, Bottom: 5);
         Padding: (Left: 12);
         Style: @TierTabStyle;
       }
@@ -184,15 +190,31 @@ Group {
 
       Group {
         Anchor: (Height: 1);
-        Background: #263a52;
+        Background: #293645;
       }
 
-      Group { Anchor: (Height: 8); }
+      Group { Anchor: (Height: 10); }
+
+      Label {
+        Text: "Furnace ready";
+        Anchor: (Height: 18);
+        Style: @SubtleStyle;
+      }
+
+      Group {
+        Anchor: (Height: 16, Top: 6, Bottom: 8);
+        Background: #10171f;
+
+        Group {
+          Anchor: (Left: 2, Top: 2, Bottom: 2, Right: 70);
+          Background: #d1792f;
+        }
+      }
 
       TextButton #StartCraftingButton {
-        Text: "Start Crafting";
-        Anchor: (Height: 48);
-        Style: @StartCraftingStyle;
+        Text: "Select a Recipe";
+        Anchor: (Height: 46);
+        Style: @CraftButtonStyle;
       }
     }
 
@@ -202,27 +224,27 @@ Group {
       LayoutMode: Top;
       FlexWeight: 1;
       Padding: (Full: 12);
-      Background: #122235;
+      Background: #18222e;
 
       Label {
-        Text: "Recipes";
-        Anchor: (Height: 18);
-        Style: @SectionSubtle;
+        Text: "Input";
+        Anchor: (Height: 20);
+        Style: @PanelTitleStyle;
       }
 
       Group { Anchor: (Height: 6); }
 
       Label #SectionTitle {
         Text: "Bronze Bars";
-        Anchor: (Height: 30);
-        Style: @SectionStyle;
+        Anchor: (Height: 32);
+        Style: @SectionTitleStyle;
       }
 
-      Group { Anchor: (Height: 10); }
+      Group { Anchor: (Height: 8); }
 
       Group {
         Anchor: (Height: 1);
-        Background: #263a52;
+        Background: #293645;
       }
 
       Group { Anchor: (Height: 10); }
@@ -232,6 +254,57 @@ Group {
         FlexWeight: 1;
         ScrollbarStyle: $C.@DefaultScrollbarStyle;
         KeepScrollPosition: true;
+      }
+    }
+
+    Group { Anchor: (Width: 10); }
+
+    Group {
+      Anchor: (Width: 200);
+      LayoutMode: Top;
+      Padding: (Full: 12);
+      Background: #18222e;
+
+      Label {
+        Text: "Output";
+        Anchor: (Height: 20);
+        Style: @PanelTitleStyle;
+      }
+
+      Group { Anchor: (Height: 10); }
+
+      Group {
+        Anchor: (Height: 120);
+        Background: #111922;
+        LayoutMode: Middle;
+
+        Group {
+          Anchor: (Width: 72, Height: 72);
+          Background: #2b3645;
+        }
+      }
+
+      Group { Anchor: (Height: 10); }
+
+      Label {
+        Text: "Resulting bar appears here";
+        Anchor: (Height: 18);
+        Style: @SubtleStyle;
+      }
+
+      Group { FlexWeight: 1; }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #293645;
+      }
+
+      Group { Anchor: (Height: 10); }
+
+      Label {
+        Text: "Uses native Hytale crafting checks";
+        Anchor: (Height: 34);
+        Style: (FontSize: 12, TextColor: #7f95aa, Wrap: true, VerticalAlignment: Start);
       }
     }
   }

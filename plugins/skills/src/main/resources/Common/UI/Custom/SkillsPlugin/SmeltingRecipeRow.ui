@@ -1,6 +1,6 @@
 @RecipeNameStyle = LabelStyle(
-  FontSize: 16,
-  TextColor: #eaf3ff,
+  FontSize: 15,
+  TextColor: #eef6ff,
   RenderBold: true,
   HorizontalAlignment: Start,
   VerticalAlignment: Center,
@@ -8,34 +8,46 @@
 );
 
 @RecipeMetaStyle = LabelStyle(
-  FontSize: 13,
-  TextColor: #b2c8e5,
+  FontSize: 12,
+  TextColor: #a8bacd,
   HorizontalAlignment: Start,
-  VerticalAlignment: Center
+  VerticalAlignment: Center,
+  Wrap: true
 );
 
 @RecipeXpStyle = LabelStyle(
-  FontSize: 13,
-  TextColor: #48d185,
+  FontSize: 12,
+  TextColor: #87d56c,
   HorizontalAlignment: End,
   VerticalAlignment: Center,
   RenderBold: true
 );
 
 @RecipeStatusStyle = LabelStyle(
-  FontSize: 12,
-  TextColor: #5a6a7f,
+  FontSize: 11,
+  TextColor: #7f95aa,
   HorizontalAlignment: End,
   VerticalAlignment: Center
 );
 
+@SelectOverlayStyle = TextButtonStyle(
+  Default: (Background: #00000000, LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Hovered: (Background: #ffffff(0.04), LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Pressed: (Background: #ffffff(0.08), LabelStyle: (FontSize: 1, TextColor: #00000000))
+);
+
 Group {
-  Anchor: (Height: 80, Bottom: 6);
-  Padding: (Left: 12, Right: 12, Top: 8, Bottom: 8);
+  Anchor: (Height: 88, Bottom: 6);
+  Padding: (Left: 10, Right: 10, Top: 8, Bottom: 8);
   Background: #1a2a3e;
 
   Group {
     LayoutMode: Left;
+
+    Group {
+      Anchor: (Width: 64, Height: 64, Right: 8);
+      Background: #2d3c4d;
+    }
 
     Group {
       LayoutMode: Top;
@@ -43,7 +55,7 @@ Group {
 
       Label #RecipeName {
         Text: "";
-        Anchor: (Height: 24);
+        Anchor: (Height: 22);
         Style: @RecipeNameStyle;
       }
 
@@ -55,18 +67,18 @@ Group {
 
       Label #RecipeStatus {
         Text: "";
-        Anchor: (Height: 18);
+        Anchor: (Height: 16, Top: 2);
         Style: @RecipeStatusStyle;
       }
     }
 
     Group {
-      Anchor: (Width: 100);
+      Anchor: (Width: 110);
       LayoutMode: Top;
 
       Label #RecipeXp {
         Text: "";
-        Anchor: (Height: 28, Top: 8);
+        Anchor: (Height: 22, Top: 8);
         Style: @RecipeXpStyle;
       }
     }
@@ -74,7 +86,13 @@ Group {
 
   Group #LockOverlay {
     Anchor: (Full: 1);
-    Background: #0a1320(0.5);
+    Background: #0b1118(0.6);
     Visible: false;
+  }
+
+  TextButton #SelectBtn {
+    Text: "";
+    Anchor: (Full: 1);
+    Style: @SelectOverlayStyle;
   }
 }

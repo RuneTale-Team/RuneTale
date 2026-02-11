@@ -2,8 +2,6 @@ package org.runetale.skills.page;
 
 import com.hypixel.hytale.builtin.crafting.CraftingPlugin;
 import com.hypixel.hytale.builtin.crafting.component.CraftingManager;
-import com.hypixel.hytale.builtin.crafting.state.BenchState;
-import com.hypixel.hytale.builtin.crafting.window.SimpleCraftingWindow;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -11,13 +9,14 @@ import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.protocol.BlockPosition;
 import com.hypixel.hytale.protocol.BenchType;
+import com.hypixel.hytale.protocol.BlockPosition;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
-import com.hypixel.hytale.protocol.packets.interface_.Page;
+import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
-import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.inventory.MaterialQuantity;
@@ -27,18 +26,17 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.util.NotificationUtil;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
-import org.runetale.skills.domain.SmithingMaterialTier;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.domain.SmithingMaterialTier;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Custom UI page for smithing at the RuneTale anvil.
@@ -46,8 +44,7 @@ import java.util.UUID;
  * <p>
  * Displays recipes organized by material tier tabs with a card grid layout.
  * Locked recipes (insufficient smithing level) appear dimmed with requirement
- * labels. "Start Crafting" opens the native bench window for actual crafting
- * execution.
+ * labels. Clicking a recipe selects it; the bottom button then executes the craft.
  */
 public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingPageEventData> {
 
@@ -59,12 +56,18 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 10); }";
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
 
+	private static final String COLOR_SELECTED = "#243a56";
+	private static final String COLOR_NORMAL = "#1a2a3e";
+
 	private final BlockPosition blockPosition;
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final CraftingRecipeTagService craftingRecipeTagService;
 
 	@Nonnull
 	private SmithingMaterialTier selectedTier = SmithingMaterialTier.BRONZE;
+
+	@Nullable
+	private String selectedRecipeId;
 
 	public SmithingPage(
 			@Nonnull PlayerRef playerRef,
@@ -83,12 +86,13 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder,
 			@Nonnull Store<EntityStore> store) {
+		initializeBenchBinding(ref, store);
 		commandBuilder.append(UI_PATH);
 		bindTierTabs(eventBuilder);
 		eventBuilder.addEventBinding(
 				CustomUIEventBindingType.Activating,
 				"#StartCraftingButton",
-				EventData.of("Action", "StartCrafting"),
+				EventData.of("Action", "Craft"),
 				false);
 		render(ref, store, commandBuilder, eventBuilder);
 	}
@@ -98,15 +102,23 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			@Nonnull Ref<EntityStore> ref,
 			@Nonnull Store<EntityStore> store,
 			@Nonnull SmithingPageEventData data) {
-		if ("StartCrafting".equalsIgnoreCase(data.action)) {
-			openNativeBench(ref, store);
-			return;
+
+		// Handle craft action
+		if ("Craft".equalsIgnoreCase(data.action)) {
+			executeCraft(ref, store);
 		}
 
+		// Handle recipe selection
+		if (data.recipeId != null) {
+			this.selectedRecipeId = data.recipeId;
+		}
+
+		// Handle tier change — clears selection
 		if (data.tier != null) {
 			SmithingMaterialTier parsed = parseTier(data.tier);
 			if (parsed != null) {
 				this.selectedTier = parsed;
+				this.selectedRecipeId = null;
 			}
 		}
 
@@ -114,6 +126,63 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 		UIEventBuilder eventBuilder = new UIEventBuilder();
 		render(ref, store, commandBuilder, eventBuilder);
 		this.sendUpdate(commandBuilder, eventBuilder, false);
+	}
+
+	@Override
+	public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+		clearBenchBinding(ref, store);
+	}
+
+	private void executeCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+		if (this.selectedRecipeId == null) {
+			return;
+		}
+
+		CraftingRecipe recipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
+		if (recipe == null) {
+			LOGGER.atWarning().log("Selected recipe not found: %s", this.selectedRecipeId);
+			return;
+		}
+
+		PlayerSkillProfileComponent profile = store.getComponent(ref, this.profileComponentType);
+		if (profile == null) {
+			return;
+		}
+
+		List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(recipe);
+		PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+		int requiredLevel = getSmithingRequiredLevel(requirements);
+		int playerLevel = profile.getLevel(SkillType.SMITHING);
+		if (playerLevel < requiredLevel) {
+			if (playerRef != null) {
+				NotificationUtil.sendNotification(
+						playerRef.getPacketHandler(),
+						Message.raw("[Skills] You need Smithing level " + requiredLevel),
+						NotificationStyle.Danger);
+			}
+			return;
+		}
+
+		CraftingManager craftingManager = store.getComponent(ref, CraftingManager.getComponentType());
+		Player player = store.getComponent(ref, Player.getComponentType());
+		if (craftingManager == null || player == null) {
+			LOGGER.atWarning().log("Cannot smith %s because crafting context is unavailable", recipe.getId());
+			return;
+		}
+
+		boolean crafted = craftingManager.craftItem(
+				ref,
+				store,
+				recipe,
+				1,
+				player.getInventory().getCombinedBackpackStorageHotbar());
+		if (crafted && playerRef != null) {
+			String outputName = getRecipeOutputName(recipe);
+			NotificationUtil.sendNotification(
+					playerRef.getPacketHandler(),
+					Message.raw("[Skills] Crafted " + outputName),
+					NotificationStyle.Default);
+		}
 	}
 
 	private void render(
@@ -155,6 +224,17 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			String cardSelector = "#RecipeGrid[" + row + "][" + uiCol + "]";
 			commandBuilder.append("#RecipeGrid[" + row + "]", RECIPE_CARD_TEMPLATE);
 
+			// Highlight selected recipe
+			boolean isSelected = recipe.getId().equals(this.selectedRecipeId);
+			commandBuilder.set(cardSelector + ".Background", isSelected ? COLOR_SELECTED : COLOR_NORMAL);
+
+			// Bind click to select this recipe
+			eventBuilder.addEventBinding(
+					CustomUIEventBindingType.Activating,
+					cardSelector + " #SelectBtn",
+					EventData.of("RecipeId", recipe.getId()),
+					false);
+
 			// Output name
 			String outputName = getRecipeOutputName(recipe);
 			commandBuilder.set(cardSelector + " #CardName.Text", outputName);
@@ -164,8 +244,8 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			commandBuilder.set(cardSelector + " #CardIngredients.Text", ingredients);
 
 			// XP reward
-			Optional<Double> xpReward = this.craftingRecipeTagService.getXpOnSuccessfulCraft(recipe);
-			String xpText = xpReward.map(xp -> "+" + String.format(Locale.ROOT, "%.1f", xp) + " XP")
+			String xpText = this.craftingRecipeTagService.getXpOnSuccessfulCraft(recipe)
+					.map(xp -> "+" + String.format(Locale.ROOT, "%.1f", xp) + " XP")
 					.orElse("");
 			commandBuilder.set(cardSelector + " #CardXp.Text", xpText);
 
@@ -191,6 +271,55 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 			commandBuilder.set("#RecipeGrid[0][0] #CardXp.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #CardStatus.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #LockOverlay.Visible", false);
+		}
+
+		// Update craft button text
+		if (this.selectedRecipeId != null) {
+			CraftingRecipe selectedRecipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
+			if (selectedRecipe != null) {
+				commandBuilder.set("#StartCraftingButton.Text", "Craft " + getRecipeOutputName(selectedRecipe));
+			} else {
+				commandBuilder.set("#StartCraftingButton.Text", "Select a Recipe");
+				this.selectedRecipeId = null;
+			}
+		} else {
+			commandBuilder.set("#StartCraftingButton.Text", "Select a Recipe");
+		}
+	}
+
+	private void initializeBenchBinding(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+		CraftingManager craftingManager = store.getComponent(ref, CraftingManager.getComponentType());
+		if (craftingManager == null) {
+			LOGGER.atWarning().log("Cannot initialize smithing bench binding: missing CraftingManager component");
+			return;
+		}
+
+		if (craftingManager.hasBenchSet()) {
+			craftingManager.clearBench(ref, store);
+		}
+
+		World world = store.getExternalData().getWorld();
+		BlockType blockType = world.getBlockType(this.blockPosition.x, this.blockPosition.y, this.blockPosition.z);
+		if (blockType == null || blockType.getBench() == null) {
+			LOGGER.atWarning().log(
+					"Cannot initialize smithing bench binding: invalid block at %d,%d,%d",
+					this.blockPosition.x,
+					this.blockPosition.y,
+					this.blockPosition.z);
+			return;
+		}
+
+		try {
+			craftingManager.setBench(this.blockPosition.x, this.blockPosition.y, this.blockPosition.z, blockType);
+		} catch (IllegalArgumentException e) {
+			LOGGER.atWarning().withCause(e).log("Failed to bind smithing page to crafting bench");
+		}
+	}
+
+	private void clearBenchBinding(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+		CraftingManager craftingManager = store.getComponent(ref, CraftingManager.getComponentType());
+		if (craftingManager != null && craftingManager.hasBenchSet()) {
+			craftingManager.clearBench(ref, store);
 		}
 	}
 
@@ -255,42 +384,6 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 		return 1;
 	}
 
-	private void openNativeBench(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-		Player player = store.getComponent(ref, Player.getComponentType());
-		if (player == null) {
-			return;
-		}
-
-		CraftingManager craftingManager = store.getComponent(ref, CraftingManager.getComponentType());
-		if (craftingManager == null) {
-			LOGGER.atWarning().log("CraftingManager not found on player entity; cannot open bench");
-			return;
-		}
-
-		if (craftingManager.hasBenchSet()) {
-			return;
-		}
-
-		World world = store.getExternalData().getWorld();
-		if (!(world.getState(blockPosition.x, blockPosition.y, blockPosition.z, true) instanceof BenchState benchState)) {
-			LOGGER.atWarning().log("No BenchState at %d,%d,%d", blockPosition.x, blockPosition.y, blockPosition.z);
-			return;
-		}
-
-		SimpleCraftingWindow window = new SimpleCraftingWindow(benchState);
-		UUIDComponent uuidComponent = store.getComponent(ref, UUIDComponent.getComponentType());
-		if (uuidComponent == null) {
-			return;
-		}
-
-		UUID uuid = uuidComponent.getUuid();
-		if (benchState.getWindows().putIfAbsent(uuid, window) == null) {
-			window.registerCloseEvent(event -> benchState.getWindows().remove(uuid, window));
-		}
-
-		player.getPageManager().setPageWithWindows(ref, store, Page.Bench, true, window);
-	}
-
 	@Nullable
 	private SmithingMaterialTier parseTier(@Nullable String raw) {
 		if (raw == null || raw.isBlank()) {
@@ -306,6 +399,7 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 	public static class SmithingPageEventData {
 		private static final String KEY_ACTION = "Action";
 		private static final String KEY_TIER = "Tier";
+		private static final String KEY_RECIPE_ID = "RecipeId";
 
 		public static final BuilderCodec<SmithingPageEventData> CODEC = BuilderCodec
 				.builder(SmithingPageEventData.class, SmithingPageEventData::new)
@@ -313,9 +407,12 @@ public class SmithingPage extends InteractiveCustomUIPage<SmithingPage.SmithingP
 				.add()
 				.append(new KeyedCodec<>(KEY_TIER, Codec.STRING), (entry, value) -> entry.tier = value, entry -> entry.tier)
 				.add()
+				.append(new KeyedCodec<>(KEY_RECIPE_ID, Codec.STRING), (entry, value) -> entry.recipeId = value, entry -> entry.recipeId)
+				.add()
 				.build();
 
 		private String action;
 		private String tier;
+		private String recipeId;
 	}
 }

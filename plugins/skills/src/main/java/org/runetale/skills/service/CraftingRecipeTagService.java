@@ -3,6 +3,8 @@ package org.runetale.skills.service;
 import com.hypixel.hytale.assetstore.AssetExtraInfo;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
+import com.hypixel.hytale.server.core.asset.type.item.config.Item;
+import com.hypixel.hytale.server.core.inventory.MaterialQuantity;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
 
@@ -98,7 +100,18 @@ public class CraftingRecipeTagService {
 
 	@Nullable
 	private String[] getRawTagValues(@Nonnull CraftingRecipe recipe, @Nonnull String tagKey) {
-		AssetExtraInfo.Data data = CraftingRecipe.CODEC.getData(recipe);
+		MaterialQuantity primaryOutput = recipe.getPrimaryOutput();
+		if (primaryOutput == null || primaryOutput.getItemId() == null || primaryOutput.getItemId().isBlank()) {
+			return null;
+		}
+
+		Item outputItem = Item.getAssetMap().getAsset(primaryOutput.getItemId());
+		if (outputItem == null) {
+			LOGGER.atWarning().log("Output item asset not found for recipe %s: %s", recipe.getId(), primaryOutput.getItemId());
+			return null;
+		}
+
+		AssetExtraInfo.Data data = outputItem.getData();
 		if (data == null) {
 			return null;
 		}
