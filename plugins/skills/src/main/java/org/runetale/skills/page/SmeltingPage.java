@@ -1,7 +1,6 @@
 package org.runetale.skills.page;
 
 import com.hypixel.hytale.builtin.crafting.CraftingPlugin;
-import com.hypixel.hytale.builtin.crafting.component.CraftingManager;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
@@ -13,20 +12,14 @@ import com.hypixel.hytale.protocol.BenchType;
 import com.hypixel.hytale.protocol.BlockPosition;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
-import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
-import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.inventory.MaterialQuantity;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.core.util.NotificationUtil;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
@@ -85,9 +78,9 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder,
 			@Nonnull Store<EntityStore> store) {
-		initializeBenchBinding(ref, store);
+		CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, LOGGER, "smelting");
 		commandBuilder.append(UI_PATH);
-		bindTierTabs(eventBuilder);
+		CraftingPageSupport.bindTierTabs(eventBuilder);
 		eventBuilder.addEventBinding(
 				CustomUIEventBindingType.Activating,
 				"#StartCraftingButton",
@@ -114,7 +107,7 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 
 		// Handle tier change — clears selection
 		if (data.tier != null) {
-			SmithingMaterialTier parsed = parseTier(data.tier);
+			SmithingMaterialTier parsed = CraftingPageSupport.parseTier(data.tier);
 			if (parsed != null) {
 				this.selectedTier = parsed;
 				this.selectedRecipeId = null;
@@ -129,59 +122,19 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 
 	@Override
 	public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-		clearBenchBinding(ref, store);
+		CraftingPageSupport.clearBenchBinding(ref, store);
 	}
 
 	private void executeCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-		if (this.selectedRecipeId == null) {
-			return;
-		}
-
-		CraftingRecipe recipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
-		if (recipe == null) {
-			LOGGER.atWarning().log("Selected recipe not found: %s", this.selectedRecipeId);
-			return;
-		}
-
-		PlayerSkillProfileComponent profile = store.getComponent(ref, this.profileComponentType);
-		if (profile == null) {
-			return;
-		}
-
-		List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(recipe);
-		PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
-		int requiredLevel = getSmithingRequiredLevel(requirements);
-		int playerLevel = profile.getLevel(SkillType.SMITHING);
-		if (playerLevel < requiredLevel) {
-			if (playerRef != null) {
-				NotificationUtil.sendNotification(
-						playerRef.getPacketHandler(),
-						Message.raw("[Skills] You need Smithing level " + requiredLevel),
-						NotificationStyle.Danger);
-			}
-			return;
-		}
-
-		CraftingManager craftingManager = store.getComponent(ref, CraftingManager.getComponentType());
-		Player player = store.getComponent(ref, Player.getComponentType());
-		if (craftingManager == null || player == null) {
-			LOGGER.atWarning().log("Cannot smelt %s because crafting context is unavailable", recipe.getId());
-			return;
-		}
-
-		boolean crafted = craftingManager.craftItem(
+		CraftingPageSupport.executeCraft(
 				ref,
 				store,
-				recipe,
-				1,
-				player.getInventory().getCombinedBackpackStorageHotbar());
-		if (crafted && playerRef != null) {
-			String outputName = getRecipeOutputName(recipe);
-			NotificationUtil.sendNotification(
-					playerRef.getPacketHandler(),
-					Message.raw("[Skills] Smelted " + outputName),
-					NotificationStyle.Default);
-		}
+				this.selectedRecipeId,
+				this.profileComponentType,
+				this.craftingRecipeTagService,
+				LOGGER,
+				"Smelted",
+				"smelt");
 	}
 
 	private void render(
@@ -225,22 +178,20 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 					false);
 
 			// Output name
-			String outputName = getRecipeOutputName(recipe);
+			String outputName = CraftingPageSupport.getRecipeOutputName(recipe);
 			commandBuilder.set(selector + " #RecipeName.Text", outputName);
 
 			// Ingredients
-			String ingredients = formatIngredients(recipe);
+			String ingredients = CraftingPageSupport.formatIngredients(recipe);
 			commandBuilder.set(selector + " #RecipeIngredients.Text", ingredients);
 
 			// XP reward
-			String xpText = this.craftingRecipeTagService.getXpOnSuccessfulCraft(recipe)
-					.map(xp -> "+" + String.format(Locale.ROOT, "%.1f", xp) + " XP")
-					.orElse("");
+			String xpText = CraftingPageSupport.getXpText(recipe, this.craftingRecipeTagService);
 			commandBuilder.set(selector + " #RecipeXp.Text", xpText);
 
 			// Level requirement check
 			List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(recipe);
-			int requiredLevel = getSmithingRequiredLevel(requirements);
+			int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
 			boolean unlocked = smithingLevel >= requiredLevel;
 
 			if (unlocked) {
@@ -261,27 +212,8 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 			commandBuilder.set("#RecipeList[0] #LockOverlay.Visible", false);
 		}
 
-		// Update craft button text
-		if (this.selectedRecipeId != null) {
-			CraftingRecipe selectedRecipe = CraftingRecipe.getAssetMap().getAsset(this.selectedRecipeId);
-			if (selectedRecipe != null) {
-				commandBuilder.set("#StartCraftingButton.Text", "Craft " + getRecipeOutputName(selectedRecipe));
-			} else {
-				commandBuilder.set("#StartCraftingButton.Text", "Select a Recipe");
-				this.selectedRecipeId = null;
-			}
-		} else {
-			commandBuilder.set("#StartCraftingButton.Text", "Select a Recipe");
-		}
-	}
-
-	private void bindTierTabs(@Nonnull UIEventBuilder eventBuilder) {
-		for (SmithingMaterialTier tier : SmithingMaterialTier.values()) {
-			eventBuilder.addEventBinding(
-					CustomUIEventBindingType.Activating,
-					"#Tier" + tier.getDisplayName(),
-					EventData.of("Tier", tier.name()),
-					false);
+		if (!CraftingPageSupport.updateCraftButtonLabel(commandBuilder, this.selectedRecipeId)) {
+			this.selectedRecipeId = null;
 		}
 	}
 
@@ -313,104 +245,6 @@ public class SmeltingPage extends InteractiveCustomUIPage<SmeltingPage.SmeltingP
 		return filtered;
 	}
 
-	private void initializeBenchBinding(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-		CraftingManager craftingManager = store.getComponent(ref, CraftingManager.getComponentType());
-		if (craftingManager == null) {
-			LOGGER.atWarning().log("Cannot initialize smelting bench binding: missing CraftingManager component");
-			return;
-		}
-
-		if (craftingManager.hasBenchSet()) {
-			craftingManager.clearBench(ref, store);
-		}
-
-		World world = store.getExternalData().getWorld();
-		BlockType blockType = world.getBlockType(this.blockPosition.x, this.blockPosition.y, this.blockPosition.z);
-		if (blockType == null || blockType.getBench() == null) {
-			LOGGER.atWarning().log(
-					"Cannot initialize smelting bench binding: invalid block at %d,%d,%d",
-					this.blockPosition.x,
-					this.blockPosition.y,
-					this.blockPosition.z);
-			return;
-		}
-
-		try {
-			craftingManager.setBench(this.blockPosition.x, this.blockPosition.y, this.blockPosition.z, blockType);
-		} catch (IllegalArgumentException e) {
-			LOGGER.atWarning().withCause(e).log("Failed to bind smelting page to crafting bench");
-		}
-	}
-
-	private void clearBenchBinding(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-		CraftingManager craftingManager = store.getComponent(ref, CraftingManager.getComponentType());
-		if (craftingManager != null && craftingManager.hasBenchSet()) {
-			craftingManager.clearBench(ref, store);
-		}
-	}
-
-	@Nonnull
-	private String getRecipeOutputName(@Nonnull CraftingRecipe recipe) {
-		MaterialQuantity[] outputs = recipe.getOutputs();
-		if (outputs != null && outputs.length > 0) {
-			String itemId = outputs[0].getItemId();
-			if (itemId != null) {
-				return formatItemId(itemId);
-			}
-		}
-		return recipe.getId();
-	}
-
-	@Nonnull
-	private String formatIngredients(@Nonnull CraftingRecipe recipe) {
-		MaterialQuantity[] inputs = recipe.getInput();
-		if (inputs == null || inputs.length == 0) {
-			return "No ingredients";
-		}
-
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < inputs.length; i++) {
-			if (i > 0) {
-				sb.append(", ");
-			}
-			String itemId = inputs[i].getItemId();
-			int quantity = inputs[i].getQuantity();
-			String name = itemId != null ? formatItemId(itemId) : "Unknown";
-			if (quantity > 1) {
-				sb.append(quantity).append("x ");
-			}
-			sb.append(name);
-		}
-		return sb.toString();
-	}
-
-	@Nonnull
-	private String formatItemId(@Nonnull String itemId) {
-		int colonIndex = itemId.lastIndexOf(':');
-		String name = colonIndex >= 0 ? itemId.substring(colonIndex + 1) : itemId;
-		return name.replace('_', ' ');
-	}
-
-	private int getSmithingRequiredLevel(@Nonnull List<SkillRequirement> requirements) {
-		for (SkillRequirement req : requirements) {
-			if (req.skillType() == SkillType.SMITHING) {
-				return req.requiredLevel();
-			}
-		}
-		return 1;
-	}
-
-	@Nullable
-	private SmithingMaterialTier parseTier(@Nullable String raw) {
-		if (raw == null || raw.isBlank()) {
-			return null;
-		}
-		try {
-			return SmithingMaterialTier.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-		} catch (IllegalArgumentException ignored) {
-			return null;
-		}
-	}
 
 	public static class SmeltingPageEventData {
 		private static final String KEY_ACTION = "Action";
