@@ -8,23 +8,20 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.core.util.NotificationUtil;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.config.HeuristicsConfig;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
+import org.runetale.skills.service.SkillNodeBreakResolutionResult;
+import org.runetale.skills.service.SkillNodeBreakResolutionService;
 import org.runetale.skills.service.SkillNodeLookupService;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Locale;
 
 /**
  * Handles block-break gathering flow:
@@ -59,17 +56,13 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			@Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull BreakBlockEvent event) {
 
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
-		PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
+		PlayerRef playerRef = this.playerRefResolver.resolve(commandBuffer, ref);
 		BlockType brokenBlockType = event.getBlockType();
-		SkillNodeDefinition node = this.nodeLookupService.findByBlockId(brokenBlockType.getId());
+		String blockId = brokenBlockType.getId();
+		SkillNodeDefinition node = this.nodeLookupService.findByBlockId(blockId);
 		if (node == null) {
-			if (looksLikeSkillNodeCandidate(brokenBlockType.getId())) {
-				event.setCancelled(true);
-				sendPlayerNotification(
-						playerRef,
-						"[Skills] This resource is not configured yet. Try a supported node.",
-						NotificationStyle.Warning);
-			}
+			SkillNodeBreakResolutionResult missingNodeResult = this.skillNodeBreakResolutionService.resolveMissingNode(blockId);
+			applyResolution(event, playerRef, missingNodeResult);
 			return;
 		}
 
@@ -95,9 +88,9 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		this.skillXpDispatchService.grantSkillXp(
 				commandBuffer,
 				ref,
-				skill,
-				node.getExperienceReward(),
-				"node:" + node.getId(),
+				resolution.getSkillType(),
+				resolution.getExperience(),
+				resolution.getSourceTag(),
 				true);
 	}
 
@@ -107,19 +100,14 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		return this.query;
 	}
 
-	private void sendPlayerNotification(@Nullable PlayerRef playerRef, @Nonnull String text) {
-		sendPlayerNotification(playerRef, text, NotificationStyle.Default);
-	}
+	private void applyResolution(@Nonnull BreakBlockEvent event, PlayerRef playerRef,
+			@Nonnull SkillNodeBreakResolutionResult resolution) {
+		if (resolution.shouldCancelBreak()) {
+			event.setCancelled(true);
+		}
 
-	private void sendPlayerNotification(@Nullable PlayerRef playerRef, @Nonnull String text,
-			@Nonnull NotificationStyle style) {
-		if (playerRef != null) {
-			try {
-				NotificationUtil.sendNotification(playerRef.getPacketHandler(), Message.raw(text), style);
-			} catch (Exception e) {
-				LOGGER.atFine().withCause(e).log("Failed to send skills notification; falling back to chat message.");
-				playerRef.sendMessage(Message.raw(text));
-			}
+		if (resolution.shouldNotifyPlayer()) {
+			this.skillNodePlayerNotifier.notify(playerRef, resolution.getPlayerMessage(), resolution.getNotificationStyle());
 		}
 	}
 
