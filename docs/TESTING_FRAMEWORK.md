@@ -2,6 +2,8 @@
 
 This repository now includes a generic, reusable testing framework for all plugin modules.
 
+For a beginner-friendly "how to add tests" guide, see `docs/CONTRACT_TEST_PLAYBOOK.md`.
+
 ## Scope
 
 - Included: unit tests, contract tests, shared test utilities, ECS fakes.
@@ -31,6 +33,10 @@ Test doubles for ECS-facing code.
 - `RecordingComponentAccessor` captures entity/world event invocations
 - `InMemoryComponentAccessor` adds in-memory component storage and factory-backed `ensureAndGetComponent`
 
+### `:platform:testing-fixtures`
+
+Shared fixture constants and reusable test data.
+
 ## Plugin Conventions
 
 All `:plugins:*` projects automatically receive:
@@ -38,7 +44,7 @@ All `:plugins:*` projects automatically receive:
 - JUnit 5 (`junit-bom:5.14.2` + Jupiter)
 - Mockito (`mockito-core`, `mockito-junit-jupiter`)
 - AssertJ (`assertj-core:3.27.7`)
-- Test dependencies on `:platform:testing-core`, `:platform:testing-junit`, and `:platform:testing-ecs`
+- Test dependencies on `:platform:testing-core`, `:platform:testing-junit`, `:platform:testing-ecs`, and `:platform:testing-fixtures`
 - Hytale server API on test classpaths (`testCompileOnly` + `testRuntimeOnly`)
 - JUnit platform enabled for `Test` tasks
 - Log manager JVM property set to `com.hypixel.hytale.logger.backend.HytaleLogManager`
