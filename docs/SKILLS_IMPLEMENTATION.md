@@ -81,6 +81,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 - Node definitions are loaded from classpath resources under `src/main/resources/Skills/Nodes/**/*.properties` via `index.list`; in-memory defaults remain as a fail-safe fallback only.
 - Unknown blocks remain a no-op path (fail-safe behavior).
+- Runtime tuning now loads from `src/main/resources/Skills/Config/*.properties` through `SkillsConfigService`.
 
 ## Testing Guide
 
@@ -244,12 +245,11 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
 ### Tool tier / keyword mapping guidance
 
 - Keep node `requiredToolKeyword` aligned with item-id fragments (e.g. `axe`) because tool family checks are substring-based.
-- Keep node `requiredToolTier` within declared tiers in `Skills/tool-tier-defaults.properties` for authoring consistency.
-- Current tier detection is code-based token matching (`bronze`, `iron`, `steel`, ... `crystal`) against held item id.
+- Keep node `requiredToolTier` within declared tiers in `Skills/Config/tooling.properties` (legacy `Skills/tool-tier-defaults.properties` is used only as fallback metadata).
+- Current tier detection and family matching are config-driven via `Skills/Config/tooling.properties`.
 
 ### Caveats / staged behavior TODOs
 
-- `Skills/tool-tier-defaults.properties` is currently informational/logged metadata; runtime tool checks still rely on evaluator code paths.
 - Node resources now parse `skill` strictly. Missing/invalid `skill` values are skipped with a warning instead of silently routing to a default skill.
 - If node resources fail to load, in-memory fallback defaults are registered to keep runtime alive (use logs to detect this during testing).
 
