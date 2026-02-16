@@ -16,6 +16,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
 import org.runetale.skills.asset.SkillNodeDefinition;
+import org.runetale.skills.config.HeuristicsConfig;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
@@ -36,16 +37,19 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final SkillXpDispatchService skillXpDispatchService;
 	private final SkillNodeLookupService nodeLookupService;
+	private final HeuristicsConfig heuristicsConfig;
 	private final Query<EntityStore> query;
 
 	public SkillNodeBreakBlockSystem(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull SkillXpDispatchService skillXpDispatchService,
-			@Nonnull SkillNodeLookupService nodeLookupService) {
+			@Nonnull SkillNodeLookupService nodeLookupService,
+			@Nonnull HeuristicsConfig heuristicsConfig) {
 		super(BreakBlockEvent.class);
 		this.profileComponentType = profileComponentType;
 		this.skillXpDispatchService = skillXpDispatchService;
 		this.nodeLookupService = nodeLookupService;
+		this.heuristicsConfig = heuristicsConfig;
 		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
 	}
 
@@ -127,7 +131,12 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 	private boolean looksLikeSkillNodeCandidate(@Nonnull String blockId) {
 		String lowered = blockId.toLowerCase(Locale.ROOT);
-		return lowered.contains("log") || lowered.contains("tree") || lowered.contains("ore") || lowered.contains("rock");
+		for (String token : this.heuristicsConfig.nodeCandidateTokens()) {
+			if (lowered.contains(token)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

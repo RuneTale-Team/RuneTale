@@ -7,6 +7,7 @@ import com.hypixel.hytale.protocol.BenchType;
 import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
 import com.hypixel.hytale.server.core.asset.type.item.config.Item;
 import com.hypixel.hytale.server.core.inventory.MaterialQuantity;
+import org.runetale.skills.config.CraftingConfig;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
 
@@ -33,8 +34,12 @@ public class CraftingRecipeTagService {
 	private static final String TAG_SKILLS_REQUIRED = "SkillsRequired";
 	private static final String TAG_SKILL_LEVELS_REQUIRED = "CraftingLevelRequirement";
 	private static final String TAG_CRAFTING_LEVEL_REQUIRED = "CraftingLevelRequirement";
-	private static final String RUNETALE_ANVIL_BENCH_ID = "RuneTale_Anvil";
-	private static final String RUNETALE_FURNACE_BENCH_ID = "RuneTale_Furnace";
+
+	private final CraftingConfig craftingConfig;
+
+	public CraftingRecipeTagService(@Nonnull CraftingConfig craftingConfig) {
+		this.craftingConfig = craftingConfig;
+	}
 
 	/**
 	 * Returns the XP reward for a successful craft, if configured.
@@ -145,8 +150,8 @@ public class CraftingRecipeTagService {
 				continue;
 			}
 
-			if (RUNETALE_ANVIL_BENCH_ID.equals(benchRequirement.id)
-					|| RUNETALE_FURNACE_BENCH_ID.equals(benchRequirement.id)) {
+			if (this.craftingConfig.anvilBenchId().equals(benchRequirement.id)
+					|| this.craftingConfig.furnaceBenchId().equals(benchRequirement.id)) {
 				return true;
 			}
 		}

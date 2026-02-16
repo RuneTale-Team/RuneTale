@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
+import org.runetale.skills.config.SkillsConfigService;
 import org.runetale.skills.command.CombatStyleCommand;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.SkillsPageCommand;
@@ -58,6 +59,11 @@ public class SkillsPlugin extends JavaPlugin {
      * Service that encapsulates OSRS-like nonlinear XP/level mathematics.
      */
     private XpService xpService;
+
+    /**
+     * Config snapshot service for tunable gameplay/runtime values.
+     */
+    private SkillsConfigService skillsConfigService;
 
     /**
      * Service that resolves data-driven skill-node assets for broken blocks.
@@ -123,6 +129,10 @@ public class SkillsPlugin extends JavaPlugin {
         return this.craftingRecipeTagService;
     }
 
+    public SkillsConfigService getSkillsConfigService() {
+        return this.skillsConfigService;
+    }
+
     /**
      * Public plugin API: queue an XP grant by strict skill id.
      */
@@ -186,13 +196,14 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private void registerServices() {
         LOGGER.atInfo().log("[Skills] Registering services...");
-        this.xpService = new XpService();
+        this.skillsConfigService = new SkillsConfigService();
+        this.xpService = new XpService(this.skillsConfigService.getXpConfig());
         this.nodeLookupService = new SkillNodeLookupService();
         this.sessionStatsService = new SkillSessionStatsService();
         this.combatStyleService = new CombatStyleService();
-        this.skillXpToastHudService = new SkillXpToastHudService();
+        this.skillXpToastHudService = new SkillXpToastHudService(this.skillsConfigService.getHudConfig());
         this.xpDispatchService = new SkillXpDispatchService();
-        this.craftingRecipeTagService = new CraftingRecipeTagService();
+        this.craftingRecipeTagService = new CraftingRecipeTagService(this.skillsConfigService.getCraftingConfig());
         LOGGER.atInfo().log("[Skills] Services registered.");
     }
 
@@ -252,20 +263,22 @@ public class SkillsPlugin extends JavaPlugin {
 
         // Apply combat-derived XP from damage events (melee style + ranged).
         this.getEntityStoreRegistry().registerSystem(
-                new CombatDamageXpSystem(this.xpDispatchService, this.combatStyleService));
+                new CombatDamageXpSystem(this.xpDispatchService, this.combatStyleService, this.skillsConfigService.getCombatConfig()));
 
         // Keep custom XP toasts transient and auto-expiring.
-        this.getEntityStoreRegistry().registerSystem(new SkillXpToastHudExpirySystem(this.skillXpToastHudService));
+        this.getEntityStoreRegistry().registerSystem(
+                new SkillXpToastHudExpirySystem(this.skillXpToastHudService, this.skillsConfigService.getHudConfig()));
 
         // Drive timed progress updates for custom smithing/smelting pages.
-        this.getEntityStoreRegistry().registerSystem(new CraftingPageProgressSystem());
+        this.getEntityStoreRegistry().registerSystem(new CraftingPageProgressSystem(this.skillsConfigService.getCraftingConfig()));
 
         // Then process block-break events with requirement checks and XP grants.
         this.getEntityStoreRegistry().registerSystem(
                 new SkillNodeBreakBlockSystem(
                         this.playerSkillProfileComponentType,
                         this.xpDispatchService,
-                        this.nodeLookupService));
+                        this.nodeLookupService,
+                        this.skillsConfigService.getHeuristicsConfig()));
 
         // Grant XP from crafting recipes tagged with skill XP rewards.
         this.getEntityStoreRegistry().registerSystem(
@@ -301,6 +314,7 @@ public class SkillsPlugin extends JavaPlugin {
         // Clear explicit singleton/state references for clean hot reload behavior.
         this.playerSkillProfileComponentType = null;
         this.xpService = null;
+        this.skillsConfigService = null;
         this.nodeLookupService = null;
         this.sessionStatsService = null;
         this.combatStyleService = null;

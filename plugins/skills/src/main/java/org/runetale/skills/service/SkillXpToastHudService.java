@@ -4,6 +4,7 @@ import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.interface_.CustomHud;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import org.runetale.skills.config.HudConfig;
 import org.runetale.skills.domain.SkillType;
 
 import javax.annotation.Nonnull;
@@ -28,14 +29,16 @@ public class SkillXpToastHudService {
 	private static final String ICON_SELECTOR = ROOT_SELECTOR + " #ToastIcon";
 	private static final String PRIMARY_TEXT_SELECTOR = ROOT_SELECTOR + " #ToastPrimary";
 	private static final String SECONDARY_TEXT_SELECTOR = ROOT_SELECTOR + " #ToastSecondary";
-	private static final long XP_TOAST_DURATION_MILLIS = 1400L;
-	private static final long XP_TOAST_FADE_DURATION_MILLIS = 180L;
-	private static final String ROOT_BACKGROUND_FADED = "#1b314b";
-	private static final String INNER_BACKGROUND_FADED = "#0a1421";
+
+	private final HudConfig hudConfig;
 
 	private final Map<UUID, Long> hideAtByPlayer = new ConcurrentHashMap<>();
 	private final Set<UUID> visibleByPlayer = ConcurrentHashMap.newKeySet();
 	private final Set<UUID> fadedByPlayer = ConcurrentHashMap.newKeySet();
+
+	public SkillXpToastHudService(@Nonnull HudConfig hudConfig) {
+		this.hudConfig = hudConfig;
+	}
 
 	public void showXpToast(@Nullable PlayerRef playerRef, @Nonnull SkillType skillType, long gainedXp) {
 		showXpToast(playerRef, skillType, gainedXp, false);
@@ -59,7 +62,7 @@ public class SkillXpToastHudService {
 		send(playerRef, commandBuilder);
 		this.visibleByPlayer.add(playerUuid);
 		this.fadedByPlayer.remove(playerUuid);
-		this.hideAtByPlayer.put(playerUuid, System.currentTimeMillis() + XP_TOAST_DURATION_MILLIS);
+		this.hideAtByPlayer.put(playerUuid, System.currentTimeMillis() + this.hudConfig.toastDurationMillis());
 	}
 
 	public void tickLifecycle(@Nullable PlayerRef playerRef, long nowMillis) {
@@ -78,7 +81,7 @@ public class SkillXpToastHudService {
 			return;
 		}
 
-		long fadeAt = hideAt - XP_TOAST_FADE_DURATION_MILLIS;
+		long fadeAt = hideAt - this.hudConfig.toastFadeDurationMillis();
 		if (nowMillis < fadeAt || !this.fadedByPlayer.add(playerUuid)) {
 			return;
 		}
@@ -109,8 +112,8 @@ public class SkillXpToastHudService {
 		}
 
 		UICommandBuilder commandBuilder = new UICommandBuilder();
-		commandBuilder.set(ROOT_SELECTOR + ".Background", ROOT_BACKGROUND_FADED);
-		commandBuilder.set(INNER_SELECTOR + ".Background", INNER_BACKGROUND_FADED);
+		commandBuilder.set(ROOT_SELECTOR + ".Background", this.hudConfig.rootBackgroundFaded());
+		commandBuilder.set(INNER_SELECTOR + ".Background", this.hudConfig.innerBackgroundFaded());
 		send(playerRef, commandBuilder);
 	}
 

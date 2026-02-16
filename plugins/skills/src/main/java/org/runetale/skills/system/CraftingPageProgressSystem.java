@@ -7,6 +7,7 @@ import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.config.CraftingConfig;
 import org.runetale.skills.page.SmeltingPage;
 import org.runetale.skills.page.SmithingPage;
 
@@ -17,8 +18,8 @@ import javax.annotation.Nonnull;
  */
 public class CraftingPageProgressSystem extends DelayedSystem<EntityStore> {
 
-	public CraftingPageProgressSystem() {
-		super(0.05F);
+	public CraftingPageProgressSystem(@Nonnull CraftingConfig craftingConfig) {
+		super(craftingConfig.pageProgressTickSeconds());
 	}
 
 	@Override

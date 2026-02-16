@@ -49,26 +49,35 @@ final class CraftingPageSupport {
 		}
 	}
 
-	static void bindQuantityControls(@Nonnull UIEventBuilder eventBuilder) {
-		eventBuilder.addEventBinding(
-				CustomUIEventBindingType.Activating,
-				"#Qty1",
-				EventData.of("Quantity", "1"),
-				false);
-		eventBuilder.addEventBinding(
-				CustomUIEventBindingType.Activating,
-				"#Qty5",
-				EventData.of("Quantity", "5"),
-				false);
-		eventBuilder.addEventBinding(
-				CustomUIEventBindingType.Activating,
-				"#Qty10",
-				EventData.of("Quantity", "10"),
-				false);
+	static void bindQuantityControls(
+			@Nonnull UIEventBuilder eventBuilder,
+			@Nonnull TimedCraftingPageState craftingState) {
+		List<Integer> presets = craftingState.getQuantityPresets();
+		if (!presets.isEmpty()) {
+			eventBuilder.addEventBinding(
+					CustomUIEventBindingType.Activating,
+					"#Qty1",
+					EventData.of("Quantity", Integer.toString(presets.get(0))),
+					false);
+		}
+		if (presets.size() > 1) {
+			eventBuilder.addEventBinding(
+					CustomUIEventBindingType.Activating,
+					"#Qty5",
+					EventData.of("Quantity", Integer.toString(presets.get(1))),
+					false);
+		}
+		if (presets.size() > 2) {
+			eventBuilder.addEventBinding(
+					CustomUIEventBindingType.Activating,
+					"#Qty10",
+					EventData.of("Quantity", Integer.toString(presets.get(2))),
+					false);
+		}
 		eventBuilder.addEventBinding(
 				CustomUIEventBindingType.Activating,
 				"#QtyAll",
-				EventData.of("Quantity", "ALL"),
+				EventData.of("Quantity", craftingState.getQuantityAllToken()),
 				false);
 		eventBuilder.addEventBinding(
 				CustomUIEventBindingType.Activating,
@@ -269,16 +278,22 @@ final class CraftingPageSupport {
 			if (allRecipe != null) {
 				displayedCraftCount = Math.max(
 						1,
-						getMaxCraftableCount(player, allRecipe, TimedCraftingPageState.MAX_CRAFT_COUNT));
+						getMaxCraftableCount(player, allRecipe, craftingState.getMaxCraftCount()));
 			}
 		}
 		craftingState.setDisplayedCraftQuantity(displayedCraftCount);
 
 		int selectedCraftQuantity = craftingState.getSelectedCraftQuantity();
 		boolean craftAllSelected = craftingState.isCraftAllSelected();
-		commandBuilder.set("#Qty1Selected.Visible", !craftAllSelected && selectedCraftQuantity == 1);
-		commandBuilder.set("#Qty5Selected.Visible", !craftAllSelected && selectedCraftQuantity == 5);
-		commandBuilder.set("#Qty10Selected.Visible", !craftAllSelected && selectedCraftQuantity == 10);
+		int qty1 = craftingState.getQuantityPresets().isEmpty() ? 1 : craftingState.getQuantityPresets().get(0);
+		int qty5 = craftingState.getQuantityPresets().size() > 1 ? craftingState.getQuantityPresets().get(1) : 5;
+		int qty10 = craftingState.getQuantityPresets().size() > 2 ? craftingState.getQuantityPresets().get(2) : 10;
+		commandBuilder.set("#Qty1.Text", "x" + qty1);
+		commandBuilder.set("#Qty5.Text", "x" + qty5);
+		commandBuilder.set("#Qty10.Text", "x" + qty10);
+		commandBuilder.set("#Qty1Selected.Visible", !craftAllSelected && selectedCraftQuantity == qty1);
+		commandBuilder.set("#Qty5Selected.Visible", !craftAllSelected && selectedCraftQuantity == qty5);
+		commandBuilder.set("#Qty10Selected.Visible", !craftAllSelected && selectedCraftQuantity == qty10);
 		commandBuilder.set("#QtyAllSelected.Visible", craftAllSelected);
 		commandBuilder.set("#Qty1.Disabled", false);
 		commandBuilder.set("#Qty5.Disabled", false);

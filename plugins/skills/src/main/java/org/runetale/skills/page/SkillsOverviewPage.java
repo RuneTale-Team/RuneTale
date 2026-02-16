@@ -27,7 +27,6 @@ import java.util.Locale;
 
 public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPage.SkillsPageEventData> {
 
-	private static final int MAX_LEVEL = 99;
 	private static final int MAX_ROADMAP_CARDS = 6;
 	private static final String SKILL_SUBMENU_CARD_TEMPLATE = "SkillsPlugin/SkillSubmenuCard.ui";
 	private static final String SKILL_LIST_ITEM_TEMPLATE = "SkillsPlugin/SkillListItem.ui";
@@ -165,13 +164,14 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		commandBuilder.clear("#SubcommandCards");
 
 		int cardIndex = 0;
+		int maxLevel = this.xpService.getMaxLevel();
 		for (SkillType skill : SkillType.values()) {
 			int skillIndex = skill.ordinal();
 			int level = profile == null ? 1 : profile.getLevel(skill);
 			long xp = profile == null ? 0L : profile.getExperience(skill);
 			long current = xpProgressCurrent(level, xp);
 			long required = xpProgressRequired(level);
-			String usage = level >= MAX_LEVEL ? "Lv 99 (MAX)" : "Lv " + level + "  Progress " + current + "/" + required;
+			String usage = level >= maxLevel ? "Lv " + maxLevel + " (MAX)" : "Lv " + level + "  Progress " + current + "/" + required;
 			appendCard(commandBuilder, eventBuilder, cardIndex++, formatSkillName(skill), usage, formatNumber(xp) + " XP total", skillIndex, skill);
 		}
 	}
@@ -186,12 +186,13 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		long current = xpProgressCurrent(level, xp);
 		long required = xpProgressRequired(level);
 		long nextLevelGap = xpToNextLevel(level, xp);
+		int maxLevel = this.xpService.getMaxLevel();
 
 		commandBuilder.set("#BackButton.Visible", true);
 		commandBuilder.set("#CommandName.Text", formatSkillName(skill) + " Details");
 		commandBuilder.set("#SkillsSectionTitle.Text", "Roadmap");
-		if (level >= MAX_LEVEL) {
-			commandBuilder.set("#CommandDescription.Text", "Level 99 reached. Progression is capped.");
+		if (level >= maxLevel) {
+			commandBuilder.set("#CommandDescription.Text", "Level " + maxLevel + " reached. Progression is capped.");
 			commandBuilder.set("#CommandUsageLabel.Text", "Total XP: " + formatNumber(xp));
 		} else {
 			commandBuilder.set("#CommandDescription.Text", "Level " + level + "  |  Progress " + current + "/" + required + " (current/required)");
@@ -203,7 +204,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 
 		int cardIndex = 0;
 		appendCard(commandBuilder, eventBuilder, cardIndex++, "Current", "Lv " + level, formatNumber(xp) + " XP total", null, null);
-		if (level >= MAX_LEVEL) {
+		if (level >= maxLevel) {
 			appendCard(commandBuilder, eventBuilder, cardIndex++, "Next Milestone", "MAX", "No further level requirement", null, null);
 		} else {
 			appendCard(commandBuilder, eventBuilder, cardIndex++, "Next Milestone", "Lv " + (level + 1), formatNumber(nextLevelGap) + " XP remaining", null, null);
@@ -379,8 +380,9 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	private long xpProgressCurrent(int level, long totalXp) {
-		int safeLevel = Math.max(1, Math.min(MAX_LEVEL, level));
-		if (safeLevel >= MAX_LEVEL) {
+		int maxLevel = this.xpService.getMaxLevel();
+		int safeLevel = Math.max(1, Math.min(maxLevel, level));
+		if (safeLevel >= maxLevel) {
 			return 0L;
 		}
 		long levelStartXp = this.xpService.xpForLevel(safeLevel);
@@ -390,8 +392,9 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	private long xpProgressRequired(int level) {
-		int safeLevel = Math.max(1, Math.min(MAX_LEVEL, level));
-		if (safeLevel >= MAX_LEVEL) {
+		int maxLevel = this.xpService.getMaxLevel();
+		int safeLevel = Math.max(1, Math.min(maxLevel, level));
+		if (safeLevel >= maxLevel) {
 			return 0L;
 		}
 		long start = this.xpService.xpForLevel(safeLevel);
@@ -400,7 +403,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	private long xpToNextLevel(int level, long totalXp) {
-		if (level >= MAX_LEVEL) {
+		if (level >= this.xpService.getMaxLevel()) {
 			return 0L;
 		}
 		long required = xpProgressRequired(level);

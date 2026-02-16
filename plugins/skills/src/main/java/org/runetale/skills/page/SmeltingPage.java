@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.config.CraftingConfig;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
@@ -35,24 +36,27 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 
 	private static final String UI_PATH = "SkillsPlugin/Smelting.ui";
 	private static final String RECIPE_ROW_TEMPLATE = "SkillsPlugin/SmeltingRecipeRow.ui";
-	private static final String BENCH_ID = "RuneTale_Furnace";
-	private static final long CRAFT_DURATION_MILLIS = 3000L;
+
+	private final CraftingConfig craftingConfig;
 
 	public SmeltingPage(
 			@Nonnull PlayerRef playerRef,
 			@Nonnull BlockPosition blockPosition,
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull CraftingRecipeTagService craftingRecipeTagService) {
+			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
+			@Nonnull CraftingConfig craftingConfig) {
 		super(
 				playerRef,
 				blockPosition,
 				profileComponentType,
 				craftingRecipeTagService,
+				craftingConfig,
 				UI_PATH,
 				"smelting",
 				"Smelting",
-				CRAFT_DURATION_MILLIS,
+				craftingConfig.smeltingCraftDurationMillis(),
 				SmeltingPageEventData.CODEC);
+		this.craftingConfig = craftingConfig;
 	}
 
 	@Override
@@ -202,7 +206,7 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 
 	@Nonnull
 	private List<CraftingRecipe> getBarRecipes() {
-		List<CraftingRecipe> allRecipes = CraftingPlugin.getBenchRecipes(BenchType.Crafting, BENCH_ID);
+		List<CraftingRecipe> allRecipes = CraftingPlugin.getBenchRecipes(BenchType.Crafting, this.craftingConfig.furnaceBenchId());
 		List<CraftingRecipe> filtered = new ArrayList<>();
 
 		for (CraftingRecipe recipe : allRecipes) {
@@ -210,7 +214,8 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 			if (outputs != null) {
 				for (MaterialQuantity output : outputs) {
 					String itemId = output.getItemId();
-					if (itemId != null && itemId.toLowerCase(Locale.ROOT).contains("bar_")) {
+					if (itemId != null && itemId.toLowerCase(Locale.ROOT)
+							.contains(this.craftingConfig.smeltingOutputContainsToken().toLowerCase(Locale.ROOT))) {
 						filtered.add(recipe);
 						break;
 					}

@@ -2,6 +2,7 @@ package org.runetale.skills.service;
 
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import org.runetale.skills.config.ToolingConfig;
 import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.ToolTier;
 
@@ -17,6 +18,11 @@ public class ToolRequirementEvaluator {
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 	private static final Pattern NON_ALNUM = Pattern.compile("[^a-z0-9]+");
+	private final ToolingConfig toolingConfig;
+
+	public ToolRequirementEvaluator(@Nonnull ToolingConfig toolingConfig) {
+		this.toolingConfig = toolingConfig;
+	}
 
 	/**
 	 * Validates required tool keyword and minimum tier from the held item.
@@ -47,42 +53,12 @@ public class ToolRequirementEvaluator {
 	}
 
 	private boolean matchesToolFamily(@Nonnull String normalizedItemId, @Nonnull String normalizedKeyword) {
-		if (normalizedItemId.isBlank() || normalizedKeyword.isBlank()) {
-			return false;
-		}
-
-		if (normalizedItemId.contains(normalizedKeyword)) {
-			return true;
-		}
-
-		if (normalizedKeyword.equals("tool_hatchet")) {
-			return normalizedItemId.contains("tool_hatchet");
-		}
-
-		return false;
+		return this.toolingConfig.matchesToolFamily(normalizedItemId, normalizedKeyword);
 	}
 
 	@Nonnull
 	private ToolTier detectTier(@Nonnull String normalizedItemId) {
-		if (normalizedItemId.contains("mithril"))
-			return ToolTier.MITHRIL;
-		if (normalizedItemId.contains("onyxium"))
-			return ToolTier.ONYXIUM;
-		if (normalizedItemId.contains("adamantite"))
-			return ToolTier.ADAMANTITE;
-		if (normalizedItemId.contains("cobalt"))
-			return ToolTier.COBALT;
-		if (normalizedItemId.contains("thorium"))
-			return ToolTier.THORIUM;
-		if (normalizedItemId.contains("iron"))
-			return ToolTier.IRON;
-		if (normalizedItemId.contains("copper"))
-			return ToolTier.COPPER;
-		if (normalizedItemId.contains("crude"))
-			return ToolTier.CRUDE;
-		if (normalizedItemId.contains("wood"))
-			return ToolTier.WOOD;
-		return ToolTier.NONE;
+		return this.toolingConfig.detectTier(normalizedItemId);
 	}
 
 	@Nonnull

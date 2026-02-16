@@ -2,10 +2,13 @@ package org.runetale.skills.page;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 final class TimedCraftingPageState {
 
-	static final int MAX_CRAFT_COUNT = 999;
+	private final int maxCraftCount;
+	private final String quantityAllToken;
+	private final List<Integer> quantityPresets;
 
 	private int selectedCraftQuantity = 1;
 	private boolean craftAllSelected;
@@ -20,6 +23,13 @@ final class TimedCraftingPageState {
 
 	@Nullable
 	private String craftingRecipeId;
+
+	TimedCraftingPageState(int maxCraftCount, @Nonnull String quantityAllToken, @Nonnull List<Integer> quantityPresets) {
+		this.maxCraftCount = Math.max(1, maxCraftCount);
+		this.quantityAllToken = quantityAllToken;
+		this.quantityPresets = quantityPresets.isEmpty() ? List.of(1, 5, 10) : List.copyOf(quantityPresets);
+		this.selectedCraftQuantity = this.quantityPresets.get(0);
+	}
 
 	void reset() {
 		this.craftingInProgress = false;
@@ -47,12 +57,26 @@ final class TimedCraftingPageState {
 		return this.selectedCraftQuantity;
 	}
 
+	int getMaxCraftCount() {
+		return this.maxCraftCount;
+	}
+
+	@Nonnull
+	String getQuantityAllToken() {
+		return this.quantityAllToken;
+	}
+
+	@Nonnull
+	List<Integer> getQuantityPresets() {
+		return this.quantityPresets;
+	}
+
 	void setDisplayedCraftQuantity(int craftQuantity) {
-		this.selectedCraftQuantity = Math.max(1, Math.min(MAX_CRAFT_COUNT, craftQuantity));
+		this.selectedCraftQuantity = Math.max(1, Math.min(this.maxCraftCount, craftQuantity));
 	}
 
 	void applyQuantitySelection(@Nonnull String quantityRaw) {
-		if ("ALL".equalsIgnoreCase(quantityRaw)) {
+		if (this.quantityAllToken.equalsIgnoreCase(quantityRaw)) {
 			this.craftAllSelected = true;
 			return;
 		}
@@ -168,7 +192,7 @@ final class TimedCraftingPageState {
 		try {
 			int value = Integer.parseInt(raw.trim());
 			if (value > 0) {
-				return Math.min(MAX_CRAFT_COUNT, value);
+				return Math.min(this.maxCraftCount, value);
 			}
 		} catch (NumberFormatException ignored) {
 		}

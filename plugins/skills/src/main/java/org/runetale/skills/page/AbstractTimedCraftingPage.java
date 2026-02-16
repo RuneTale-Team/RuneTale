@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.config.CraftingConfig;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
@@ -23,7 +24,6 @@ import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.List;
 
 abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventData>
@@ -45,13 +45,14 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 	private String selectedRecipeId;
 
 	@Nonnull
-	private final TimedCraftingPageState craftingState = new TimedCraftingPageState();
+	private final TimedCraftingPageState craftingState;
 
 	AbstractTimedCraftingPage(
 			@Nonnull PlayerRef playerRef,
 			@Nonnull BlockPosition blockPosition,
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
+			@Nonnull CraftingConfig craftingConfig,
 			@Nonnull String uiPath,
 			@Nonnull String benchContextName,
 			@Nonnull String progressVerb,
@@ -65,6 +66,10 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 		this.benchContextName = benchContextName;
 		this.progressVerb = progressVerb;
 		this.craftDurationMillis = craftDurationMillis;
+		this.craftingState = new TimedCraftingPageState(
+				craftingConfig.maxCraftCount(),
+				craftingConfig.quantityAllToken(),
+				craftingConfig.quantityPresets());
 	}
 
 	@Override
@@ -76,7 +81,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 		CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, getLogger(), this.benchContextName);
 		commandBuilder.append(this.uiPath);
 		CraftingPageSupport.bindTierTabs(eventBuilder, availableTiers());
-		CraftingPageSupport.bindQuantityControls(eventBuilder);
+		CraftingPageSupport.bindQuantityControls(eventBuilder, this.craftingState);
 		eventBuilder.addEventBinding(
 				CustomUIEventBindingType.Activating,
 				"#StartCraftingButton",
@@ -182,7 +187,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 		}
 
 		int targetCraftCount = this.craftingState.isCraftAllSelected()
-				? CraftingPageSupport.getMaxCraftableCount(player, selectedRecipe, TimedCraftingPageState.MAX_CRAFT_COUNT)
+				? CraftingPageSupport.getMaxCraftableCount(player, selectedRecipe, this.craftingState.getMaxCraftCount())
 				: this.craftingState.getSelectedCraftQuantity();
 		targetCraftCount = Math.max(0, targetCraftCount);
 		if (targetCraftCount <= 0) {

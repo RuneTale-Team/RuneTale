@@ -81,7 +81,8 @@ public final class OpenSmithingUIInteraction extends SimpleInstantInteraction {
 				playerRef,
 				targetBlock,
 				plugin.getPlayerSkillProfileComponentType(),
-				plugin.getCraftingRecipeTagService());
+				plugin.getCraftingRecipeTagService(),
+				plugin.getSkillsConfigService().getCraftingConfig());
 
 		player.getPageManager().openCustomPage(ref, store, page);
 		ctx.getState().state = InteractionState.Finished;

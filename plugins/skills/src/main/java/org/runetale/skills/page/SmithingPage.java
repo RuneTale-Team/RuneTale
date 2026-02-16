@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.config.CraftingConfig;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
@@ -33,26 +34,29 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 
 	private static final String UI_PATH = "SkillsPlugin/Smithing.ui";
 	private static final String RECIPE_CARD_TEMPLATE = "SkillsPlugin/SmithingRecipeCard.ui";
-	private static final String BENCH_ID = "RuneTale_Anvil";
 	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 10); }";
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
-	private static final long CRAFT_DURATION_MILLIS = 3000L;
+
+	private final CraftingConfig craftingConfig;
 
 	public SmithingPage(
 			@Nonnull PlayerRef playerRef,
 			@Nonnull BlockPosition blockPosition,
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull CraftingRecipeTagService craftingRecipeTagService) {
+			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
+			@Nonnull CraftingConfig craftingConfig) {
 		super(
 				playerRef,
 				blockPosition,
 				profileComponentType,
 				craftingRecipeTagService,
+				craftingConfig,
 				UI_PATH,
 				"smithing",
 				"Smithing",
-				CRAFT_DURATION_MILLIS,
+				craftingConfig.smithingCraftDurationMillis(),
 				SmithingPageEventData.CODEC);
+		this.craftingConfig = craftingConfig;
 	}
 
 	@Override
@@ -104,7 +108,7 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 
 		commandBuilder.clear("#RecipeGrid");
 		List<CraftingRecipe> recipes = CraftingPlugin.getBenchRecipes(
-				BenchType.Crafting, BENCH_ID, selectedTier().getAnvilCategory());
+				BenchType.Crafting, this.craftingConfig.anvilBenchId(), selectedTier().getAnvilCategory());
 
 		for (int i = 0; i < recipes.size(); i++) {
 			CraftingRecipe recipe = recipes.get(i);
