@@ -18,6 +18,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.domain.SmithingMaterialTier;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
@@ -191,6 +192,12 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 		}
 
 		appendProgressUi(commandBuilder);
+	}
+
+	@Nonnull
+	@Override
+	protected List<SmithingMaterialTier> availableTiers() {
+		return List.of(SmithingMaterialTier.BRONZE);
 	}
 
 	@Nonnull

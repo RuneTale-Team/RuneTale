@@ -39,8 +39,8 @@ final class CraftingPageSupport {
 	private CraftingPageSupport() {
 	}
 
-	static void bindTierTabs(@Nonnull UIEventBuilder eventBuilder) {
-		for (SmithingMaterialTier tier : SmithingMaterialTier.values()) {
+	static void bindTierTabs(@Nonnull UIEventBuilder eventBuilder, @Nonnull List<SmithingMaterialTier> tiers) {
+		for (SmithingMaterialTier tier : tiers) {
 			eventBuilder.addEventBinding(
 					CustomUIEventBindingType.Activating,
 					"#Tier" + tier.getDisplayName(),

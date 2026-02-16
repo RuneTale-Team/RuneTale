@@ -24,6 +24,7 @@ import org.runetale.skills.service.CraftingRecipeTagService;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.List;
 
 abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventData>
 		extends InteractiveCustomUIPage<TEventData> {
@@ -74,7 +75,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull Store<EntityStore> store) {
 		CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, getLogger(), this.benchContextName);
 		commandBuilder.append(this.uiPath);
-		CraftingPageSupport.bindTierTabs(eventBuilder);
+		CraftingPageSupport.bindTierTabs(eventBuilder, availableTiers());
 		CraftingPageSupport.bindQuantityControls(eventBuilder);
 		eventBuilder.addEventBinding(
 				CustomUIEventBindingType.Activating,
@@ -231,6 +232,11 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 	@Nonnull
 	protected final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType() {
 		return this.profileComponentType;
+	}
+
+	@Nonnull
+	protected List<SmithingMaterialTier> availableTiers() {
+		return List.of(SmithingMaterialTier.values());
 	}
 
 	protected abstract void renderPage(
