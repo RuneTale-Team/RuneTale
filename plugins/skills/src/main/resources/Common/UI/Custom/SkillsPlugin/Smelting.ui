@@ -135,57 +135,8 @@ Group {
     Group {
       Anchor: (Width: 118, Height: 44, Right: 6);
       Group #TierBronzeSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierBronze { Text: "Bronze"; Anchor: (Full: 1); Style: @TierTabStyle; }
+      TextButton #TierBronze { Text: "Bars"; Anchor: (Full: 1); Style: @TierTabStyle; }
       Group #TierBronzeIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierIronSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierIron { Text: "Iron"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierIronIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierSilverSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierSilver { Text: "Silver"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierSilverIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierSteelSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierSteel { Text: "Steel"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierSteelIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierGoldSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierGold { Text: "Gold"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierGoldIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierMithrilSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierMithril { Text: "Mithril"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierMithrilIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierAdamantiteSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierAdamantite { Text: "Adamantite"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierAdamantiteIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierRuniteSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierRunite { Text: "Runite"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierRuniteIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
     }
   }
 
@@ -201,18 +152,7 @@ Group {
       Padding: (Full: 10);
       Background: (TexturePath: "Assets/UI/ContainerPanelPatch.png", Border: 8);
 
-      Label {
-        Text: "Input";
-        Anchor: (Height: 35, Horizontal: 8);
-        Style: @PanelTitleStyle;
-      }
-
-      Group {
-        Anchor: (Height: 1);
-        Background: #1b2533;
-      }
-
-      Group { Anchor: (Height: 6); }
+      Group { Anchor: (Height: 12); }
 
       Label #SectionTitle {
         Text: "Bronze Bars";
@@ -261,13 +201,26 @@ Group {
       Group {
         Anchor: (Height: 142);
         Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
-        LayoutMode: MiddleCenter;
+        LayoutMode: Top;
 
-        ItemSlot #SelectedOutputSlot {
-          Anchor: (Width: 74, Height: 74);
-          ShowQuantity: true;
-          ShowQualityBackground: false;
-          ShowDurabilityBar: false;
+        Label #SelectedOutputLargeName {
+          Text: "";
+          Anchor: (Height: 30, Horizontal: 8, Top: 8);
+          Style: (FontSize: 15, TextColor: #d8e7f8, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center, Wrap: true);
+        }
+
+        Group { Anchor: (Height: 4); }
+
+        Group {
+          Anchor: (Height: 92);
+          LayoutMode: MiddleCenter;
+
+          ItemSlot #SelectedOutputSlot {
+            Anchor: (Width: 74, Height: 74);
+            ShowQuantity: true;
+            ShowQualityBackground: false;
+            ShowDurabilityBar: false;
+          }
         }
       }
 

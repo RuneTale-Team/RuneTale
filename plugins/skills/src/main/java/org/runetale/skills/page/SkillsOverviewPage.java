@@ -19,7 +19,6 @@ import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
-import org.runetale.skills.service.SkillSessionStatsService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,7 +37,6 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final XpService xpService;
 	private final SkillNodeLookupService nodeLookupService;
-	private final SkillSessionStatsService sessionStatsService;
 
 	@Nullable
 	private SkillType selectedSkill;
@@ -47,13 +45,11 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull PlayerRef playerRef,
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull XpService xpService,
-			@Nonnull SkillNodeLookupService nodeLookupService,
-			@Nonnull SkillSessionStatsService sessionStatsService) {
+			@Nonnull SkillNodeLookupService nodeLookupService) {
 		super(playerRef, CustomPageLifetime.CanDismiss, SkillsPageEventData.CODEC);
 		this.profileComponentType = profileComponentType;
 		this.xpService = xpService;
 		this.nodeLookupService = nodeLookupService;
-		this.sessionStatsService = sessionStatsService;
 	}
 
 	@Override
@@ -75,15 +71,6 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull SkillsPageEventData data) {
 		if ("Back".equalsIgnoreCase(data.action)) {
 			this.selectedSkill = null;
-		}
-
-		if ("ToggleTrack".equalsIgnoreCase(data.action) && this.selectedSkill != null) {
-			SkillType tracked = this.sessionStatsService.getTrackedSkill(this.playerRef.getUuid());
-			if (tracked == this.selectedSkill) {
-				this.sessionStatsService.clearTrackedSkill(this.playerRef.getUuid());
-			} else {
-				this.sessionStatsService.setTrackedSkill(this.playerRef.getUuid(), this.selectedSkill);
-			}
 		}
 
 		if (data.skill != null) {
@@ -137,14 +124,13 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder) {
 		commandBuilder.clear("#CommandList");
-		SkillType trackedSkill = this.sessionStatsService.getTrackedSkill(this.playerRef.getUuid());
 		for (int i = 0; i < SkillType.values().length; i++) {
 			SkillType skill = SkillType.values()[i];
 			int level = profile == null ? 1 : profile.getLevel(skill);
 			boolean selected = this.selectedSkill == skill;
 			String selector = "#CommandList[" + i + "]";
 			commandBuilder.append("#CommandList", SKILL_LIST_ITEM_TEMPLATE);
-			commandBuilder.set(selector + " #SkillLabel.Text", decorateSkillTitle(skill, trackedSkill) + "  Lv " + level);
+			commandBuilder.set(selector + " #SkillLabel.Text", formatSkillName(skill) + "  Lv " + level);
 			commandBuilder.set(selector + " #SkillIcon.Background", skillIconTexturePath(skill));
 			commandBuilder.set(selector + " #SelectedAccent.Visible", selected);
 			eventBuilder.addEventBinding(
@@ -169,13 +155,10 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			totalLevel += level;
 		}
 
-		SkillType trackedSkill = this.sessionStatsService.getTrackedSkill(this.playerRef.getUuid());
-		String trackedLabel = trackedSkill == null ? "None" : formatSkillName(trackedSkill);
-
 		commandBuilder.set("#BackButton.Visible", false);
 		commandBuilder.set("#CommandName.Text", "Skills Overview");
-		commandBuilder.set("#CommandDescription.Text", "Total Level: " + totalLevel + " | Tracked: " + trackedLabel);
-		commandBuilder.set("#CommandUsageLabel.Text", "Total XP: " + formatNumber(totalXp) + " | Select a skill to inspect details");
+		commandBuilder.set("#CommandDescription.Text", "Total Level: " + totalLevel);
+		commandBuilder.set("#CommandUsageLabel.Text", "Total XP: " + formatNumber(totalXp));
 		commandBuilder.set("#SkillsSectionTitle.Text", "Skills");
 
 		commandBuilder.set("#SubcommandSection.Visible", true);
@@ -203,8 +186,6 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		long current = xpProgressCurrent(level, xp);
 		long required = xpProgressRequired(level);
 		long nextLevelGap = xpToNextLevel(level, xp);
-		SkillType trackedSkill = this.sessionStatsService.getTrackedSkill(this.playerRef.getUuid());
-		boolean isTracked = trackedSkill == skill;
 
 		commandBuilder.set("#BackButton.Visible", true);
 		commandBuilder.set("#CommandName.Text", formatSkillName(skill) + " Details");
@@ -227,17 +208,13 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		} else {
 			appendCard(commandBuilder, eventBuilder, cardIndex++, "Next Milestone", "Lv " + (level + 1), formatNumber(nextLevelGap) + " XP remaining", null, null);
 		}
-		appendCardWithAction(
-				commandBuilder,
-				eventBuilder,
-				cardIndex++,
-				isTracked ? "Tracked Skill" : "Track Skill",
-				isTracked ? formatSkillName(skill) : "Set as tracked",
-				isTracked ? "Click to clear tracked skill" : "Click to prioritize this skill",
-				"ToggleTrack",
-				null);
 
 		List<SkillNodeDefinition> nodes = this.nodeLookupService.listDefinitionsForSkill(skill);
+		if (nodes.isEmpty() && isCombatRoadmapSkill(skill)) {
+			appendCombatRoadmap(commandBuilder, eventBuilder, cardIndex, skill, level);
+			return;
+		}
+
 		int shown = 0;
 		int unlockedShown = 0;
 		int upcomingShown = 0;
@@ -254,9 +231,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			}
 			String state = unlocked ? "Unlocked" : "Locked";
 			String usage = "Current/Required Lv " + level + "/" + node.getRequiredSkillLevel();
-			String description = state
-					+ "  |  Tool " + formatToolTier(node) + " " + formatToolKeyword(node)
-					+ "  |  +" + Math.round(node.getExperienceReward()) + " XP";
+			String description = state + "  |  +" + Math.round(node.getExperienceReward()) + " XP";
 			appendCard(commandBuilder, eventBuilder, cardIndex++, displayNodeName(node), usage, description, null, null);
 			if (unlocked) {
 				unlockedShown++;
@@ -281,19 +256,6 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nullable Integer clickSkillIndex,
 			@Nullable SkillType iconSkill) {
 		appendCardInternal(commandBuilder, eventBuilder, cardIndex, title, usage, description, clickSkillIndex, null,
-				iconSkill);
-	}
-
-	private void appendCardWithAction(
-			@Nonnull UICommandBuilder commandBuilder,
-			@Nonnull UIEventBuilder eventBuilder,
-			int cardIndex,
-			@Nonnull String title,
-			@Nonnull String usage,
-			@Nonnull String description,
-			@Nonnull String action,
-			@Nullable SkillType iconSkill) {
-		appendCardInternal(commandBuilder, eventBuilder, cardIndex, title, usage, description, null, action,
 				iconSkill);
 	}
 
@@ -376,45 +338,44 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	@Nonnull
-	private String formatToolTier(@Nonnull SkillNodeDefinition node) {
-		String raw = node.getRequiredToolTier().name().toLowerCase(Locale.ROOT);
-		if ("none".equals(raw)) {
-			return "Any";
-		}
-		return Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
-	}
-
-	@Nonnull
-	private String formatToolKeyword(@Nonnull SkillNodeDefinition node) {
-		String raw = node.getRequiredToolKeyword().toLowerCase(Locale.ROOT).replace('_', ' ').trim();
-		raw = raw.replace("tool ", "");
-		if (raw.isEmpty()) {
-			return "Tool";
-		}
-		return Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
-	}
-
-	@Nonnull
 	private String formatNumber(long value) {
 		return String.format(Locale.ROOT, "%,d", value);
-	}
-
-	@Nonnull
-	private String decorateSkillTitle(
-			@Nonnull SkillType skill,
-			@Nullable SkillType trackedSkill) {
-		StringBuilder label = new StringBuilder();
-		label.append(formatSkillName(skill));
-		if (trackedSkill == skill) {
-			label.append("  [Tracked]");
-		}
-		return label.toString();
 	}
 
 	@Nonnull
 	private String skillIconTexturePath(@Nullable SkillType skill) {
 		String id = skill == null ? "unknown" : skill.name().toLowerCase(Locale.ROOT);
 		return "SkillsPlugin/Assets/Icons/icon_" + id + ".png";
+	}
+
+	private boolean isCombatRoadmapSkill(@Nonnull SkillType skill) {
+		return skill == SkillType.ATTACK || skill == SkillType.RANGED || skill == SkillType.DEFENSE;
+	}
+
+	private void appendCombatRoadmap(
+			@Nonnull UICommandBuilder commandBuilder,
+			@Nonnull UIEventBuilder eventBuilder,
+			int cardIndex,
+			@Nonnull SkillType skill,
+			int level) {
+		if (skill == SkillType.ATTACK) {
+			appendCard(commandBuilder, eventBuilder, cardIndex++, "Training Focus", "Melee precision", "Accurate style routes XP into Attack", null, skill);
+			appendCard(commandBuilder, eventBuilder, cardIndex++, "Roadmap", "Weapon upgrades", "Higher-tier weapons scale Attack training speed", null, skill);
+			appendCard(commandBuilder, eventBuilder, cardIndex, "Roadmap", "Boss unlocks", "Future content ties Attack levels to PvE milestones", null, skill);
+			return;
+		}
+
+		if (skill == SkillType.RANGED) {
+			appendCard(commandBuilder, eventBuilder, cardIndex++, "Training Focus", "Distance combat", "Ranged damage grants direct Ranged XP", null, skill);
+			appendCard(commandBuilder, eventBuilder, cardIndex++, "Roadmap", "Ammo progression", "Future arrows and bows unlock through level bands", null, skill);
+			appendCard(commandBuilder, eventBuilder, cardIndex, "Roadmap", "Encounters", "Planned encounters will reward ranged specialization", null, skill);
+			return;
+		}
+
+		String milestone = level < 40 ? "Defensive basics" : "Tank progression";
+		appendCard(commandBuilder, eventBuilder, cardIndex++, "Training Focus", milestone, "Blocking damage grants Defense XP", null, skill);
+		appendCard(commandBuilder, eventBuilder, cardIndex++, "Roadmap", "Armor scaling", "Higher defense levels support stronger gear sets", null, skill);
+		appendCard(commandBuilder, eventBuilder, cardIndex, "Roadmap", "Encounter roles", "Future PvE content will include dedicated tank checks", null, skill);
 	}
 
 	private long xpProgressCurrent(int level, long totalXp) {

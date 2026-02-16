@@ -17,11 +17,9 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
-import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.SkillNodeLookupService;
-import org.runetale.skills.service.ToolRequirementEvaluator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,19 +36,16 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final SkillXpDispatchService skillXpDispatchService;
 	private final SkillNodeLookupService nodeLookupService;
-	private final ToolRequirementEvaluator toolRequirementEvaluator;
 	private final Query<EntityStore> query;
 
 	public SkillNodeBreakBlockSystem(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull SkillXpDispatchService skillXpDispatchService,
-			@Nonnull SkillNodeLookupService nodeLookupService,
-			@Nonnull ToolRequirementEvaluator toolRequirementEvaluator) {
+			@Nonnull SkillNodeLookupService nodeLookupService) {
 		super(BreakBlockEvent.class);
 		this.profileComponentType = profileComponentType;
 		this.skillXpDispatchService = skillXpDispatchService;
 		this.nodeLookupService = nodeLookupService;
-		this.toolRequirementEvaluator = toolRequirementEvaluator;
 		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
 	}
 
@@ -90,22 +85,6 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 					String.format("[Skills] %s level %d/%d (current/required).", formatSkillName(skill),
 							levelBefore, node.getRequiredSkillLevel()),
 					NotificationStyle.Warning);
-			return;
-		}
-
-		RequirementCheckResult toolCheck = this.toolRequirementEvaluator.evaluate(event.getItemInHand(),
-				node.getRequiredToolKeyword(), node.getRequiredToolTier());
-		if (!toolCheck.isSuccess()) {
-			// decided not to cancel the break event, because OSRS doesn't either.
-			/*
-			event.setCancelled(true);
-			sendPlayerNotification(playerRef,
-					String.format("[Skills] Tool tier %s/%s (current/required) for %s.",
-							toolCheck.getDetectedTier().name().toLowerCase(Locale.ROOT),
-							node.getRequiredToolTier().name().toLowerCase(Locale.ROOT),
-							node.getRequiredToolKeyword()),
-					NotificationStyle.Warning);
-			*/
 			return;
 		}
 

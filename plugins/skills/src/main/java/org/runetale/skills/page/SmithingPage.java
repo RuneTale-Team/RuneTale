@@ -132,6 +132,8 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 
 			commandBuilder.set(cardSelector + " #CardName.TextSpans", CraftingPageSupport.getRecipeOutputLabel(recipe));
 			CraftingPageSupport.configureOutputSlot(commandBuilder, cardSelector + " #CardOutputSlot", recipe);
+			int outputQuantity = CraftingPageSupport.getPrimaryOutputQuantity(recipe);
+			commandBuilder.set(cardSelector + " #CardOutputQuantity.Text", outputQuantity > 1 ? "x" + outputQuantity : "");
 			CraftingPageSupport.configureIngredientSlots(commandBuilder, cardSelector, recipe);
 			commandBuilder.set(cardSelector + " #CardIngredients.TextSpans", CraftingPageSupport.formatIngredientsLabel(recipe));
 			commandBuilder.set(cardSelector + " #CardXp.Text", CraftingPageSupport.getXpText(recipe, craftingRecipeTagService()));
@@ -145,14 +147,17 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 				commandBuilder.set(cardSelector + " #CardStatus.Text", "Requires Lv " + requiredLevel + " Smithing");
 				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#d7a6a6");
 				commandBuilder.set(cardSelector + " #LockOverlay.Visible", true);
+				commandBuilder.set(cardSelector + " #MissingMaterialsOutline.Visible", false);
 			} else if (!hasMaterials) {
-				commandBuilder.set(cardSelector + " #CardStatus.Text", "Materials required");
-				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#d8c187");
-				commandBuilder.set(cardSelector + " #LockOverlay.Visible", true);
+				commandBuilder.set(cardSelector + " #CardStatus.Text", "Unlocked");
+				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#99afc6");
+				commandBuilder.set(cardSelector + " #LockOverlay.Visible", false);
+				commandBuilder.set(cardSelector + " #MissingMaterialsOutline.Visible", true);
 			} else {
 				commandBuilder.set(cardSelector + " #CardStatus.Text", "Unlocked");
 				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#99afc6");
 				commandBuilder.set(cardSelector + " #LockOverlay.Visible", false);
+				commandBuilder.set(cardSelector + " #MissingMaterialsOutline.Visible", false);
 			}
 		}
 
@@ -164,11 +169,13 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 			commandBuilder.set("#RecipeGrid[0][0] #CardXp.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #CardStatus.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #CardOutputSlot.Visible", false);
+			commandBuilder.set("#RecipeGrid[0][0] #CardOutputQuantity.Text", "");
 			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot0.Visible", false);
 			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot1.Visible", false);
 			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot2.Visible", false);
 			commandBuilder.set("#RecipeGrid[0][0] #SelectedFrame.Visible", false);
 			commandBuilder.set("#RecipeGrid[0][0] #LockOverlay.Visible", false);
+			commandBuilder.set("#RecipeGrid[0][0] #MissingMaterialsOutline.Visible", false);
 		}
 
 		CraftingRecipe selectedPreviewRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());

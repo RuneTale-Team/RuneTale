@@ -144,28 +144,26 @@ final class CraftingPageSupport {
 			return false;
 		}
 
+		PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+
 		CraftingRecipe recipe = CraftingRecipe.getAssetMap().getAsset(selectedRecipeId);
 		if (recipe == null) {
 			logger.atWarning().log("Selected recipe not found: %s", selectedRecipeId);
+			sendDanger(playerRef, "[Skills] Recipe not found. Re-select and try again.");
 			return false;
 		}
 
 		PlayerSkillProfileComponent profile = store.getComponent(ref, profileComponentType);
 		if (profile == null) {
+			sendDanger(playerRef, "[Skills] Could not verify your skill profile. Try reopening the station.");
 			return false;
 		}
 
 		List<SkillRequirement> requirements = craftingRecipeTagService.getSkillRequirements(recipe);
-		PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
 		int requiredLevel = getSmithingRequiredLevel(requirements);
 		int playerLevel = profile.getLevel(SkillType.SMITHING);
 		if (playerLevel < requiredLevel) {
-			if (playerRef != null) {
-				NotificationUtil.sendNotification(
-						playerRef.getPacketHandler(),
-						Message.raw("[Skills] You need Smithing level " + requiredLevel),
-						NotificationStyle.Danger);
-			}
+			sendDanger(playerRef, "[Skills] You need Smithing level " + requiredLevel);
 			return false;
 		}
 
@@ -173,6 +171,12 @@ final class CraftingPageSupport {
 		Player player = store.getComponent(ref, Player.getComponentType());
 		if (craftingManager == null || player == null) {
 			logger.atWarning().log("Cannot %s %s because crafting context is unavailable", contextName, recipe.getId());
+			sendDanger(playerRef, "[Skills] Crafting station context unavailable. Close and reopen it.");
+			return false;
+		}
+
+		if (!hasRequiredMaterials(player, recipe)) {
+			sendDanger(playerRef, "[Skills] Materials required.");
 			return false;
 		}
 
@@ -187,9 +191,22 @@ final class CraftingPageSupport {
 					playerRef.getPacketHandler(),
 					Message.raw("[Skills] " + craftVerb + " " + getRecipeOutputName(recipe)),
 					NotificationStyle.Default);
+		} else if (!crafted) {
+			sendDanger(playerRef, "[Skills] Craft failed. Verify recipe unlock, station, and materials.");
 		}
 
 		return crafted;
+	}
+
+	private static void sendDanger(@Nullable PlayerRef playerRef, @Nonnull String text) {
+		if (playerRef == null) {
+			return;
+		}
+
+		NotificationUtil.sendNotification(
+				playerRef.getPacketHandler(),
+				Message.raw(text),
+				NotificationStyle.Danger);
 	}
 
 	static boolean hasRequiredMaterials(@Nullable Player player, @Nonnull CraftingRecipe recipe) {

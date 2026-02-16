@@ -32,6 +32,7 @@ public class CraftingRecipeTagService {
 	private static final String TAG_XP_ON_SUCCESSFUL_CRAFT = "XpOnSuccessfulCraft";
 	private static final String TAG_SKILLS_REQUIRED = "SkillsRequired";
 	private static final String TAG_SKILL_LEVELS_REQUIRED = "SkillLevelsRequired";
+	private static final String TAG_CRAFTING_LEVEL_REQUIRED = "CraftingLevelRequired";
 	private static final String RUNETALE_ANVIL_BENCH_ID = "RuneTale_Anvil";
 	private static final String RUNETALE_FURNACE_BENCH_ID = "RuneTale_Furnace";
 
@@ -72,6 +73,11 @@ public class CraftingRecipeTagService {
 	public List<SkillRequirement> getSkillRequirements(@Nonnull CraftingRecipe recipe) {
 		String[] skillNames = getRawTagValues(recipe, TAG_SKILLS_REQUIRED);
 		if (skillNames == null || skillNames.length == 0) {
+			Integer craftingLevelRequired = parseCraftingLevelRequired(recipe);
+			if (craftingLevelRequired != null) {
+				return List.of(new SkillRequirement(SkillType.SMITHING, craftingLevelRequired));
+			}
+
 			if (isRuneTaleSmithingBenchRecipe(recipe)) {
 				return List.of(new SkillRequirement(SkillType.SMITHING, 1));
 			}
@@ -102,7 +108,30 @@ public class CraftingRecipeTagService {
 			requirements.add(new SkillRequirement(skill, level));
 		}
 
+		Integer craftingLevelRequired = parseCraftingLevelRequired(recipe);
+		if (craftingLevelRequired != null && requirements.stream().noneMatch(req -> req.skillType() == SkillType.SMITHING)) {
+			requirements.add(new SkillRequirement(SkillType.SMITHING, craftingLevelRequired));
+		}
+
 		return requirements;
+	}
+
+	@Nullable
+	private Integer parseCraftingLevelRequired(@Nonnull CraftingRecipe recipe) {
+		String[] values = getRawTagValues(recipe, TAG_CRAFTING_LEVEL_REQUIRED);
+		if (values == null || values.length == 0) {
+			return null;
+		}
+
+		try {
+			return Math.max(1, Integer.parseInt(values[0].trim()));
+		} catch (NumberFormatException e) {
+			LOGGER.atWarning().log("Invalid %s value '%s' on recipe %s; ignoring",
+					TAG_CRAFTING_LEVEL_REQUIRED,
+					values[0],
+					recipe.getId());
+			return null;
+		}
 	}
 
 	private boolean isRuneTaleSmithingBenchRecipe(@Nonnull CraftingRecipe recipe) {

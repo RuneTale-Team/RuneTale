@@ -15,9 +15,7 @@ import java.util.Locale;
 public enum SmithingMaterialTier {
 	BRONZE("Bronze", 1),
 	IRON("Iron", 15),
-	SILVER("Silver", 20),
 	STEEL("Steel", 30),
-	GOLD("Gold", 40),
 	MITHRIL("Mithril", 50),
 	ADAMANTITE("Adamantite", 70),
 	RUNITE("Runite", 85);

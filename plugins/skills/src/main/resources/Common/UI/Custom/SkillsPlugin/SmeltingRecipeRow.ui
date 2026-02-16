@@ -30,6 +30,14 @@
   VerticalAlignment: Center
 );
 
+@OutputQuantityStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #c7d8ea,
+  HorizontalAlignment: Center,
+  VerticalAlignment: Center,
+  RenderBold: true
+);
+
 @SelectOverlayStyle = TextButtonStyle(
   Default: (Background: #00000000, LabelStyle: (FontSize: 1, TextColor: #00000000)),
   Hovered: (Background: #ffffff(0.03), LabelStyle: (FontSize: 1, TextColor: #00000000)),
@@ -50,11 +58,22 @@ Group {
   Group {
     LayoutMode: Left;
 
-    ItemSlot #RecipeOutputSlot {
-      Anchor: (Width: 72, Height: 72, Right: 10);
-      ShowQuantity: true;
-      ShowQualityBackground: false;
-      ShowDurabilityBar: false;
+    Group {
+      Anchor: (Width: 72, Height: 88, Right: 10);
+      LayoutMode: Top;
+
+      ItemSlot #RecipeOutputSlot {
+        Anchor: (Width: 72, Height: 72);
+        ShowQuantity: false;
+        ShowQualityBackground: false;
+        ShowDurabilityBar: false;
+      }
+
+      Label #RecipeOutputQuantity {
+        Text: "";
+        Anchor: (Height: 16);
+        Style: @OutputQuantityStyle;
+      }
     }
 
     Group {
@@ -104,7 +123,7 @@ Group {
 
       Label #RecipeStatus {
         Text: "";
-        Anchor: (Height: 16, Top: 6);
+        Anchor: (Height: 16, Top: 2);
         Style: @RecipeStatusStyle;
       }
     }
@@ -124,6 +143,12 @@ Group {
   Group #LockOverlay {
     Anchor: (Full: 1);
     Background: #05101a(0.42);
+    Visible: false;
+  }
+
+  Group #MissingMaterialsOutline {
+    Anchor: (Full: 1);
+    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22, Color: #d24d4d(0.80));
     Visible: false;
   }
 

@@ -18,7 +18,6 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.domain.SmithingMaterialTier;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
@@ -86,13 +85,9 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 		Player player = store.getComponent(ref, Player.getComponentType());
 		int smithingLevel = profile == null ? 1 : profile.getLevel(SkillType.SMITHING);
 
-		for (SmithingMaterialTier tier : SmithingMaterialTier.values()) {
-			String selector = "#Tier" + tier.getDisplayName();
-			boolean selected = tier == selectedTier();
-			commandBuilder.set(selector + ".Text", tier.getDisplayName());
-			commandBuilder.set(selector + "Indicator.Visible", selected);
-			commandBuilder.set(selector + "Selected.Visible", selected);
-		}
+		commandBuilder.set("#TierBronze.Text", "Bars");
+		commandBuilder.set("#TierBronzeIndicator.Visible", true);
+		commandBuilder.set("#TierBronzeSelected.Visible", true);
 
 		int selectedCraftQuantity = CraftingPageSupport.syncQuantityControls(
 				commandBuilder,
@@ -100,10 +95,10 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 				player,
 				selectedRecipeId());
 
-		commandBuilder.set("#SectionTitle.Text", selectedTier().getSectionTitle("Bars"));
+		commandBuilder.set("#SectionTitle.Text", "Bars");
 
 		commandBuilder.clear("#RecipeList");
-		List<CraftingRecipe> recipes = getRecipesForTier(selectedTier());
+		List<CraftingRecipe> recipes = getBarRecipes();
 
 		for (int i = 0; i < recipes.size(); i++) {
 			CraftingRecipe recipe = recipes.get(i);
@@ -122,6 +117,8 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 
 			commandBuilder.set(selector + " #RecipeName.TextSpans", CraftingPageSupport.getRecipeOutputLabel(recipe));
 			CraftingPageSupport.configureOutputSlot(commandBuilder, selector + " #RecipeOutputSlot", recipe);
+			int outputQuantity = CraftingPageSupport.getPrimaryOutputQuantity(recipe);
+			commandBuilder.set(selector + " #RecipeOutputQuantity.Text", outputQuantity > 1 ? "x" + outputQuantity : "");
 			CraftingPageSupport.configureIngredientSlots(commandBuilder, selector, recipe);
 			commandBuilder.set(selector + " #RecipeIngredients.TextSpans", CraftingPageSupport.formatIngredientsLabel(recipe));
 			commandBuilder.set(selector + " #RecipeXp.Text", CraftingPageSupport.getXpText(recipe, craftingRecipeTagService()));
@@ -135,14 +132,17 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 				commandBuilder.set(selector + " #RecipeStatus.Text", "Requires Lv " + requiredLevel + " Smithing");
 				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#d7a6a6");
 				commandBuilder.set(selector + " #LockOverlay.Visible", true);
+				commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", false);
 			} else if (!hasMaterials) {
-				commandBuilder.set(selector + " #RecipeStatus.Text", "Materials required");
-				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#d8c187");
-				commandBuilder.set(selector + " #LockOverlay.Visible", true);
+				commandBuilder.set(selector + " #RecipeStatus.Text", "Unlocked");
+				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#99afc6");
+				commandBuilder.set(selector + " #LockOverlay.Visible", false);
+				commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", true);
 			} else {
 				commandBuilder.set(selector + " #RecipeStatus.Text", "Unlocked");
 				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#99afc6");
 				commandBuilder.set(selector + " #LockOverlay.Visible", false);
+				commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", false);
 			}
 		}
 
@@ -153,15 +153,23 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 			commandBuilder.set("#RecipeList[0] #RecipeXp.Text", "");
 			commandBuilder.set("#RecipeList[0] #RecipeStatus.Text", "");
 			commandBuilder.set("#RecipeList[0] #RecipeOutputSlot.Visible", false);
+			commandBuilder.set("#RecipeList[0] #RecipeOutputQuantity.Text", "");
 			commandBuilder.set("#RecipeList[0] #IngredientSlot0.Visible", false);
 			commandBuilder.set("#RecipeList[0] #IngredientSlot1.Visible", false);
 			commandBuilder.set("#RecipeList[0] #IngredientSlot2.Visible", false);
 			commandBuilder.set("#RecipeList[0] #SelectedFrame.Visible", false);
 			commandBuilder.set("#RecipeList[0] #LockOverlay.Visible", false);
+			commandBuilder.set("#RecipeList[0] #MissingMaterialsOutline.Visible", false);
 		}
 
 		CraftingRecipe selectedPreviewRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());
 		CraftingPageSupport.syncSelectedRecipePreview(commandBuilder, selectedPreviewRecipe);
+		commandBuilder.set("#SelectedOutputName.Text", "");
+		if (selectedPreviewRecipe == null) {
+			commandBuilder.set("#SelectedOutputLargeName.Text", "");
+		} else {
+			commandBuilder.set("#SelectedOutputLargeName.Text", CraftingPageSupport.getRecipeOutputName(selectedPreviewRecipe));
+		}
 
 		CraftingRecipe selectedRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());
 		boolean selectedUnlocked = false;
@@ -186,23 +194,16 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 	}
 
 	@Nonnull
-	private List<CraftingRecipe> getRecipesForTier(@Nonnull SmithingMaterialTier tier) {
-		String categoryId = BENCH_ID + "_" + tier.getDisplayName();
-		List<CraftingRecipe> categoryRecipes = CraftingPlugin.getBenchRecipes(BenchType.Crafting, BENCH_ID, categoryId);
-		if (!categoryRecipes.isEmpty()) {
-			return categoryRecipes;
-		}
-
+	private List<CraftingRecipe> getBarRecipes() {
 		List<CraftingRecipe> allRecipes = CraftingPlugin.getBenchRecipes(BenchType.Crafting, BENCH_ID);
 		List<CraftingRecipe> filtered = new ArrayList<>();
-		String barSubstring = tier.getBarSubstring().toLowerCase(Locale.ROOT);
 
 		for (CraftingRecipe recipe : allRecipes) {
 			MaterialQuantity[] outputs = recipe.getOutputs();
 			if (outputs != null) {
 				for (MaterialQuantity output : outputs) {
 					String itemId = output.getItemId();
-					if (itemId != null && itemId.toLowerCase(Locale.ROOT).contains(barSubstring)) {
+					if (itemId != null && itemId.toLowerCase(Locale.ROOT).contains("bar_")) {
 						filtered.add(recipe);
 						break;
 					}

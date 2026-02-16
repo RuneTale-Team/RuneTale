@@ -148,23 +148,9 @@ Group {
 
     Group {
       Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierSilverSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierSilver { Text: "Silver"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierSilverIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
       Group #TierSteelSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
       TextButton #TierSteel { Text: "Steel"; Anchor: (Full: 1); Style: @TierTabStyle; }
       Group #TierSteelIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
-    }
-
-    Group {
-      Anchor: (Width: 118, Height: 44, Right: 6);
-      Group #TierGoldSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
-      TextButton #TierGold { Text: "Gold"; Anchor: (Full: 1); Style: @TierTabStyle; }
-      Group #TierGoldIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
     }
 
     Group {
@@ -201,18 +187,7 @@ Group {
       Padding: (Full: 10);
       Background: (TexturePath: "Assets/UI/ContainerPanelPatch.png", Border: 8);
 
-      Label {
-        Text: "Crafting";
-        Anchor: (Height: 35, Horizontal: 8);
-        Style: @PanelTitleStyle;
-      }
-
-      Group {
-        Anchor: (Height: 1);
-        Background: #1b2533;
-      }
-
-      Group { Anchor: (Height: 6); }
+      Group { Anchor: (Height: 12); }
 
       Label #SectionTitle {
         Text: "Bronze Equipment";

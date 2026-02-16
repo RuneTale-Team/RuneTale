@@ -25,7 +25,6 @@ import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
-import org.runetale.skills.service.ToolRequirementEvaluator;
 import org.runetale.skills.system.CombatDamageXpSystem;
 import org.runetale.skills.system.CraftingRecipeUnlockSystem;
 import org.runetale.skills.system.CraftingPageProgressSystem;
@@ -64,11 +63,6 @@ public class SkillsPlugin extends JavaPlugin {
      * Service that resolves data-driven skill-node assets for broken blocks.
      */
     private SkillNodeLookupService nodeLookupService;
-
-    /**
-     * Service that evaluates held-tool requirements against configured tiers.
-     */
-    private ToolRequirementEvaluator toolRequirementEvaluator;
 
     /**
      * Session-scoped telemetry used by skill UI and feedback messaging.
@@ -180,8 +174,7 @@ public class SkillsPlugin extends JavaPlugin {
                 new SkillsPageCommand(
                         this.playerSkillProfileComponentType,
                         this.xpService,
-                        this.nodeLookupService,
-                        this.sessionStatsService));
+                        this.nodeLookupService));
         registerSystems();
 
         LOGGER.atInfo().log("Skills runtime setup complete.");
@@ -195,7 +188,6 @@ public class SkillsPlugin extends JavaPlugin {
         LOGGER.atInfo().log("[Skills] Registering services...");
         this.xpService = new XpService();
         this.nodeLookupService = new SkillNodeLookupService();
-        this.toolRequirementEvaluator = new ToolRequirementEvaluator();
         this.sessionStatsService = new SkillSessionStatsService();
         this.combatStyleService = new CombatStyleService();
         this.skillXpToastHudService = new SkillXpToastHudService();
@@ -273,8 +265,7 @@ public class SkillsPlugin extends JavaPlugin {
                 new SkillNodeBreakBlockSystem(
                         this.playerSkillProfileComponentType,
                         this.xpDispatchService,
-                        this.nodeLookupService,
-                        this.toolRequirementEvaluator));
+                        this.nodeLookupService));
 
         // Grant XP from crafting recipes tagged with skill XP rewards.
         this.getEntityStoreRegistry().registerSystem(
@@ -311,7 +302,6 @@ public class SkillsPlugin extends JavaPlugin {
         this.playerSkillProfileComponentType = null;
         this.xpService = null;
         this.nodeLookupService = null;
-        this.toolRequirementEvaluator = null;
         this.sessionStatsService = null;
         this.combatStyleService = null;
         this.skillXpToastHudService = null;
