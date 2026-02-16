@@ -23,7 +23,7 @@ import java.util.Optional;
  *
 	 * <p>
 	 * Output item assets define skill integration through Tags in their asset JSON:
-	 * {@code XpOnSuccessfulCraft}, {@code SkillsRequired}, {@code SkillLevelsRequired}.
+	 * {@code XpOnSuccessfulCraft}, {@code CraftingLevelRequirement}.
 	 */
 public class CraftingRecipeTagService {
 
@@ -31,8 +31,8 @@ public class CraftingRecipeTagService {
 
 	private static final String TAG_XP_ON_SUCCESSFUL_CRAFT = "XpOnSuccessfulCraft";
 	private static final String TAG_SKILLS_REQUIRED = "SkillsRequired";
-	private static final String TAG_SKILL_LEVELS_REQUIRED = "SkillLevelsRequired";
-	private static final String TAG_CRAFTING_LEVEL_REQUIRED = "CraftingLevelRequired";
+	private static final String TAG_SKILL_LEVELS_REQUIRED = "CraftingLevelRequirement";
+	private static final String TAG_CRAFTING_LEVEL_REQUIRED = "CraftingLevelRequirement";
 	private static final String RUNETALE_ANVIL_BENCH_ID = "RuneTale_Anvil";
 	private static final String RUNETALE_FURNACE_BENCH_ID = "RuneTale_Furnace";
 
