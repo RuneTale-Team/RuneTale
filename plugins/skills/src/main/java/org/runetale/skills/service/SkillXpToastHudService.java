@@ -1,6 +1,7 @@
 package org.runetale.skills.service;
 
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.ToClientPacket;
 import com.hypixel.hytale.protocol.packets.interface_.CustomHud;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -125,7 +126,8 @@ public class SkillXpToastHudService {
 
 	private void send(@Nonnull PlayerRef playerRef, @Nonnull UICommandBuilder commandBuilder) {
 		try {
-			playerRef.getPacketHandler().writeNoCache(new CustomHud(false, commandBuilder.getCommands()));
+			// NOTE: Hytale packet transport signatures may change across releases (Packet vs ToClientPacket).
+			playerRef.getPacketHandler().writeNoCache((ToClientPacket) new CustomHud(false, commandBuilder.getCommands()));
 		} catch (Exception e) {
 			LOGGER.atFine().withCause(e).log("Failed to update custom XP toast HUD.");
 		}
