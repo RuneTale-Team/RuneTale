@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Resolves skill-node definitions from block identifiers.
@@ -46,6 +48,7 @@ public class SkillNodeLookupService {
 	 * Keyed by block id for fast break-event matching.
 	 */
 	private final Map<String, SkillNodeDefinition> byBlockId = new ConcurrentHashMap<>();
+	private final List<WildcardBlockMapping> wildcardBlockMappings = new CopyOnWriteArrayList<>();
 	@Nullable
 	private final Path externalConfigRoot;
 
@@ -213,6 +216,11 @@ public class SkillNodeLookupService {
 	public void register(@Nonnull SkillNodeDefinition definition, @Nonnull List<String> blockIds) {
 		for (String rawBlockId : blockIds) {
 			String normalized = normalize(rawBlockId);
+			if (isWildcardPattern(normalized)) {
+				registerWildcard(definition, rawBlockId, normalized);
+				continue;
+			}
+
 			SkillNodeDefinition previous = byBlockId.put(normalized, definition);
 			if (previous != null && previous != definition) {
 				LOGGER.atWarning().log("[Skills] Replaced node mapping for block=%s oldNode=%s newNode=%s",
@@ -235,16 +243,145 @@ public class SkillNodeLookupService {
 			return null;
 		}
 
-		SkillNodeDefinition def = byBlockId.get(normalize(blockId));
+		String normalizedBlockId = normalize(blockId);
+		SkillNodeDefinition def = byBlockId.get(normalizedBlockId);
+		if (def == null) {
+			String simplifiedBlockId = simplifyBlockId(normalizedBlockId);
+			if (!simplifiedBlockId.equals(normalizedBlockId)) {
+				def = byBlockId.get(simplifiedBlockId);
+			}
+		}
+		if (def == null) {
+			def = findByWildcardBlockId(normalizedBlockId, blockId);
+		}
+
 		if (def == null) {
 			LOGGER.atFiner().log("[Skills] Node lookup miss for block=%s", blockId);
 		}
 		return def;
 	}
 
+	private void registerWildcard(@Nonnull SkillNodeDefinition definition, @Nonnull String rawPattern,
+			@Nonnull String normalizedPattern) {
+		WildcardBlockMapping previous = removeWildcardMapping(normalizedPattern);
+		if (previous != null && previous.definition() != definition) {
+			LOGGER.atWarning().log("[Skills] Replaced node wildcard mapping pattern=%s oldNode=%s newNode=%s",
+					rawPattern,
+					previous.definition().getId(),
+					definition.getId());
+		}
+
+		this.wildcardBlockMappings
+				.add(new WildcardBlockMapping(normalizedPattern, createWildcardPattern(normalizedPattern), definition));
+		LOGGER.atFine().log("[Skills] Registered node wildcard id=%s pattern=%s", definition.getId(), rawPattern);
+	}
+
+	@Nullable
+	private WildcardBlockMapping removeWildcardMapping(@Nonnull String normalizedPattern) {
+		for (WildcardBlockMapping mapping : this.wildcardBlockMappings) {
+			if (mapping.rawPattern().equals(normalizedPattern)) {
+				this.wildcardBlockMappings.remove(mapping);
+				return mapping;
+			}
+		}
+		return null;
+	}
+
+	@Nullable
+	private SkillNodeDefinition findByWildcardBlockId(@Nonnull String normalizedBlockId,
+			@Nonnull String originalBlockId) {
+		String simplifiedBlockId = simplifyBlockId(normalizedBlockId);
+		SkillNodeDefinition firstMatch = null;
+		String firstPattern = null;
+		for (WildcardBlockMapping mapping : this.wildcardBlockMappings) {
+			if (!matchesWildcard(mapping.pattern(), normalizedBlockId, simplifiedBlockId)) {
+				continue;
+			}
+
+			if (firstMatch == null) {
+				firstMatch = mapping.definition();
+				firstPattern = mapping.rawPattern();
+				continue;
+			}
+
+			LOGGER.atWarning().log(
+					"[Skills] Block id=%s matched multiple wildcard node mappings; using first pattern=%s node=%s over pattern=%s node=%s",
+					originalBlockId,
+					firstPattern,
+					firstMatch.getId(),
+					mapping.rawPattern(),
+					mapping.definition().getId());
+			break;
+		}
+
+		return firstMatch;
+	}
+
+	private static boolean matchesWildcard(@Nonnull Pattern pattern, @Nonnull String normalizedBlockId,
+			@Nonnull String simplifiedBlockId) {
+		if (pattern.matcher(normalizedBlockId).matches()) {
+			return true;
+		}
+		return !simplifiedBlockId.equals(normalizedBlockId) && pattern.matcher(simplifiedBlockId).matches();
+	}
+
+	@Nonnull
+	private static String simplifyBlockId(@Nonnull String normalizedBlockId) {
+		String simplified = normalizedBlockId;
+
+		int namespaceSeparator = simplified.lastIndexOf(':');
+		if (namespaceSeparator >= 0 && namespaceSeparator + 1 < simplified.length()) {
+			simplified = simplified.substring(namespaceSeparator + 1);
+		}
+
+		int pathSeparator = simplified.lastIndexOf('/');
+		if (pathSeparator >= 0 && pathSeparator + 1 < simplified.length()) {
+			simplified = simplified.substring(pathSeparator + 1);
+		}
+
+		return simplified;
+	}
+
+	private static boolean isWildcardPattern(@Nonnull String token) {
+		return token.indexOf('*') >= 0;
+	}
+
+	@Nonnull
+	private static Pattern createWildcardPattern(@Nonnull String normalizedPattern) {
+		StringBuilder regexBuilder = new StringBuilder(normalizedPattern.length() + 8);
+		regexBuilder.append('^');
+		int segmentStart = 0;
+		for (int i = 0; i < normalizedPattern.length(); i++) {
+			if (normalizedPattern.charAt(i) != '*') {
+				continue;
+			}
+
+			if (segmentStart < i) {
+				String literalSegment = normalizedPattern.substring(segmentStart, i);
+				regexBuilder.append(Pattern.quote(literalSegment));
+			}
+			regexBuilder.append(".*");
+			segmentStart = i + 1;
+		}
+
+		if (segmentStart < normalizedPattern.length()) {
+			String literalSegment = normalizedPattern.substring(segmentStart);
+			regexBuilder.append(Pattern.quote(literalSegment));
+		}
+		regexBuilder.append('$');
+		return Pattern.compile(regexBuilder.toString());
+	}
+
+	private record WildcardBlockMapping(@Nonnull String rawPattern, @Nonnull Pattern pattern,
+			@Nonnull SkillNodeDefinition definition) {
+	}
+
 	@Nonnull
 	public List<SkillNodeDefinition> listAllDefinitions() {
 		LinkedHashSet<SkillNodeDefinition> deduped = new LinkedHashSet<>(this.byBlockId.values());
+		for (WildcardBlockMapping mapping : this.wildcardBlockMappings) {
+			deduped.add(mapping.definition());
+		}
 		List<SkillNodeDefinition> definitions = new ArrayList<>(deduped);
 		definitions.sort(Comparator
 				.comparingInt(SkillNodeDefinition::getRequiredSkillLevel)

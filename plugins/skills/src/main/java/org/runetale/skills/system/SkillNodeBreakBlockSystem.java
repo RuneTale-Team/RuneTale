@@ -64,6 +64,9 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		SkillNodeDefinition node = this.nodeLookupService.findByBlockId(brokenBlockType.getId());
 		if (node == null) {
 			if (looksLikeSkillNodeCandidate(brokenBlockType.getId())) {
+				LOGGER.atWarning().log(
+						"[Skills] Unconfigured node-like block encountered id=%s. Add matching blockId/blockIds in Skills/Nodes.",
+						brokenBlockType.getId());
 				event.setCancelled(true);
 				sendPlayerNotification(
 						playerRef,

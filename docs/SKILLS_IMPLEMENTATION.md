@@ -134,12 +134,16 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
    - `id`, `skill`, `blockIds` (preferred, comma-separated) or `blockId` (backward-compatible fallback),
    - `requiredSkillLevel`, `requiredToolKeyword`, `requiredToolTier`,
    - `experienceReward`.
+   - `blockIds` entries support `*` wildcard matching (for example `Ore_Copper_Surface_*`).
+     Exact `blockId` matches always win over wildcard matches.
+     If multiple wildcard patterns match, the first declared pattern is used and a warning is logged.
+     For namespaced runtime IDs (for example `mymod:Ore_Copper_Surface_A`), lookup also tries the id suffix (`Ore_Copper_Surface_A`).
 4. Rebuild and verify log line: `Loaded node resource=... id=... skill=...`.
 
 ### Add more nodes for an existing skill
 
 - Repeat the same pattern with additional `*.properties` files.
-- Use distinct mapped block ids per node for deterministic lookup (via `blockIds` or `blockId`).
+- Use distinct mapped block ids/patterns per node for deterministic lookup (via `blockIds` or `blockId`).
 - Keep progression coherent by increasing `requiredSkillLevel` / `requiredToolTier` / `experienceReward` gradually.
 
 ### Add a new skill end-to-end

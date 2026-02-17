@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.bundling.Zip
 
 plugins {
@@ -108,6 +109,16 @@ tasks.register<Delete>("cleanDeployedPluginBundles") {
 }
 
 val skillsConfigResourceDir = layout.projectDirectory.dir("plugins/skills/src/main/resources/Skills")
+val skillsConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/skills")
+
+tasks.register<Sync>("deploySkillsConfigToRun") {
+    from(skillsConfigResourceDir)
+    into(skillsConfigRunDir)
+
+    doLast {
+        println("Synced skills config to ${skillsConfigRunDir.asFile}")
+    }
+}
 
 tasks.register<Zip>("bundlePluginJars") {
     dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
@@ -145,6 +156,7 @@ tasks.register("deployPluginsToRun") {
     dependsOn("cleanDeployedPlugins")
     dependsOn("cleanDeployedPluginBundles")
     dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
+    dependsOn("deploySkillsConfigToRun")
 
     doLast {
         copy {
