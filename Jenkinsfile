@@ -1,12 +1,14 @@
 def setGitHubStatus(String state, String description) {
     String commitSha = env.GIT_COMMIT?.trim()
+    String repoUrl = env.GIT_URL?.trim()
+
     if (!commitSha) {
-        commitSha = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
+        echo 'Skipping GitHub status update: GIT_COMMIT is not available'
+        return
     }
 
-    String repoUrl = sh(returnStdout: true, script: 'git config --get remote.origin.url').trim()
     if (!repoUrl) {
-        echo 'Skipping GitHub status update: could not resolve remote.origin.url'
+        echo 'Skipping GitHub status update: GIT_URL is not available'
         return
     }
 
