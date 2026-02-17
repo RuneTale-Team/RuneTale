@@ -5,12 +5,15 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.junit.jupiter.api.Test;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
+import org.runetale.skills.config.XpConfig;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.domain.SkillXpGrantResult;
 import org.runetale.skills.service.XpService;
 import org.runetale.testing.ecs.InMemoryComponentAccessor;
 import org.runetale.testing.junit.ContractTest;
 import org.runetale.testing.core.TestConstructors;
+
+import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -25,7 +28,7 @@ class SkillProgressionServiceContractTest {
 		accessor.registerFactory(profileType,
 				() -> TestConstructors.instantiateNoArgs(PlayerSkillProfileComponent.class));
 		Ref<EntityStore> playerRef = mock(Ref.class);
-		XpService xpService = new XpService();
+		XpService xpService = new XpService(XpConfig.load(Path.of(".missing-test-config")));
 		SkillProgressionService service = new SkillProgressionService(profileType, xpService);
 
 		SkillXpGrantResult result = service.grantExperience(accessor, playerRef, SkillType.MINING, 7.5D);
@@ -49,7 +52,7 @@ class SkillProgressionServiceContractTest {
 		accessor.registerFactory(profileType,
 				() -> TestConstructors.instantiateNoArgs(PlayerSkillProfileComponent.class));
 		Ref<EntityStore> playerRef = mock(Ref.class);
-		XpService xpService = new XpService();
+		XpService xpService = new XpService(XpConfig.load(Path.of(".missing-test-config")));
 		SkillProgressionService service = new SkillProgressionService(profileType, xpService);
 
 		long levelTwoThreshold = xpService.xpForLevel(2);
@@ -71,7 +74,7 @@ class SkillProgressionServiceContractTest {
 		accessor.registerFactory(profileType,
 				() -> TestConstructors.instantiateNoArgs(PlayerSkillProfileComponent.class));
 		Ref<EntityStore> playerRef = mock(Ref.class);
-		XpService xpService = new XpService();
+		XpService xpService = new XpService(XpConfig.load(Path.of(".missing-test-config")));
 		SkillProgressionService service = new SkillProgressionService(profileType, xpService);
 
 		SkillXpGrantResult first = service.grantExperience(accessor, playerRef, SkillType.SMITHING, 15.0D);

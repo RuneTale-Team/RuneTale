@@ -312,7 +312,8 @@ public class SkillsPlugin extends JavaPlugin {
                         this.playerSkillProfileComponentType,
                         this.xpDispatchService,
                         this.nodeLookupService,
-                        this.skillsConfigService.getHeuristicsConfig()));
+                        this.skillsConfigService.getHeuristicsConfig(),
+                        this.skillsConfigService.getToolingConfig()));
 
         // Grant XP from crafting recipes tagged with skill XP rewards.
         this.getEntityStoreRegistry().registerSystem(

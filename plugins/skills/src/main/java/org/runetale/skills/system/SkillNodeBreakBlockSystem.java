@@ -14,12 +14,14 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.config.HeuristicsConfig;
+import org.runetale.skills.config.ToolingConfig;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
-import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.SkillNodeBreakResolutionResult;
 import org.runetale.skills.service.SkillNodeBreakResolutionService;
 import org.runetale.skills.service.SkillNodeLookupService;
+import org.runetale.skills.service.ToolRequirementEvaluator;
 
 import javax.annotation.Nonnull;
 
@@ -34,20 +36,47 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final SkillXpDispatchService skillXpDispatchService;
 	private final SkillNodeLookupService nodeLookupService;
-	private final HeuristicsConfig heuristicsConfig;
+	private final ToolRequirementEvaluator toolRequirementEvaluator;
+	private final SkillNodeBreakResolutionService skillNodeBreakResolutionService;
+	private final SkillNodePlayerRefResolver playerRefResolver;
+	private final SkillNodePlayerNotifier skillNodePlayerNotifier;
 	private final Query<EntityStore> query;
 
 	public SkillNodeBreakBlockSystem(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull SkillXpDispatchService skillXpDispatchService,
 			@Nonnull SkillNodeLookupService nodeLookupService,
-			@Nonnull HeuristicsConfig heuristicsConfig) {
+			@Nonnull HeuristicsConfig heuristicsConfig,
+			@Nonnull ToolingConfig toolingConfig) {
+		this(
+				profileComponentType,
+				skillXpDispatchService,
+				nodeLookupService,
+				new ToolRequirementEvaluator(toolingConfig),
+				new SkillNodeBreakResolutionService(heuristicsConfig.nodeCandidateTokens()),
+				new CommandBufferSkillNodePlayerRefResolver(),
+				new NotificationUtilSkillNodePlayerNotifier(),
+				Query.and(PlayerRef.getComponentType(), profileComponentType));
+	}
+
+	public SkillNodeBreakBlockSystem(
+			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
+			@Nonnull SkillXpDispatchService skillXpDispatchService,
+			@Nonnull SkillNodeLookupService nodeLookupService,
+			@Nonnull ToolRequirementEvaluator toolRequirementEvaluator,
+			@Nonnull SkillNodeBreakResolutionService skillNodeBreakResolutionService,
+			@Nonnull SkillNodePlayerRefResolver playerRefResolver,
+			@Nonnull SkillNodePlayerNotifier skillNodePlayerNotifier,
+			@Nonnull Query<EntityStore> query) {
 		super(BreakBlockEvent.class);
 		this.profileComponentType = profileComponentType;
 		this.skillXpDispatchService = skillXpDispatchService;
 		this.nodeLookupService = nodeLookupService;
-		this.heuristicsConfig = heuristicsConfig;
-		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
+		this.toolRequirementEvaluator = toolRequirementEvaluator;
+		this.skillNodeBreakResolutionService = skillNodeBreakResolutionService;
+		this.playerRefResolver = playerRefResolver;
+		this.skillNodePlayerNotifier = skillNodePlayerNotifier;
+		this.query = query;
 	}
 
 	@Override
@@ -73,15 +102,13 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			return;
 		}
 
-		SkillType skill = node.getSkillType();
-		int levelBefore = profile.getLevel(skill);
-
-		if (levelBefore < node.getRequiredSkillLevel()) {
-			event.setCancelled(true);
-			sendPlayerNotification(playerRef,
-					String.format("[Skills] %s level %d/%d (current/required).", formatSkillName(skill),
-							levelBefore, node.getRequiredSkillLevel()),
-					NotificationStyle.Warning);
+		int levelBefore = profile.getLevel(node.getSkillType());
+		RequirementCheckResult toolCheck = this.toolRequirementEvaluator.evaluate(event.getItemInHand(),
+				node.getRequiredToolKeyword(), node.getRequiredToolTier());
+		SkillNodeBreakResolutionResult resolution = this.skillNodeBreakResolutionService
+				.resolveConfiguredNode(node, levelBefore, toolCheck);
+		applyResolution(event, playerRef, resolution);
+		if (!resolution.shouldDispatchXp()) {
 			return;
 		}
 
@@ -110,21 +137,4 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			this.skillNodePlayerNotifier.notify(playerRef, resolution.getPlayerMessage(), resolution.getNotificationStyle());
 		}
 	}
-
-	@Nonnull
-	private String formatSkillName(@Nonnull SkillType skill) {
-		String name = skill.name().toLowerCase(Locale.ROOT);
-		return Character.toUpperCase(name.charAt(0)) + name.substring(1);
-	}
-
-	private boolean looksLikeSkillNodeCandidate(@Nonnull String blockId) {
-		String lowered = blockId.toLowerCase(Locale.ROOT);
-		for (String token : this.heuristicsConfig.nodeCandidateTokens()) {
-			if (lowered.contains(token)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 }

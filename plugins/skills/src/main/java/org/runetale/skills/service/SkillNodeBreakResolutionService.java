@@ -5,12 +5,23 @@ import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.SkillType;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Locale;
 
 /**
  * Resolves block-break outcomes for gathering node interactions.
  */
 public class SkillNodeBreakResolutionService {
+
+	private final List<String> nodeCandidateTokens;
+
+	public SkillNodeBreakResolutionService() {
+		this(List.of("log", "tree", "ore", "rock"));
+	}
+
+	public SkillNodeBreakResolutionService(@Nonnull List<String> nodeCandidateTokens) {
+		this.nodeCandidateTokens = List.copyOf(nodeCandidateTokens);
+	}
 
 	@Nonnull
 	public SkillNodeBreakResolutionResult resolveMissingNode(@Nonnull String blockId) {
@@ -55,6 +66,11 @@ public class SkillNodeBreakResolutionService {
 
 	private boolean looksLikeSkillNodeCandidate(@Nonnull String blockId) {
 		String lowered = blockId.toLowerCase(Locale.ROOT);
-		return lowered.contains("log") || lowered.contains("tree") || lowered.contains("ore") || lowered.contains("rock");
+		for (String token : this.nodeCandidateTokens) {
+			if (lowered.contains(token)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

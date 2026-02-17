@@ -24,32 +24,18 @@ class SkillSessionStatsServiceTest {
 	}
 
 	@Test
-	void trackedSkillCanBeSetAndClearedIndependently() {
-		SkillSessionStatsService service = new SkillSessionStatsService();
-		UUID playerId = TestPlayerIds.fromKey("bob");
-
-		service.setTrackedSkill(playerId, SkillType.WOODCUTTING);
-		assertThat(service.getTrackedSkill(playerId)).isEqualTo(SkillType.WOODCUTTING);
-
-		service.clearTrackedSkill(playerId);
-		assertThat(service.getTrackedSkill(playerId)).isNull();
-	}
-
-	@Test
-	void clearRemovesAllSessionStateForPlayerOnly() {
+	void clearRemovesRecentSessionStateForPlayerOnly() {
 		SkillSessionStatsService service = new SkillSessionStatsService();
 		UUID aliceId = TestPlayerIds.fromKey("alice");
 		UUID bobId = TestPlayerIds.fromKey("bob");
 
 		service.recordGain(aliceId, SkillType.MINING, 50L);
-		service.setTrackedSkill(aliceId, SkillType.MINING);
 		service.recordGain(bobId, SkillType.SMITHING, 80L);
 
 		service.clear(aliceId);
 
 		assertThat(service.getMostRecentGain(aliceId)).isZero();
 		assertThat(service.getMostRecentSkill(aliceId)).isNull();
-		assertThat(service.getTrackedSkill(aliceId)).isNull();
 		assertThat(service.getMostRecentGain(bobId)).isEqualTo(80L);
 		assertThat(service.getMostRecentSkill(bobId)).isEqualTo(SkillType.SMITHING);
 	}

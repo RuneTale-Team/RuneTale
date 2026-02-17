@@ -1,9 +1,12 @@
 package org.runetale.skills.service;
 
 import org.junit.jupiter.api.Test;
+import org.runetale.skills.config.ToolingConfig;
 import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.ToolTier;
 import org.runetale.testing.junit.ContractTest;
+
+import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -14,7 +17,7 @@ class ToolRequirementEvaluatorContractTest {
 
 	@Test
 	void evaluateAcceptsMatchingToolFamilyAtRequiredTier() {
-		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator();
+		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator(ToolingConfig.load(Path.of(".missing-test-config")));
 		var heldItem = mockHeldItem("Tool_Hatchet_Copper");
 
 		RequirementCheckResult result = evaluator.evaluate(heldItem, "Tool_Hatchet", ToolTier.COPPER);
@@ -26,7 +29,7 @@ class ToolRequirementEvaluatorContractTest {
 
 	@Test
 	void evaluateRejectsInsufficientTierWithinMatchingFamily() {
-		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator();
+		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator(ToolingConfig.load(Path.of(".missing-test-config")));
 		var heldItem = mockHeldItem("Tool_Hatchet_Wood");
 
 		RequirementCheckResult result = evaluator.evaluate(heldItem, "Tool_Hatchet", ToolTier.IRON);
@@ -37,7 +40,7 @@ class ToolRequirementEvaluatorContractTest {
 
 	@Test
 	void evaluateRejectsNonMatchingToolFamily() {
-		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator();
+		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator(ToolingConfig.load(Path.of(".missing-test-config")));
 		var heldItem = mockHeldItem("Tool_Pickaxe_Copper");
 
 		RequirementCheckResult result = evaluator.evaluate(heldItem, "Tool_Hatchet", ToolTier.NONE);

@@ -1,7 +1,10 @@
 package org.runetale.skills.service;
 
 import org.junit.jupiter.api.Test;
+import org.runetale.skills.config.XpConfig;
 import org.runetale.testing.junit.ContractTest;
+
+import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,7 +13,7 @@ class XpServiceContractTest {
 
 	@Test
 	void xpThresholdsAreMonotonicAndAnchoredAtZero() {
-		XpService service = new XpService();
+		XpService service = new XpService(XpConfig.load(Path.of(".missing-test-config")));
 
 		assertThat(service.xpForLevel(1)).isZero();
 		assertThat(service.xpForLevel(2)).isGreaterThan(service.xpForLevel(1));
@@ -20,7 +23,7 @@ class XpServiceContractTest {
 
 	@Test
 	void levelForXpMatchesThresholdBoundaries() {
-		XpService service = new XpService();
+		XpService service = new XpService(XpConfig.load(Path.of(".missing-test-config")));
 		long levelTwoThreshold = service.xpForLevel(2);
 		long levelThreeThreshold = service.xpForLevel(3);
 
@@ -33,7 +36,7 @@ class XpServiceContractTest {
 
 	@Test
 	void addXpClampsNegativeInputsAndRoundsGain() {
-		XpService service = new XpService();
+		XpService service = new XpService(XpConfig.load(Path.of(".missing-test-config")));
 
 		assertThat(service.addXp(-100L, 10.4D)).isEqualTo(10L);
 		assertThat(service.addXp(5L, -3.9D)).isEqualTo(5L);
