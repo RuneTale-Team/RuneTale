@@ -20,6 +20,7 @@ import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.SmithingMaterialTier;
+import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
@@ -44,12 +45,14 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 			@Nonnull BlockPosition blockPosition,
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
+			@Nonnull CraftingPageTrackerService craftingPageTrackerService,
 			@Nonnull CraftingConfig craftingConfig) {
 		super(
 				playerRef,
 				blockPosition,
 				profileComponentType,
 				craftingRecipeTagService,
+				craftingPageTrackerService,
 				craftingConfig,
 				UI_PATH,
 				"smithing",
@@ -182,10 +185,9 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 			commandBuilder.set("#RecipeGrid[0][0] #MissingMaterialsOutline.Visible", false);
 		}
 
-		CraftingRecipe selectedPreviewRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());
-		CraftingPageSupport.syncSelectedRecipePreview(commandBuilder, selectedPreviewRecipe);
-
 		CraftingRecipe selectedRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());
+		CraftingPageSupport.syncSelectedRecipePreview(commandBuilder, selectedRecipe);
+
 		boolean selectedUnlocked = false;
 		if (selectedRecipe != null) {
 			int selectedRequiredLevel = CraftingPageSupport.getSmithingRequiredLevel(craftingRecipeTagService().getSkillRequirements(selectedRecipe));

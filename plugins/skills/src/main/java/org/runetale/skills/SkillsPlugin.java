@@ -23,6 +23,7 @@ import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
 import org.runetale.skills.service.CombatStyleService;
+import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
@@ -34,6 +35,7 @@ import org.runetale.skills.system.CraftingPageProgressSystem;
 import org.runetale.skills.system.CraftingXpSystem;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
 import org.runetale.skills.system.PlayerJoinRecipeUnlockSystem;
+import org.runetale.skills.system.PlayerSessionCleanupSystem;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
 
@@ -103,6 +105,11 @@ public class SkillsPlugin extends JavaPlugin {
     private CraftingRecipeTagService craftingRecipeTagService;
 
     /**
+     * Tracks players currently viewing timed crafting pages.
+     */
+    private CraftingPageTrackerService craftingPageTrackerService;
+
+    /**
      * Runtime path layout for external config and plugin data.
      */
     private SkillsPathLayout pathLayout;
@@ -134,6 +141,10 @@ public class SkillsPlugin extends JavaPlugin {
 
     public CraftingRecipeTagService getCraftingRecipeTagService() {
         return this.craftingRecipeTagService;
+    }
+
+    public CraftingPageTrackerService getCraftingPageTrackerService() {
+        return this.craftingPageTrackerService;
     }
 
     public SkillsConfigService getSkillsConfigService() {
@@ -217,6 +228,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.skillXpToastHudService = new SkillXpToastHudService(this.skillsConfigService.getHudConfig());
         this.xpDispatchService = new SkillXpDispatchService();
         this.craftingRecipeTagService = new CraftingRecipeTagService(this.skillsConfigService.getCraftingConfig());
+        this.craftingPageTrackerService = new CraftingPageTrackerService();
         LOGGER.atInfo().log("[Skills] Services registered.");
     }
 
@@ -283,7 +295,16 @@ public class SkillsPlugin extends JavaPlugin {
                 new SkillXpToastHudExpirySystem(this.skillXpToastHudService, this.skillsConfigService.getHudConfig()));
 
         // Drive timed progress updates for custom smithing/smelting pages.
-        this.getEntityStoreRegistry().registerSystem(new CraftingPageProgressSystem(this.skillsConfigService.getCraftingConfig()));
+        this.getEntityStoreRegistry().registerSystem(new CraftingPageProgressSystem(
+                this.skillsConfigService.getCraftingConfig(),
+                this.craftingPageTrackerService));
+
+        // Clear session-scoped state maps when a player entity is removed.
+        this.getEntityStoreRegistry().registerSystem(new PlayerSessionCleanupSystem(
+                this.combatStyleService,
+                this.sessionStatsService,
+                this.skillXpToastHudService,
+                this.craftingPageTrackerService));
 
         // Then process block-break events with requirement checks and XP grants.
         this.getEntityStoreRegistry().registerSystem(
@@ -335,6 +356,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.progressionService = null;
         this.xpDispatchService = null;
         this.craftingRecipeTagService = null;
+        this.craftingPageTrackerService = null;
         this.pathLayout = null;
 
         instance = null;

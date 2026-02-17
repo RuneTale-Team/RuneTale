@@ -68,14 +68,20 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull Ref<EntityStore> ref,
 			@Nonnull Store<EntityStore> store,
 			@Nonnull SkillsPageEventData data) {
+		SkillType previousSelectedSkill = this.selectedSkill;
+
 		if ("Back".equalsIgnoreCase(data.action)) {
-			this.selectedSkill = null;
+			if (this.selectedSkill != null) {
+				this.selectedSkill = null;
+			}
 		}
 
 		if (data.skill != null) {
 			SkillType parsed = parseSkill(data.skill);
 			if (parsed != null) {
-				this.selectedSkill = parsed;
+				if (this.selectedSkill != parsed) {
+					this.selectedSkill = parsed;
+				}
 			}
 		}
 
@@ -83,10 +89,17 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			try {
 				int index = Integer.parseInt(data.index);
 				if (index >= 0 && index < SkillType.values().length) {
-					this.selectedSkill = SkillType.values()[index];
+					SkillType indexedSkill = SkillType.values()[index];
+					if (this.selectedSkill != indexedSkill) {
+						this.selectedSkill = indexedSkill;
+					}
 				}
 			} catch (NumberFormatException ignored) {
 			}
+		}
+
+		if (previousSelectedSkill == this.selectedSkill) {
+			return;
 		}
 
 		UICommandBuilder commandBuilder = new UICommandBuilder();

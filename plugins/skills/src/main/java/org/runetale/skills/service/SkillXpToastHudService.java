@@ -106,6 +106,12 @@ public class SkillXpToastHudService {
 		send(playerRef, commandBuilder);
 	}
 
+	public void clear(@Nonnull UUID playerId) {
+		this.hideAtByPlayer.remove(playerId);
+		this.visibleByPlayer.remove(playerId);
+		this.fadedByPlayer.remove(playerId);
+	}
+
 	private void applyFade(@Nonnull PlayerRef playerRef) {
 		if (!this.visibleByPlayer.contains(playerRef.getUuid())) {
 			return;

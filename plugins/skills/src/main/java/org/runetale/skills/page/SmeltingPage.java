@@ -20,6 +20,7 @@ import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.SmithingMaterialTier;
+import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
@@ -48,12 +49,14 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 			@Nonnull BlockPosition blockPosition,
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
+			@Nonnull CraftingPageTrackerService craftingPageTrackerService,
 			@Nonnull CraftingConfig craftingConfig) {
 		super(
 				playerRef,
 				blockPosition,
 				profileComponentType,
 				craftingRecipeTagService,
+				craftingPageTrackerService,
 				craftingConfig,
 				UI_PATH,
 				"smelting",
@@ -196,16 +199,15 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 			commandBuilder.set("#RecipeList[0][0] #MissingMaterialsOutline.Visible", false);
 		}
 
-		CraftingRecipe selectedPreviewRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());
-		CraftingPageSupport.syncSelectedRecipePreview(commandBuilder, selectedPreviewRecipe);
+		CraftingRecipe selectedRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());
+		CraftingPageSupport.syncSelectedRecipePreview(commandBuilder, selectedRecipe);
 		commandBuilder.set("#SelectedOutputName.Text", "");
-		if (selectedPreviewRecipe == null) {
+		if (selectedRecipe == null) {
 			commandBuilder.set("#SelectedOutputLargeName.Text", "");
 		} else {
-			commandBuilder.set("#SelectedOutputLargeName.Text", CraftingPageSupport.getRecipeOutputName(selectedPreviewRecipe));
+			commandBuilder.set("#SelectedOutputLargeName.Text", CraftingPageSupport.getRecipeOutputName(selectedRecipe));
 		}
 
-		CraftingRecipe selectedRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());
 		boolean selectedUnlocked = false;
 		if (selectedRecipe != null) {
 			int selectedRequiredLevel = CraftingPageSupport.getSmithingRequiredLevel(craftingRecipeTagService().getSkillRequirements(selectedRecipe));

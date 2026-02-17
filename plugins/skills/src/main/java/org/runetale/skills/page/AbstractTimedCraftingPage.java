@@ -20,6 +20,7 @@ import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.SmithingMaterialTier;
+import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
@@ -32,6 +33,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 	private final BlockPosition blockPosition;
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final CraftingRecipeTagService craftingRecipeTagService;
+	private final CraftingPageTrackerService craftingPageTrackerService;
 
 	private final String uiPath;
 	private final String benchContextName;
@@ -52,6 +54,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull BlockPosition blockPosition,
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
+			@Nonnull CraftingPageTrackerService craftingPageTrackerService,
 			@Nonnull CraftingConfig craftingConfig,
 			@Nonnull String uiPath,
 			@Nonnull String benchContextName,
@@ -62,6 +65,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 		this.blockPosition = blockPosition;
 		this.profileComponentType = profileComponentType;
 		this.craftingRecipeTagService = craftingRecipeTagService;
+		this.craftingPageTrackerService = craftingPageTrackerService;
 		this.uiPath = uiPath;
 		this.benchContextName = benchContextName;
 		this.progressVerb = progressVerb;
@@ -78,6 +82,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder,
 			@Nonnull Store<EntityStore> store) {
+		this.craftingPageTrackerService.trackOpenPage(this.playerRef.getUuid(), ref);
 		CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, getLogger(), this.benchContextName);
 		commandBuilder.append(this.uiPath);
 		CraftingPageSupport.bindTierTabs(eventBuilder, availableTiers());
@@ -95,28 +100,52 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull Ref<EntityStore> ref,
 			@Nonnull Store<EntityStore> store,
 			@Nonnull TEventData data) {
+		boolean shouldRerender = false;
+
 		if ("Craft".equalsIgnoreCase(data.action)) {
-			startCraft(ref, store);
+			shouldRerender = startCraft(ref, store) || shouldRerender;
 		}
 
 		if (!this.craftingState.isCraftingInProgress() && data.recipeId != null) {
-			this.selectedRecipeId = data.recipeId;
+			if (!data.recipeId.equals(this.selectedRecipeId)) {
+				this.selectedRecipeId = data.recipeId;
+				shouldRerender = true;
+			}
 		}
 
 		if (!this.craftingState.isCraftingInProgress() && data.tier != null) {
 			SmithingMaterialTier parsed = CraftingPageSupport.parseTier(data.tier);
 			if (parsed != null) {
-				this.selectedTier = parsed;
-				this.selectedRecipeId = null;
+				if (this.selectedTier != parsed || this.selectedRecipeId != null) {
+					this.selectedTier = parsed;
+					this.selectedRecipeId = null;
+					shouldRerender = true;
+				}
 			}
 		}
 
 		if (!this.craftingState.isCraftingInProgress() && data.quantity != null) {
+			int previousQuantity = this.craftingState.getSelectedCraftQuantity();
+			boolean previousAll = this.craftingState.isCraftAllSelected();
 			this.craftingState.applyQuantitySelection(data.quantity);
+			if (previousQuantity != this.craftingState.getSelectedCraftQuantity()
+					|| previousAll != this.craftingState.isCraftAllSelected()) {
+				shouldRerender = true;
+			}
 		}
 
 		if (!this.craftingState.isCraftingInProgress() && "SetQuantity".equalsIgnoreCase(data.action)) {
+			int previousQuantity = this.craftingState.getSelectedCraftQuantity();
+			boolean previousAll = this.craftingState.isCraftAllSelected();
 			this.craftingState.applyCustomQuantity(data.quantityInput);
+			if (previousQuantity != this.craftingState.getSelectedCraftQuantity()
+					|| previousAll != this.craftingState.isCraftAllSelected()) {
+				shouldRerender = true;
+			}
+		}
+
+		if (!shouldRerender) {
+			return;
 		}
 
 		UICommandBuilder commandBuilder = new UICommandBuilder();
@@ -127,6 +156,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 
 	@Override
 	public final void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+		this.craftingPageTrackerService.untrackOpenPage(this.playerRef.getUuid());
 		this.craftingState.reset();
 		CraftingPageSupport.clearBenchBinding(ref, store);
 	}
@@ -163,27 +193,27 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 		this.sendUpdate(commandBuilder, false);
 	}
 
-	protected final void startCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+	protected final boolean startCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
 		if (this.craftingState.isCraftingInProgress() || this.selectedRecipeId == null) {
-			return;
+			return false;
 		}
 
 		CraftingRecipe selectedRecipe = CraftingPageSupport.resolveRecipe(this.selectedRecipeId);
 		if (selectedRecipe == null) {
-			return;
+			return false;
 		}
 
 		PlayerSkillProfileComponent profile = store.getComponent(ref, this.profileComponentType);
 		Player player = store.getComponent(ref, Player.getComponentType());
 		if (profile == null || player == null) {
-			return;
+			return false;
 		}
 
 		int smithingLevel = profile.getLevel(SkillType.SMITHING);
 		List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(selectedRecipe);
 		int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
 		if (smithingLevel < requiredLevel || !CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe)) {
-			return;
+			return false;
 		}
 
 		int targetCraftCount = this.craftingState.isCraftAllSelected()
@@ -191,10 +221,11 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 				: this.craftingState.getSelectedCraftQuantity();
 		targetCraftCount = Math.max(0, targetCraftCount);
 		if (targetCraftCount <= 0) {
-			return;
+			return false;
 		}
 
 		this.craftingState.startCrafting(selectedRecipe.getId(), targetCraftCount, this.craftDurationMillis);
+		return true;
 	}
 
 	protected final void appendProgressUi(@Nonnull UICommandBuilder commandBuilder) {
