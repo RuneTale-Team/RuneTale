@@ -11,6 +11,12 @@ pipeline {
     }
 
     stages {
+        stage('Set GitHub Status: Pending') {
+            steps {
+                githubNotify context: 'jenkins/rune-ci', status: 'PENDING', description: 'Build started'
+            }
+        }
+
         stage('Build, Test, Package') {
             steps {
                 sh 'chmod +x ./gradlew'
@@ -29,9 +35,19 @@ pipeline {
 
     post {
         success {
+            githubNotify context: 'jenkins/rune-ci', status: 'SUCCESS', description: 'Build succeeded'
             echo 'Build, tests, packaging completed successfully.'
         }
+        unstable {
+            githubNotify context: 'jenkins/rune-ci', status: 'FAILURE', description: 'Build unstable'
+            echo 'Pipeline is unstable. Check test reports.'
+        }
+        aborted {
+            githubNotify context: 'jenkins/rune-ci', status: 'FAILURE', description: 'Build aborted'
+            echo 'Pipeline was aborted.'
+        }
         failure {
+            githubNotify context: 'jenkins/rune-ci', status: 'FAILURE', description: 'Build failed'
             echo 'Pipeline failed. Check console log and test reports.'
         }
         always {
