@@ -38,6 +38,7 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 	private static final String RECIPE_CARD_TEMPLATE = "SkillsPlugin/SmeltingBarCard.ui";
 	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 6); }";
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 6); }";
+	private static final String EMPTY_COLUMN_PLACEHOLDER_INLINE = "Group { FlexWeight: 1; }";
 	private static final int GRID_COLUMNS = 3;
 
 	private final CraftingConfig craftingConfig;
@@ -138,6 +139,9 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 			int outputQuantity = CraftingPageSupport.getPrimaryOutputQuantity(recipe);
 			commandBuilder.set(selector + " #RecipeOutputQuantity.Text", outputQuantity > 1 ? "x" + outputQuantity : "");
 			CraftingPageSupport.configureIngredientSlots(commandBuilder, selector, recipe);
+			commandBuilder.set(selector + " #IngredientSlot0.ShowQuantity", false);
+			commandBuilder.set(selector + " #IngredientSlot1.ShowQuantity", false);
+			commandBuilder.set(selector + " #IngredientSlot2.ShowQuantity", false);
 			commandBuilder.set(selector + " #RecipeIngredients.TextSpans", CraftingPageSupport.formatIngredientsLabel(recipe));
 			commandBuilder.set(selector + " #RecipeXp.Text", CraftingPageSupport.getXpText(recipe, craftingRecipeTagService()));
 
@@ -161,6 +165,17 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#99afc6");
 				commandBuilder.set(selector + " #LockOverlay.Visible", false);
 				commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", false);
+			}
+		}
+
+		if (!recipes.isEmpty()) {
+			int remainder = recipes.size() % GRID_COLUMNS;
+			if (remainder != 0) {
+				int row = recipes.size() / GRID_COLUMNS;
+				for (int col = remainder; col < GRID_COLUMNS; col++) {
+					commandBuilder.appendInline("#RecipeList[" + row + "]", CARD_COLUMN_SPACER_INLINE);
+					commandBuilder.appendInline("#RecipeList[" + row + "]", EMPTY_COLUMN_PLACEHOLDER_INLINE);
+				}
 			}
 		}
 

@@ -94,7 +94,7 @@ Group {
 
         ItemSlot #IngredientSlot0 {
           Anchor: (Width: 22, Height: 22, Right: 3);
-          ShowQuantity: true;
+          ShowQuantity: false;
           ShowQualityBackground: false;
           ShowDurabilityBar: false;
           Visible: false;
@@ -102,7 +102,7 @@ Group {
 
         ItemSlot #IngredientSlot1 {
           Anchor: (Width: 22, Height: 22, Right: 3);
-          ShowQuantity: true;
+          ShowQuantity: false;
           ShowQualityBackground: false;
           ShowDurabilityBar: false;
           Visible: false;
@@ -110,7 +110,7 @@ Group {
 
         ItemSlot #IngredientSlot2 {
           Anchor: (Width: 22, Height: 22, Right: 3);
-          ShowQuantity: true;
+          ShowQuantity: false;
           ShowQualityBackground: false;
           ShowDurabilityBar: false;
           Visible: false;
