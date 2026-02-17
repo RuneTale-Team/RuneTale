@@ -97,6 +97,8 @@ tasks.register<Delete>("cleanDeployedPluginBundles") {
         fileTree(modsDir.asFile).apply {
             include("${rootProject.name}-plugin-jars-*.zip")
             include("*-plugin-jars-*.zip")
+            include("${rootProject.name}-mods-bundle-*.zip")
+            include("*-mods-bundle-*.zip")
         }
     )
 
@@ -104,6 +106,8 @@ tasks.register<Delete>("cleanDeployedPluginBundles") {
         println("Cleaned deployed plugin bundle zips from: ${modsDir.asFile}")
     }
 }
+
+val skillsConfigResourceDir = layout.projectDirectory.dir("plugins/skills/src/main/resources/Skills")
 
 tasks.register<Zip>("bundlePluginJars") {
     dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
@@ -117,6 +121,24 @@ tasks.register<Zip>("bundlePluginJars") {
     from(pluginProjects.map { project ->
         project.tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
     })
+}
+
+tasks.register<Zip>("bundleModsRelease") {
+    dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
+    dependsOn(pluginProjects.map { it.tasks.named("jar") })
+
+    archiveBaseName.set("${rootProject.name}-mods-bundle")
+    archiveVersion.set(project.version.toString())
+    archiveClassifier.set("")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+
+    from(pluginProjects.map { project ->
+        project.tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
+    })
+
+    from(skillsConfigResourceDir) {
+        into("runetale/config/skills")
+    }
 }
 
 tasks.register("deployPluginsToRun") {
