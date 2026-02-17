@@ -2,5 +2,11 @@
   "Group": "RuneTale",
   "Name": "SkillsPlugin",
   "Main": "org.runetale.skills.SkillsPlugin",
-  "IncludesAssetPack": true
+  "IncludesAssetPack": true,
+  "Authors": [
+    {
+      "Name": "Nico Piel",
+      "Email": "nicopiel@mailbox.org"
+    }
+  ]
 }
