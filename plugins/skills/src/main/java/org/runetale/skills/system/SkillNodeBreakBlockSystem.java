@@ -20,6 +20,7 @@ import org.runetale.skills.config.HeuristicsConfig;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
+import org.runetale.skills.service.DebugModeService;
 import org.runetale.skills.service.SkillNodeLookupService;
 
 import javax.annotation.Nonnull;
@@ -38,18 +39,21 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	private final SkillXpDispatchService skillXpDispatchService;
 	private final SkillNodeLookupService nodeLookupService;
 	private final HeuristicsConfig heuristicsConfig;
+	private final DebugModeService debugModeService;
 	private final Query<EntityStore> query;
 
 	public SkillNodeBreakBlockSystem(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull SkillXpDispatchService skillXpDispatchService,
 			@Nonnull SkillNodeLookupService nodeLookupService,
-			@Nonnull HeuristicsConfig heuristicsConfig) {
+			@Nonnull HeuristicsConfig heuristicsConfig,
+			@Nonnull DebugModeService debugModeService) {
 		super(BreakBlockEvent.class);
 		this.profileComponentType = profileComponentType;
 		this.skillXpDispatchService = skillXpDispatchService;
 		this.nodeLookupService = nodeLookupService;
 		this.heuristicsConfig = heuristicsConfig;
+		this.debugModeService = debugModeService;
 		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
 	}
 
@@ -61,8 +65,20 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 		PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
 		BlockType brokenBlockType = event.getBlockType();
+		if (isSkillsDebugEnabled()) {
+			LOGGER.atInfo().log("[Skills][Diag] Break event received blockId=%s cancelled=%s player=%s",
+					brokenBlockType.getId(),
+					event.isCancelled(),
+					playerRef == null ? "<missing>" : playerRef.getUuid());
+		}
+
 		SkillNodeDefinition node = this.nodeLookupService.findByBlockId(brokenBlockType.getId());
 		if (node == null) {
+			if (isSkillsDebugEnabled()) {
+				LOGGER.atInfo().log("[Skills][Diag] Node lookup miss blockId=%s candidate=%s",
+						brokenBlockType.getId(),
+						looksLikeSkillNodeCandidate(brokenBlockType.getId()));
+			}
 			if (looksLikeSkillNodeCandidate(brokenBlockType.getId())) {
 				LOGGER.atWarning().log(
 						"[Skills] Unconfigured node-like block encountered id=%s. Add matching blockId/blockIds in Skills/Nodes.",
@@ -80,6 +96,11 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		if (profile == null) {
 			LOGGER.atWarning().log(
 					"Player skill profile missing during break event; skipping skill processing for safety.");
+			if (isSkillsDebugEnabled()) {
+				LOGGER.atWarning().log("[Skills][Diag] Break event aborted due to missing profile blockId=%s player=%s",
+						brokenBlockType.getId(),
+						playerRef == null ? "<missing>" : playerRef.getUuid());
+			}
 			return;
 		}
 
@@ -87,6 +108,14 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		int levelBefore = profile.getLevel(skill);
 
 		if (levelBefore < node.getRequiredSkillLevel()) {
+			if (isSkillsDebugEnabled()) {
+				LOGGER.atInfo().log("[Skills][Diag] Level gate blocked break node=%s skill=%s level=%d required=%d block=%s",
+						node.getId(),
+						skill,
+						levelBefore,
+						node.getRequiredSkillLevel(),
+						brokenBlockType.getId());
+			}
 			event.setCancelled(true);
 			sendPlayerNotification(playerRef,
 					String.format("[Skills] %s level %d/%d (current/required).", formatSkillName(skill),
@@ -95,13 +124,21 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			return;
 		}
 
-		this.skillXpDispatchService.grantSkillXp(
+		boolean queued = this.skillXpDispatchService.grantSkillXp(
 				commandBuffer,
 				ref,
 				skill,
 				node.getExperienceReward(),
 				"node:" + node.getId(),
 				true);
+		if (isSkillsDebugEnabled()) {
+			LOGGER.atInfo().log("[Skills][Diag] Break XP dispatch node=%s skill=%s xp=%.4f queued=%s block=%s",
+					node.getId(),
+					skill,
+					node.getExperienceReward(),
+					queued,
+					brokenBlockType.getId());
+		}
 	}
 
 	@Nonnull
@@ -140,6 +177,10 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			}
 		}
 		return false;
+	}
+
+	private boolean isSkillsDebugEnabled() {
+		return this.debugModeService.isEnabled("skills");
 	}
 
 }

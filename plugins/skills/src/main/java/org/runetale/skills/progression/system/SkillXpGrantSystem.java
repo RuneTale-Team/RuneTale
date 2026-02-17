@@ -16,6 +16,7 @@ import org.runetale.skills.progression.domain.SkillXpGrantResult;
 import org.runetale.skills.progression.event.SkillLevelUpEvent;
 import org.runetale.skills.progression.event.SkillXpGrantEvent;
 import org.runetale.skills.progression.service.SkillProgressionService;
+import org.runetale.skills.service.DebugModeService;
 import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.service.SkillSessionStatsService;
 
@@ -32,16 +33,19 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 	private final SkillProgressionService progressionService;
 	private final SkillSessionStatsService sessionStatsService;
 	private final SkillXpToastHudService skillXpToastHudService;
+	private final DebugModeService debugModeService;
 	private final Query<EntityStore> query;
 
 	public SkillXpGrantSystem(
 			@Nonnull SkillProgressionService progressionService,
 			@Nonnull SkillSessionStatsService sessionStatsService,
-			@Nonnull SkillXpToastHudService skillXpToastHudService) {
+			@Nonnull SkillXpToastHudService skillXpToastHudService,
+			@Nonnull DebugModeService debugModeService) {
 		super(SkillXpGrantEvent.class);
 		this.progressionService = progressionService;
 		this.sessionStatsService = sessionStatsService;
 		this.skillXpToastHudService = skillXpToastHudService;
+		this.debugModeService = debugModeService;
 		this.query = Query.and(PlayerRef.getComponentType());
 	}
 
@@ -51,6 +55,14 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 			@Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull SkillXpGrantEvent event) {
 
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
+		if (isSkillsDebugEnabled()) {
+			LOGGER.atInfo().log("[Skills][Diag] Processing XP grant event skill=%s xp=%.4f source=%s notify=%s",
+					event.getSkillType(),
+					event.getExperience(),
+					event.getSource(),
+					event.shouldNotifyPlayer());
+		}
+
 		SkillXpGrantResult result = this.progressionService.grantExperience(
 				commandBuffer,
 				ref,
@@ -58,11 +70,23 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 				event.getExperience());
 
 		if (result.getGainedExperience() <= 0L) {
+			if (isSkillsDebugEnabled()) {
+				LOGGER.atInfo().log("[Skills][Diag] XP grant produced no gain skill=%s source=%s requestedXp=%.4f",
+						event.getSkillType(),
+						event.getSource(),
+						event.getExperience());
+			}
 			return;
 		}
 
 		PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
 		if (playerRef == null) {
+			if (isSkillsDebugEnabled()) {
+				LOGGER.atWarning().log("[Skills][Diag] XP grant applied but PlayerRef missing skill=%s source=%s gain=%d",
+						result.getSkillType(),
+						event.getSource(),
+						result.getGainedExperience());
+			}
 			return;
 		}
 
@@ -94,6 +118,16 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 			commandBuffer.invoke(ref, new SkillLevelUpEvent(
 					result.getSkillType(), result.getPreviousLevel(), result.getUpdatedLevel()));
 		}
+
+		if (isSkillsDebugEnabled()) {
+			LOGGER.atInfo().log("[Skills][Diag] XP grant applied source=%s skill=%s gain=%d totalXp=%d prevLevel=%d newLevel=%d",
+					event.getSource(),
+					result.getSkillType(),
+					result.getGainedExperience(),
+					result.getUpdatedExperience(),
+					result.getPreviousLevel(),
+					result.getUpdatedLevel());
+		}
 	}
 
 	@Nonnull
@@ -106,5 +140,9 @@ public class SkillXpGrantSystem extends EntityEventSystem<EntityStore, SkillXpGr
 	private String formatSkillName(@Nonnull SkillType skill) {
 		String lowered = skill.name().toLowerCase(Locale.ROOT);
 		return Character.toUpperCase(lowered.charAt(0)) + lowered.substring(1);
+	}
+
+	private boolean isSkillsDebugEnabled() {
+		return this.debugModeService.isEnabled("skills");
 	}
 }

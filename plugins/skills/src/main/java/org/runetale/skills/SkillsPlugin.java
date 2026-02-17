@@ -14,6 +14,7 @@ import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.command.CombatStyleCommand;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.SkillsPageCommand;
+import org.runetale.skills.command.debug.RtDebugCommand;
 import org.runetale.skills.command.debug.SkillXpCommand;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
@@ -25,6 +26,7 @@ import org.runetale.skills.progression.system.SkillXpGrantSystem;
 import org.runetale.skills.service.CombatStyleService;
 import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
+import org.runetale.skills.service.DebugModeService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillSessionStatsService;
@@ -40,6 +42,7 @@ import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * SkillsPlugin - A Hytale server plugin.
@@ -98,6 +101,11 @@ public class SkillsPlugin extends JavaPlugin {
      * Dispatch service used by systems/APIs to enqueue XP grants.
      */
     private SkillXpDispatchService xpDispatchService;
+
+    /**
+     * Runtime toggles for per-plugin deep diagnostics.
+     */
+    private DebugModeService debugModeService;
 
     /**
      * Stateless utility for extracting skill tags from crafting recipes.
@@ -198,6 +206,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService));
         this.getCommandRegistry().registerCommand(new CombatStyleCommand(this.combatStyleService));
         this.getCommandRegistry().registerCommand(new SkillXpCommand());
+        this.getCommandRegistry().registerCommand(new RtDebugCommand(this.debugModeService));
         this.getCommandRegistry().registerCommand(
                 new SkillsPageCommand(
                         this.playerSkillProfileComponentType,
@@ -226,7 +235,8 @@ public class SkillsPlugin extends JavaPlugin {
         this.sessionStatsService = new SkillSessionStatsService();
         this.combatStyleService = new CombatStyleService();
         this.skillXpToastHudService = new SkillXpToastHudService(this.skillsConfigService.getHudConfig());
-        this.xpDispatchService = new SkillXpDispatchService();
+        this.debugModeService = new DebugModeService(List.of("skills"));
+        this.xpDispatchService = new SkillXpDispatchService(this.debugModeService);
         this.craftingRecipeTagService = new CraftingRecipeTagService(this.skillsConfigService.getCraftingConfig());
         this.craftingPageTrackerService = new CraftingPageTrackerService();
         LOGGER.atInfo().log("[Skills] Services registered.");
@@ -284,7 +294,11 @@ public class SkillsPlugin extends JavaPlugin {
 
         // Apply all queued XP grants through the centralized progression pipeline.
         this.getEntityStoreRegistry().registerSystem(
-                new SkillXpGrantSystem(this.progressionService, this.sessionStatsService, this.skillXpToastHudService));
+                new SkillXpGrantSystem(
+                        this.progressionService,
+                        this.sessionStatsService,
+                        this.skillXpToastHudService,
+                        this.debugModeService));
 
         // Apply combat-derived XP from damage events (melee style + ranged).
         this.getEntityStoreRegistry().registerSystem(
@@ -312,7 +326,8 @@ public class SkillsPlugin extends JavaPlugin {
                         this.playerSkillProfileComponentType,
                         this.xpDispatchService,
                         this.nodeLookupService,
-                        this.skillsConfigService.getHeuristicsConfig()));
+                        this.skillsConfigService.getHeuristicsConfig(),
+                        this.debugModeService));
 
         // Grant XP from crafting recipes tagged with skill XP rewards.
         this.getEntityStoreRegistry().registerSystem(
@@ -355,6 +370,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.skillXpToastHudService = null;
         this.progressionService = null;
         this.xpDispatchService = null;
+        this.debugModeService = null;
         this.craftingRecipeTagService = null;
         this.craftingPageTrackerService = null;
         this.pathLayout = null;
