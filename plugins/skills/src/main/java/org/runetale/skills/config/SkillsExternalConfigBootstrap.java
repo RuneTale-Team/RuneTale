@@ -25,6 +25,7 @@ public final class SkillsExternalConfigBootstrap {
     public static void seedMissingDefaults(@Nonnull SkillsPathLayout pathLayout) {
         Path configRoot = pathLayout.pluginConfigRoot();
         Path runtimeRoot = pathLayout.pluginRuntimeRoot();
+        LOGGER.atInfo().log("[Skills] Seeding external config defaults configRoot=%s runtimeRoot=%s", configRoot, runtimeRoot);
 
         try {
             Files.createDirectories(configRoot);
@@ -62,6 +63,7 @@ public final class SkillsExternalConfigBootstrap {
         for (String nodePath : readNodeIndexFromClasspath()) {
             resources.add("Skills/Nodes/" + nodePath);
         }
+        LOGGER.atFine().log("[Skills] Bootstrap resource manifest contains %d resource(s)", resources.size());
         return resources;
     }
 
@@ -88,6 +90,7 @@ public final class SkillsExternalConfigBootstrap {
             LOGGER.atWarning().withCause(e).log("[Skills] Failed reading bundled node index during bootstrap");
         }
 
+        LOGGER.atFine().log("[Skills] Bootstrap node index resolved %d node resource(s)", files.size());
         return files;
     }
 
@@ -96,6 +99,7 @@ public final class SkillsExternalConfigBootstrap {
             @Nonnull String resourcePath) {
         Path outputPath = pathLayout.resolveConfigResourcePath(resourcePath);
         if (Files.exists(outputPath)) {
+            LOGGER.atFine().log("[Skills] Bootstrap skipped existing config file: %s", outputPath);
             return false;
         }
 

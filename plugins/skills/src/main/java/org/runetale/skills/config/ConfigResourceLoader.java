@@ -28,8 +28,17 @@ final class ConfigResourceLoader {
     @Nonnull
     static Properties loadProperties(@Nonnull String resourcePath, @Nullable Path externalConfigRoot) {
         Properties properties = new Properties();
+        LOGGER.atFine().log("[Skills] Loading config resource=%s externalRoot=%s",
+                resourcePath,
+                externalConfigRoot == null ? "<none>" : externalConfigRoot);
 
         Path externalPath = resolveExternalPath(resourcePath, externalConfigRoot);
+        if (externalPath != null) {
+            LOGGER.atFine().log("[Skills] Resolved external config candidate resource=%s path=%s exists=%s",
+                    resourcePath,
+                    externalPath,
+                    Files.isRegularFile(externalPath));
+        }
         if (externalPath != null && Files.isRegularFile(externalPath)) {
             try (InputStream input = Files.newInputStream(externalPath)) {
                 properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
@@ -43,6 +52,11 @@ final class ConfigResourceLoader {
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         ClassLoader configClassLoader = ConfigResourceLoader.class.getClassLoader();
         ClassLoader selectedClassLoader = configClassLoader != null ? configClassLoader : contextClassLoader;
+        LOGGER.atFine().log("[Skills] Resolving classpath config resource=%s selectedCL=%s contextCL=%s configCL=%s",
+                resourcePath,
+                describeClassLoader(selectedClassLoader),
+                describeClassLoader(contextClassLoader),
+                describeClassLoader(configClassLoader));
         if (selectedClassLoader == null) {
             LOGGER.atWarning().log("[Skills] No classloader available for config resource=%s", resourcePath);
             return properties;
@@ -56,6 +70,11 @@ final class ConfigResourceLoader {
 
         if (selectedInput == null) {
             LOGGER.atWarning().log("[Skills] Missing config resource=%s; using defaults", resourcePath);
+            LOGGER.atInfo().log("[Skills][Diag] Config resource miss via selectedCL=%s resource=%s contextVisible=%s configVisible=%s",
+                    describeClassLoader(selectedClassLoader),
+                    resourcePath,
+                    probeResourceVisible(contextClassLoader, resourcePath),
+                    probeResourceVisible(configClassLoader, resourcePath));
             return properties;
         }
 
@@ -83,16 +102,22 @@ final class ConfigResourceLoader {
     static String stringValue(@Nonnull Properties properties, @Nonnull String key, @Nonnull String defaultValue) {
         String raw = properties.getProperty(key);
         if (raw == null) {
+            LOGGER.atFiner().log("[Skills] Missing string config key=%s; using default=%s", key, defaultValue);
             return defaultValue;
         }
 
         String trimmed = raw.trim();
-        return trimmed.isEmpty() ? defaultValue : trimmed;
+        if (trimmed.isEmpty()) {
+            LOGGER.atFiner().log("[Skills] Blank string config key=%s; using default=%s", key, defaultValue);
+            return defaultValue;
+        }
+        return trimmed;
     }
 
     static int intValue(@Nonnull Properties properties, @Nonnull String key, int defaultValue) {
         String raw = properties.getProperty(key);
         if (raw == null || raw.isBlank()) {
+            LOGGER.atFiner().log("[Skills] Missing integer config key=%s; using default=%d", key, defaultValue);
             return defaultValue;
         }
 
@@ -107,6 +132,7 @@ final class ConfigResourceLoader {
     static long longValue(@Nonnull Properties properties, @Nonnull String key, long defaultValue) {
         String raw = properties.getProperty(key);
         if (raw == null || raw.isBlank()) {
+            LOGGER.atFiner().log("[Skills] Missing long config key=%s; using default=%d", key, defaultValue);
             return defaultValue;
         }
 
@@ -121,6 +147,7 @@ final class ConfigResourceLoader {
     static double doubleValue(@Nonnull Properties properties, @Nonnull String key, double defaultValue) {
         String raw = properties.getProperty(key);
         if (raw == null || raw.isBlank()) {
+            LOGGER.atFiner().log("[Skills] Missing decimal config key=%s; using default=%f", key, defaultValue);
             return defaultValue;
         }
 
@@ -130,5 +157,20 @@ final class ConfigResourceLoader {
             LOGGER.atWarning().log("[Skills] Invalid decimal config key=%s value=%s; using default=%f", key, raw, defaultValue);
             return defaultValue;
         }
+    }
+
+    @Nonnull
+    private static String describeClassLoader(@Nullable ClassLoader classLoader) {
+        if (classLoader == null) {
+            return "<null>";
+        }
+        return classLoader.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(classLoader));
+    }
+
+    private static boolean probeResourceVisible(@Nullable ClassLoader classLoader, @Nonnull String resourcePath) {
+        if (classLoader == null) {
+            return false;
+        }
+        return classLoader.getResource(resourcePath) != null;
     }
 }

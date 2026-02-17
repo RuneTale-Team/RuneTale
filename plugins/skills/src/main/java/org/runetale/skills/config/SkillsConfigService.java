@@ -17,6 +17,7 @@ public class SkillsConfigService {
     private final HeuristicsConfig heuristicsConfig;
 
     public SkillsConfigService(@Nonnull Path externalConfigRoot) {
+        LOGGER.atInfo().log("[Skills] Loading config set from externalRoot=%s", externalConfigRoot);
         this.xpConfig = XpConfig.load(externalConfigRoot);
         this.combatConfig = CombatConfig.load(externalConfigRoot);
         this.craftingConfig = CraftingConfig.load(externalConfigRoot);
@@ -24,6 +25,7 @@ public class SkillsConfigService {
         this.toolingConfig = ToolingConfig.load(externalConfigRoot);
         this.heuristicsConfig = HeuristicsConfig.load(externalConfigRoot);
         logSnapshot();
+        LOGGER.atInfo().log("[Skills] Config load complete");
     }
 
     @Nonnull
