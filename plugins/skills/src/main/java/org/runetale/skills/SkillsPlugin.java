@@ -9,6 +9,8 @@ import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import org.runetale.skills.config.SkillsConfigService;
+import org.runetale.skills.config.SkillsExternalConfigBootstrap;
+import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.command.CombatStyleCommand;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.SkillsPageCommand;
@@ -99,6 +101,11 @@ public class SkillsPlugin extends JavaPlugin {
      * Stateless utility for extracting skill tags from crafting recipes.
      */
     private CraftingRecipeTagService craftingRecipeTagService;
+
+    /**
+     * Runtime path layout for external config and plugin data.
+     */
+    private SkillsPathLayout pathLayout;
 
     public SkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -196,9 +203,15 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private void registerServices() {
         LOGGER.atInfo().log("[Skills] Registering services...");
-        this.skillsConfigService = new SkillsConfigService();
+        this.pathLayout = SkillsPathLayout.fromDataDirectory(this.getDataDirectory());
+        LOGGER.atInfo().log("[Skills] Runtime paths mods=%s config=%s runtime=%s",
+                this.pathLayout.modsRoot(),
+                this.pathLayout.pluginConfigRoot(),
+                this.pathLayout.pluginRuntimeRoot());
+        SkillsExternalConfigBootstrap.seedMissingDefaults(this.pathLayout);
+        this.skillsConfigService = new SkillsConfigService(this.pathLayout.pluginConfigRoot());
         this.xpService = new XpService(this.skillsConfigService.getXpConfig());
-        this.nodeLookupService = new SkillNodeLookupService();
+        this.nodeLookupService = new SkillNodeLookupService(this.pathLayout.pluginConfigRoot());
         this.sessionStatsService = new SkillSessionStatsService();
         this.combatStyleService = new CombatStyleService();
         this.skillXpToastHudService = new SkillXpToastHudService(this.skillsConfigService.getHudConfig());
@@ -322,6 +335,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.progressionService = null;
         this.xpDispatchService = null;
         this.craftingRecipeTagService = null;
+        this.pathLayout = null;
 
         instance = null;
     }

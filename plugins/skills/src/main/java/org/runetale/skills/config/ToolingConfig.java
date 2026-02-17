@@ -3,6 +3,7 @@ package org.runetale.skills.config;
 import org.runetale.skills.domain.ToolTier;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -32,9 +33,9 @@ public final class ToolingConfig {
     }
 
     @Nonnull
-    public static ToolingConfig load() {
-        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH);
-        Properties legacyDefaults = ConfigResourceLoader.loadProperties(LEGACY_DEFAULTS_RESOURCE_PATH);
+    public static ToolingConfig load(@Nonnull Path externalConfigRoot) {
+        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH, externalConfigRoot);
+        Properties legacyDefaults = ConfigResourceLoader.loadProperties(LEGACY_DEFAULTS_RESOURCE_PATH, externalConfigRoot);
 
         String defaultKeyword = ConfigResourceLoader.stringValue(
                 properties,

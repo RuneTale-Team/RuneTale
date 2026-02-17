@@ -1,6 +1,7 @@
 package org.runetale.skills.config;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Path;
 import java.util.Properties;
 
 public record HudConfig(
@@ -13,8 +14,8 @@ public record HudConfig(
     private static final String RESOURCE_PATH = "Skills/Config/hud.properties";
 
     @Nonnull
-    public static HudConfig load() {
-        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH);
+    public static HudConfig load(@Nonnull Path externalConfigRoot) {
+        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH, externalConfigRoot);
 
         long toastDurationMillis = Math.max(1L, ConfigResourceLoader.longValue(properties, "toast.durationMillis", 1400L));
         long toastFadeDurationMillis = Math.max(1L, ConfigResourceLoader.longValue(properties, "toast.fadeDurationMillis", 180L));

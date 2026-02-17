@@ -1,6 +1,7 @@
 package org.runetale.skills.service;
 
 import com.hypixel.hytale.logger.HytaleLogger;
+import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.ToolTier;
@@ -8,14 +9,18 @@ import org.runetale.skills.domain.ToolTier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +46,16 @@ public class SkillNodeLookupService {
 	 * Keyed by block id for fast break-event matching.
 	 */
 	private final Map<String, SkillNodeDefinition> byBlockId = new ConcurrentHashMap<>();
+	@Nullable
+	private final Path externalConfigRoot;
+
+	public SkillNodeLookupService() {
+		this(null);
+	}
+
+	public SkillNodeLookupService(@Nullable Path externalConfigRoot) {
+		this.externalConfigRoot = externalConfigRoot;
+	}
 
 	/**
 	 * Registers baseline defaults so runtime is operational even without external
@@ -108,40 +123,12 @@ public class SkillNodeLookupService {
 	@Nonnull
 	private List<String> readNodeIndex() {
 		List<String> files = new ArrayList<>();
-		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-		ClassLoader serviceClassLoader = SkillNodeLookupService.class.getClassLoader();
-		ClassLoader classLoader = serviceClassLoader != null ? serviceClassLoader : contextClassLoader;
-
-		LOGGER.atInfo().log(
-				"[Skills][Diag] Node index loader selectedCL=%s contextVisible=%s serviceVisible=%s resource=%s",
-				describeClassLoader(classLoader),
-				probeResourceVisible(contextClassLoader, NODE_INDEX_RESOURCE),
-				probeResourceVisible(serviceClassLoader, NODE_INDEX_RESOURCE),
-				NODE_INDEX_RESOURCE);
-
-		if (classLoader == null) {
-			LOGGER.atSevere().log(
-					"[Skills] Cannot read node index because no classloader is available for the current runtime thread");
-			return files;
-		}
-
-		InputStream selectedInput = classLoader == null ? null : classLoader.getResourceAsStream(NODE_INDEX_RESOURCE);
-		if (selectedInput == null && contextClassLoader != null && contextClassLoader != classLoader) {
-			classLoader = contextClassLoader;
-			selectedInput = classLoader.getResourceAsStream(NODE_INDEX_RESOURCE);
-		}
-
-		if (selectedInput == null) {
-			LOGGER.atWarning().log(
-					"[Skills][Diag] Node index not found via selectedCL=%s resource=%s contextVisible=%s serviceVisible=%s",
-					describeClassLoader(classLoader),
-					NODE_INDEX_RESOURCE,
-					probeResourceVisible(contextClassLoader, NODE_INDEX_RESOURCE),
-					probeResourceVisible(serviceClassLoader, NODE_INDEX_RESOURCE));
-			return files;
-		}
-
-		try (InputStream input = selectedInput) {
+		try (InputStream input = openResourceInput(NODE_INDEX_RESOURCE)) {
+			if (input == null) {
+				LOGGER.atWarning().log("[Skills] Node index not found in external config or classpath resource=%s",
+						NODE_INDEX_RESOURCE);
+				return files;
+			}
 
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
 				String line;
@@ -278,7 +265,7 @@ public class SkillNodeLookupService {
 
 	@Nonnull
 	private static String normalize(@Nonnull String input) {
-		return input.trim().toLowerCase();
+		return input.trim().toLowerCase(Locale.ROOT);
 	}
 
 	@Nonnull
@@ -354,8 +341,19 @@ public class SkillNodeLookupService {
 	}
 
 	@Nonnull
-	private static Properties loadPropertiesResource(@Nonnull String resourcePath) {
+	private Properties loadPropertiesResource(@Nonnull String resourcePath) {
 		Properties properties = new Properties();
+		Path externalPath = resolveExternalPath(resourcePath);
+		if (externalPath != null && Files.isRegularFile(externalPath)) {
+			try (InputStream input = Files.newInputStream(externalPath)) {
+				properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+				LOGGER.atFine().log("[Skills] Loaded external node resource path=%s entries=%d", externalPath,
+						properties.size());
+				return properties;
+			} catch (IOException e) {
+				LOGGER.atWarning().withCause(e).log("[Skills] Failed loading external node resource path=%s", externalPath);
+			}
+		}
 
 		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 		ClassLoader serviceClassLoader = SkillNodeLookupService.class.getClassLoader();
@@ -392,6 +390,42 @@ public class SkillNodeLookupService {
 		}
 
 		return properties;
+	}
+
+	@Nullable
+	private InputStream openResourceInput(@Nonnull String resourcePath) {
+		Path externalPath = resolveExternalPath(resourcePath);
+		if (externalPath != null && Files.isRegularFile(externalPath)) {
+			try {
+				LOGGER.atInfo().log("[Skills] Loading external resource file=%s", externalPath);
+				return Files.newInputStream(externalPath);
+			} catch (IOException e) {
+				LOGGER.atWarning().withCause(e).log("[Skills] Failed opening external resource file=%s", externalPath);
+			}
+		}
+
+		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader serviceClassLoader = SkillNodeLookupService.class.getClassLoader();
+		ClassLoader classLoader = serviceClassLoader != null ? serviceClassLoader : contextClassLoader;
+		if (classLoader == null) {
+			return null;
+		}
+
+		InputStream selectedInput = classLoader.getResourceAsStream(resourcePath);
+		if (selectedInput == null && contextClassLoader != null && contextClassLoader != classLoader) {
+			selectedInput = contextClassLoader.getResourceAsStream(resourcePath);
+		}
+		return selectedInput;
+	}
+
+	@Nullable
+	private Path resolveExternalPath(@Nonnull String resourcePath) {
+		if (this.externalConfigRoot == null) {
+			return null;
+		}
+
+		String relative = SkillsPathLayout.externalRelativeResourcePath(resourcePath);
+		return this.externalConfigRoot.resolve(relative.replace('/', File.separatorChar));
 	}
 
 	@Nonnull

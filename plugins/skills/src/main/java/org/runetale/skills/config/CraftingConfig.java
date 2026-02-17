@@ -1,6 +1,7 @@
 package org.runetale.skills.config;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -19,8 +20,8 @@ public record CraftingConfig(
     private static final String RESOURCE_PATH = "Skills/Config/crafting.properties";
 
     @Nonnull
-    public static CraftingConfig load() {
-        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH);
+    public static CraftingConfig load(@Nonnull Path externalConfigRoot) {
+        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH, externalConfigRoot);
 
         String anvilBenchId = ConfigResourceLoader.stringValue(properties, "bench.anvil.id", "RuneTale_Anvil");
         String furnaceBenchId = ConfigResourceLoader.stringValue(properties, "bench.furnace.id", "RuneTale_Furnace");

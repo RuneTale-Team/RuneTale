@@ -3,10 +3,14 @@ package org.runetale.skills.config;
 import com.hypixel.hytale.logger.HytaleLogger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 
 final class ConfigResourceLoader {
@@ -18,7 +22,23 @@ final class ConfigResourceLoader {
 
     @Nonnull
     static Properties loadProperties(@Nonnull String resourcePath) {
+        return loadProperties(resourcePath, null);
+    }
+
+    @Nonnull
+    static Properties loadProperties(@Nonnull String resourcePath, @Nullable Path externalConfigRoot) {
         Properties properties = new Properties();
+
+        Path externalPath = resolveExternalPath(resourcePath, externalConfigRoot);
+        if (externalPath != null && Files.isRegularFile(externalPath)) {
+            try (InputStream input = Files.newInputStream(externalPath)) {
+                properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+                LOGGER.atInfo().log("[Skills] Loaded external config path=%s entries=%d", externalPath, properties.size());
+                return properties;
+            } catch (IOException e) {
+                LOGGER.atWarning().withCause(e).log("[Skills] Failed loading external config path=%s; falling back", externalPath);
+            }
+        }
 
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         ClassLoader configClassLoader = ConfigResourceLoader.class.getClassLoader();
@@ -47,6 +67,16 @@ final class ConfigResourceLoader {
         }
 
         return properties;
+    }
+
+    @Nullable
+    private static Path resolveExternalPath(@Nonnull String resourcePath, @Nullable Path externalConfigRoot) {
+        if (externalConfigRoot == null) {
+            return null;
+        }
+
+        String relative = SkillsPathLayout.externalRelativeResourcePath(resourcePath);
+        return externalConfigRoot.resolve(relative.replace('/', File.separatorChar));
     }
 
     @Nonnull

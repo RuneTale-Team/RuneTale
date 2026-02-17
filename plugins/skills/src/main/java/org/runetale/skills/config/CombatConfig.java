@@ -1,6 +1,7 @@
 package org.runetale.skills.config;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -22,8 +23,8 @@ public record CombatConfig(
     private static final String RESOURCE_PATH = "Skills/Config/combat.properties";
 
     @Nonnull
-    public static CombatConfig load() {
-        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH);
+    public static CombatConfig load(@Nonnull Path externalConfigRoot) {
+        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH, externalConfigRoot);
 
         double xpPerDamage = Math.max(0.0D, ConfigResourceLoader.doubleValue(properties, "xpPerDamage", 4.0D));
         String sourceRanged = ConfigResourceLoader.stringValue(properties, "source.ranged", "combat:ranged");

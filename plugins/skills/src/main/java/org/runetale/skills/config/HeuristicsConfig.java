@@ -1,6 +1,7 @@
 package org.runetale.skills.config;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -12,8 +13,8 @@ public record HeuristicsConfig(
     private static final String RESOURCE_PATH = "Skills/Config/heuristics.properties";
 
     @Nonnull
-    public static HeuristicsConfig load() {
-        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH);
+    public static HeuristicsConfig load(@Nonnull Path externalConfigRoot) {
+        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH, externalConfigRoot);
         return new HeuristicsConfig(parseCsvLowercase(properties, "nodeCandidateTokens", List.of("log", "tree", "ore", "rock")));
     }
 

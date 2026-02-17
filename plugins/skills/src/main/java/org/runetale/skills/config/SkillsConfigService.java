@@ -3,6 +3,7 @@ package org.runetale.skills.config;
 import com.hypixel.hytale.logger.HytaleLogger;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Path;
 
 public class SkillsConfigService {
 
@@ -15,13 +16,13 @@ public class SkillsConfigService {
     private final ToolingConfig toolingConfig;
     private final HeuristicsConfig heuristicsConfig;
 
-    public SkillsConfigService() {
-        this.xpConfig = XpConfig.load();
-        this.combatConfig = CombatConfig.load();
-        this.craftingConfig = CraftingConfig.load();
-        this.hudConfig = HudConfig.load();
-        this.toolingConfig = ToolingConfig.load();
-        this.heuristicsConfig = HeuristicsConfig.load();
+    public SkillsConfigService(@Nonnull Path externalConfigRoot) {
+        this.xpConfig = XpConfig.load(externalConfigRoot);
+        this.combatConfig = CombatConfig.load(externalConfigRoot);
+        this.craftingConfig = CraftingConfig.load(externalConfigRoot);
+        this.hudConfig = HudConfig.load(externalConfigRoot);
+        this.toolingConfig = ToolingConfig.load(externalConfigRoot);
+        this.heuristicsConfig = HeuristicsConfig.load(externalConfigRoot);
         logSnapshot();
     }
 
