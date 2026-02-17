@@ -79,9 +79,9 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ## Notes / assumptions
 
-- Node definitions are loaded from classpath resources under `src/main/resources/Skills/Nodes/**/*.properties` via `index.list`; in-memory defaults remain as a fail-safe fallback only.
+- Node definitions are loaded external-first from `server/mods/runetale/config/skills/Nodes/**/*.properties` via `index.list`, then classpath resources under `src/main/resources/Skills/Nodes/**/*.properties` as fallback; in-memory defaults remain fail-safe only.
 - Unknown blocks remain a no-op path (fail-safe behavior).
-- Runtime tuning now loads from `src/main/resources/Skills/Config/*.properties` through `SkillsConfigService`.
+- Runtime tuning now loads external-first from `server/mods/runetale/config/skills/Config/*.properties` through `SkillsConfigService` (classpath resources remain defaults/fallbacks).
 
 ## Testing Guide
 
@@ -91,7 +91,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ./gradlew :plugins:skills:clean :plugins:skills:build
 ```
 
-- Confirms the plugin compiles and resource files under `src/main/resources/Skills/**` are packaged.
+- Confirms the plugin compiles and resource files under `src/main/resources/Skills/**` are packaged as fallback defaults.
 - Expected outcome: build succeeds with no compile/runtime wiring errors.
 
 ### 2) Manual in-game flow (quick checklist)
