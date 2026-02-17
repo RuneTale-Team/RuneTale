@@ -33,7 +33,7 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
 	private static final String UI_PATH = "SkillsPlugin/Smithing.ui";
-	private static final String RECIPE_CARD_TEMPLATE = "SkillsPlugin/SmithingRecipeCard.ui";
+	private static final String RECIPE_CARD_TEMPLATE = "SkillsPlugin/SmithingRecipeGridCard.ui";
 	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 10); }";
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
 

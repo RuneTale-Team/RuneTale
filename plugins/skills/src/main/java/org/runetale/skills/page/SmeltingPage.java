@@ -35,7 +35,10 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
 	private static final String UI_PATH = "SkillsPlugin/Smelting.ui";
-	private static final String RECIPE_ROW_TEMPLATE = "SkillsPlugin/SmeltingRecipeRow.ui";
+	private static final String RECIPE_CARD_TEMPLATE = "SkillsPlugin/SmeltingBarCard.ui";
+	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 6); }";
+	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 6); }";
+	private static final int GRID_COLUMNS = 3;
 
 	private final CraftingConfig craftingConfig;
 
@@ -107,9 +110,19 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 
 		for (int i = 0; i < recipes.size(); i++) {
 			CraftingRecipe recipe = recipes.get(i);
-			String selector = "#RecipeList[" + i + "]";
 
-			commandBuilder.append("#RecipeList", RECIPE_ROW_TEMPLATE);
+			int row = i / GRID_COLUMNS;
+			int col = i % GRID_COLUMNS;
+			if (col == 0) {
+				commandBuilder.appendInline("#RecipeList", CARD_ROW_INLINE);
+			} else {
+				commandBuilder.appendInline("#RecipeList[" + row + "]", CARD_COLUMN_SPACER_INLINE);
+			}
+
+			int uiCol = col * 2;
+			String selector = "#RecipeList[" + row + "][" + uiCol + "]";
+
+			commandBuilder.append("#RecipeList[" + row + "]", RECIPE_CARD_TEMPLATE);
 
 			boolean isSelected = recipe.getId().equals(selectedRecipeId());
 			commandBuilder.set(selector + " #SelectedFrame.Visible", isSelected);
@@ -134,7 +147,7 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 			boolean hasMaterials = CraftingPageSupport.hasRequiredMaterials(player, recipe);
 
 			if (!unlocked) {
-				commandBuilder.set(selector + " #RecipeStatus.Text", "Requires Lv " + requiredLevel + " Smithing");
+				commandBuilder.set(selector + " #RecipeStatus.Text", "Req. Lv " + requiredLevel);
 				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#d7a6a6");
 				commandBuilder.set(selector + " #LockOverlay.Visible", true);
 				commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", false);
@@ -152,19 +165,20 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 		}
 
 		if (recipes.isEmpty()) {
-			commandBuilder.append("#RecipeList", RECIPE_ROW_TEMPLATE);
-			commandBuilder.set("#RecipeList[0] #RecipeName.Text", "No recipes available");
-			commandBuilder.set("#RecipeList[0] #RecipeIngredients.Text", "");
-			commandBuilder.set("#RecipeList[0] #RecipeXp.Text", "");
-			commandBuilder.set("#RecipeList[0] #RecipeStatus.Text", "");
-			commandBuilder.set("#RecipeList[0] #RecipeOutputSlot.Visible", false);
-			commandBuilder.set("#RecipeList[0] #RecipeOutputQuantity.Text", "");
-			commandBuilder.set("#RecipeList[0] #IngredientSlot0.Visible", false);
-			commandBuilder.set("#RecipeList[0] #IngredientSlot1.Visible", false);
-			commandBuilder.set("#RecipeList[0] #IngredientSlot2.Visible", false);
-			commandBuilder.set("#RecipeList[0] #SelectedFrame.Visible", false);
-			commandBuilder.set("#RecipeList[0] #LockOverlay.Visible", false);
-			commandBuilder.set("#RecipeList[0] #MissingMaterialsOutline.Visible", false);
+			commandBuilder.appendInline("#RecipeList", CARD_ROW_INLINE);
+			commandBuilder.append("#RecipeList[0]", RECIPE_CARD_TEMPLATE);
+			commandBuilder.set("#RecipeList[0][0] #RecipeName.Text", "No recipes available");
+			commandBuilder.set("#RecipeList[0][0] #RecipeIngredients.Text", "");
+			commandBuilder.set("#RecipeList[0][0] #RecipeXp.Text", "");
+			commandBuilder.set("#RecipeList[0][0] #RecipeStatus.Text", "");
+			commandBuilder.set("#RecipeList[0][0] #RecipeOutputSlot.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #RecipeOutputQuantity.Text", "");
+			commandBuilder.set("#RecipeList[0][0] #IngredientSlot0.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #IngredientSlot1.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #IngredientSlot2.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #SelectedFrame.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #LockOverlay.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #MissingMaterialsOutline.Visible", false);
 		}
 
 		CraftingRecipe selectedPreviewRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());

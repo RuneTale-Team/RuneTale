@@ -77,15 +77,10 @@ $C = "../Common.ui";
 );
 
 Group {
-  Anchor: (Width: 1040, Height: 690);
+  Anchor: (Width: 1040, Height: 650);
   LayoutMode: Top;
   Padding: (Left: 13, Right: 13, Top: 10, Bottom: 10);
   Background: #101017(0.98);
-
-  Group {
-    Anchor: (Full: 1);
-    Background: (TexturePath: "Assets/UI/ContainerPatch.png", Border: 46);
-  }
 
   Group {
     Anchor: (Height: 68);
@@ -234,7 +229,7 @@ Group {
       Group { Anchor: (Height: 10); }
 
       Group {
-        Anchor: (Height: 142);
+        Anchor: (Height: 126);
         Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
         LayoutMode: MiddleCenter;
 
@@ -246,15 +241,15 @@ Group {
         }
       }
 
-      Group { Anchor: (Height: 8); }
+      Group { Anchor: (Height: 6); }
 
       Label #SelectedOutputName {
         Text: "Select a recipe to preview";
-        Anchor: (Height: 34);
+        Anchor: (Height: 28);
         Style: (FontSize: 12, TextColor: #8fa3b8, Wrap: true, VerticalAlignment: Start);
       }
 
-      Group { Anchor: (Height: 8); }
+      Group { Anchor: (Height: 6); }
 
       Label {
         Text: "Flow";
@@ -263,7 +258,7 @@ Group {
       }
 
       Group {
-        Anchor: (Height: 78);
+        Anchor: (Height: 66);
         Padding: (Left: 8, Right: 8, Top: 6, Bottom: 6);
         Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
         LayoutMode: Left;
@@ -312,7 +307,7 @@ Group {
         }
       }
 
-      Group { Anchor: (Height: 10); }
+      Group { Anchor: (Height: 8); }
 
       Label #CraftProgressLabel {
         Text: "Ready";
@@ -322,77 +317,64 @@ Group {
 
       ProgressBar #CraftProgressBar {
         Value: 0;
-        Anchor: (Height: 8, Top: 6, Bottom: 10);
+        Anchor: (Height: 8, Top: 6, Bottom: 8);
         Background: (TexturePath: "Assets/UI/ProgressBar.png", Border: 3);
         BarTexturePath: "Assets/UI/ProgressBarFill.png";
       }
 
       Group {
-        Anchor: (Height: 34, Bottom: 6);
+        Anchor: (Height: 32, Bottom: 6);
         LayoutMode: Left;
 
         Group {
-          Anchor: (Width: 56, Height: 34, Right: 4);
+          Anchor: (Width: 56, Height: 32, Right: 4);
           Group #Qty1Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
           TextButton #Qty1 { Text: "x1"; Anchor: (Full: 1); Style: @TierTabStyle; }
         }
 
         Group {
-          Anchor: (Width: 56, Height: 34, Right: 4);
+          Anchor: (Width: 56, Height: 32, Right: 4);
           Group #Qty5Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
           TextButton #Qty5 { Text: "x5"; Anchor: (Full: 1); Style: @TierTabStyle; }
         }
 
         Group {
-          Anchor: (Width: 56, Height: 34, Right: 4);
+          Anchor: (Width: 56, Height: 32, Right: 4);
           Group #Qty10Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
           TextButton #Qty10 { Text: "x10"; Anchor: (Full: 1); Style: @TierTabStyle; }
         }
 
         Group {
-          Anchor: (Width: 66, Height: 34);
+          Anchor: (Width: 66, Height: 32);
           Group #QtyAllSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
           TextButton #QtyAll { Text: "All"; Anchor: (Full: 1); Style: @TierTabStyle; }
         }
       }
 
       Group {
-        Anchor: (Height: 32, Bottom: 8);
+        Anchor: (Height: 30, Bottom: 6);
         LayoutMode: Left;
 
         $C.@TextField #QtyCustomInput {
-          Anchor: (Width: 170, Height: 32, Right: 6);
+          Anchor: (Width: 170, Height: 30, Right: 6);
           Value: "1";
           PlaceholderText: "Craft X";
         }
 
         TextButton #QtyCustomApply {
           Text: "Set";
-          Anchor: (Width: 58, Height: 32);
+          Anchor: (Width: 58, Height: 30);
           Style: @TierTabStyle;
         }
       }
 
       TextButton #StartCraftingButton {
         Text: "Select a Recipe";
-        Anchor: (Height: 46);
+        Anchor: (Height: 42);
         Style: @CraftButtonStyle;
       }
 
       Group { FlexWeight: 1; }
-
-      Group {
-        Anchor: (Height: 1);
-        Background: #2b3542;
-      }
-
-      Group { Anchor: (Height: 10); }
-
-      Label {
-        Text: "Choose a recipe to begin.";
-        Anchor: (Height: 34);
-        Style: @SubtleStyle;
-      }
     }
   }
 }
