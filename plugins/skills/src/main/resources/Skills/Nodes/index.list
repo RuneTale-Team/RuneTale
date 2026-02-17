@@ -9,4 +9,12 @@ woodcutting/beech_tree.properties
 woodcutting/birch_tree.properties
 
 # MINING
+mining/tin.properties
 mining/copper.properties
+mining/iron.properties
+mining/silver.properties
+mining/coal.properties
+mining/gold.properties
+mining/mithril.properties
+mining/adamantite.properties
+mining/runite.properties
