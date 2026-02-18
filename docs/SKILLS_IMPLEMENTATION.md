@@ -11,7 +11,8 @@ This plugin implements an OSRS-inspired, data-driven skills runtime with a centr
 5. `SkillXpGrantSystem` applies queued grants via `SkillProgressionService`.
 6. On block break:
     - Resolve the broken block to a skill node definition.
-    - Enforce skill-level and held-tool requirements.
+    - Enforce skill-level requirements.
+    - Reject unconfigured node-like blocks (candidate-token heuristic).
     - Queue XP grant through the shared progression pipeline.
 
 ## Core pieces
@@ -61,7 +62,8 @@ This plugin implements an OSRS-inspired, data-driven skills runtime with a centr
 
 Skills gameplay outcomes now surface in player chat (`[Skills] ...`) for normal interactions:
 
-- requirement failures (skill level/tool)
+- requirement failures (skill level)
+- unconfigured node-like block warnings
 - XP gain after successful gather
 - level-up notifications
 
@@ -97,27 +99,24 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ### 2) Manual in-game flow (quick checklist)
 
 1. Start the game/server with this plugin enabled.
-2. Try breaking a configured node block (from `Skills/Nodes/**/*.properties`) with:
-   - no item,
-   - wrong tool keyword,
-   - low tool tier,
-   - low skill level.
-     Expected: break is cancelled for each failed requirement.
-3. Use a valid tool/tier and break again.
-   Expected: gather succeeds, XP is awarded, level recalculates from cumulative XP.
-4. Repeat successful gathers until a level-up boundary is crossed.
-   Expected: log shows level `before -> after` change.
-5. Run `/skill` on a player with no prior gathering progress.
-   Expected: every declared `SkillType` is listed with `level=1 xp=0`.
-6. Gain XP in at least one skill, then run `/skill` again.
-   Expected: that skill reflects updated `level/xp`, while untrained skills remain defaulted.
+2. Try breaking a configured node block (from `Skills/Nodes/**/*.properties`) with low skill level.
+   Expected: break is cancelled and a warning is shown.
+3. Use any held item and break again after meeting the level requirement.
+    Expected: gather succeeds, XP is awarded, level recalculates from cumulative XP.
+4. Try breaking an unconfigured but node-like block id (for example ids containing tokens in `Skills/Config/heuristics.properties`).
+   Expected: break is cancelled and a "not configured yet" warning is shown.
+5. Repeat successful gathers until a level-up boundary is crossed.
+    Expected: log shows level `before -> after` change.
+6. Run `/skill` on a player with no prior gathering progress.
+    Expected: every declared `SkillType` is listed with `level=1 xp=0`.
+7. Gain XP in at least one skill, then run `/skill` again.
+    Expected: that skill reflects updated `level/xp`, while untrained skills remain defaulted.
 
 ### 3) Debug logs to watch
 
-- Requirement failures/successes from break handling:
+- Break handling diagnostics:
   - `Break denied: ... requiredLevel=...`
-  - `Break denied: ... requiredKeyword=... requiredTier=...`
-  - `Tool requirement check: item=... detected=... required=... success=...`
+  - warning for unconfigured node-like block ids.
 - XP + level updates:
   - `Applied XP grant source=... skill=... gain=... totalXp=... level=...`
 - Resource bootstrap:
@@ -144,13 +143,13 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 - Repeat the same pattern with additional `*.properties` files.
 - Use distinct mapped block ids/patterns per node for deterministic lookup (via `blockIds` or `blockId`).
-- Keep progression coherent by increasing `requiredSkillLevel` / `requiredToolTier` / `experienceReward` gradually.
+- Keep progression coherent by increasing `requiredSkillLevel` / `experienceReward` gradually.
 
 ### Add a new skill end-to-end
 
 1. Add the identity to `SkillType`.
 2. Author one or more node resources with `skill=<NEW_SKILL>` and include them in `index.list`.
-3. Ensure your content (blocks/tools) can satisfy the same runtime checks already used by break handling.
+3. Ensure your content (blocks/skills) can satisfy the same runtime checks already used by break handling.
 4. Rebuild and test requirement + XP paths exactly as in the Testing Guide.
 
 Runtime wiring expectation: no new system/service registration is required for basic gather-style skills as long as they fit the existing node schema and `SkillType` enum.
@@ -248,9 +247,9 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
 
 ### Tool tier / keyword mapping guidance
 
-- Keep node `requiredToolKeyword` aligned with item-id fragments (e.g. `axe`) because tool family checks are substring-based.
-- Keep node `requiredToolTier` within declared tiers in `Skills/Config/tooling.properties` (legacy `Skills/tool-tier-defaults.properties` is used only as fallback metadata).
-- Current tier detection and family matching are config-driven via `Skills/Config/tooling.properties`.
+- Node definitions still support `requiredToolKeyword` and `requiredToolTier` fields for schema compatibility.
+- Current gather break enforcement does not gate on held-tool keyword/tier.
+- Tool family/tier logic remains available via `ToolRequirementEvaluator` and `Skills/Config/tooling.properties` for other call sites.
 
 ### Caveats / staged behavior TODOs
 
@@ -265,8 +264,7 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
 
 - [ ] **Strict requirement enforcement**
   - Verify break is cancelled when player skill level is below node `requiredSkillLevel`.
-  - Verify break is cancelled when held tool does not match `requiredToolKeyword`.
-  - Verify break is cancelled when tool tier is below `requiredToolTier`.
+  - Verify unconfigured node-like blocks are cancelled with warning feedback.
 
 - [ ] **XP gain correctness**
   - Verify awarded XP equals node `experienceReward` (rounded by existing XP service behavior).

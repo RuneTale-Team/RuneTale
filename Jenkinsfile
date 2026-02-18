@@ -50,13 +50,13 @@ pipeline {
         stage('Build, Test, Package') {
             steps {
                 sh 'chmod +x ./gradlew'
-                sh './gradlew --no-daemon --refresh-dependencies clean test build bundlePluginJars'
+                sh './gradlew --no-daemon --refresh-dependencies clean test contractTest build bundlePluginJars'
             }
         }
 
         stage('Archive Reports & Artifacts') {
             steps {
-                junit testResults: '**/build/test-results/test/*.xml', allowEmptyResults: true
+                junit testResults: '**/build/test-results/test/*.xml,**/build/test-results/contractTest/*.xml', allowEmptyResults: true
                 archiveArtifacts artifacts: 'plugins/*/build/distributions/*.jar,build/distributions/*plugin-jars-*.zip', fingerprint: true
             }
         }

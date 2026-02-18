@@ -1,5 +1,7 @@
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.Sync
+import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.bundling.Zip
 
 plugins {
@@ -10,6 +12,10 @@ plugins {
 }
 
 val vineflower by configurations.creating
+
+val junitBomVersion = "5.14.3"
+val mockitoVersion = "5.21.0"
+val assertjVersion = "3.27.7"
 
 dependencies {
     vineflower("org.vineflower:vineflower:1.11.2")
@@ -43,6 +49,28 @@ subprojects {
                 languageVersion.set(JavaLanguageVersion.of(25))
             }
         }
+
+        val sourceSets = extensions.getByType<SourceSetContainer>()
+        tasks.named<Test>("test") {
+            useJUnitPlatform {
+                excludeTags("contract")
+            }
+        }
+
+        tasks.register<Test>("contractTest") {
+            group = "verification"
+            description = "Runs contract-tagged tests."
+            testClassesDirs = sourceSets.named("test").get().output.classesDirs
+            classpath = sourceSets.named("test").get().runtimeClasspath
+            shouldRunAfter(tasks.named("test"))
+            useJUnitPlatform {
+                includeTags("contract")
+            }
+        }
+
+        tasks.named("check") {
+            dependsOn("contractTest")
+        }
     }
 }
 
@@ -53,15 +81,23 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
 
     dependencies {
         "compileOnly"("com.hypixel.hytale:Server:+")
+        "testCompileOnly"("com.hypixel.hytale:Server:+")
+        "testRuntimeOnly"("com.hypixel.hytale:Server:+")
+        "testImplementation"(project(":platform:testing-core"))
+        "testImplementation"(project(":platform:testing-ecs"))
+        "testImplementation"(project(":platform:testing-junit"))
 
-        "testImplementation"(platform("org.junit:junit-bom:5.10.2"))
+        "testImplementation"(platform("org.junit:junit-bom:$junitBomVersion"))
         "testImplementation"("org.junit.jupiter:junit-jupiter")
+        "testImplementation"("org.mockito:mockito-core:$mockitoVersion")
+        "testImplementation"("org.mockito:mockito-junit-jupiter:$mockitoVersion")
+        "testImplementation"("org.assertj:assertj-core:$assertjVersion")
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
     }
 
 
     tasks.withType<Test>().configureEach {
-        useJUnitPlatform()
+        systemProperty("java.util.logging.manager", "com.hypixel.hytale.logger.backend.HytaleLogManager")
     }
 
     // Produce a single distributable jar per plugin (no “-all” classifier)
@@ -75,8 +111,45 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     }
 }
 
+// Shared conventions for testing framework modules (":platform:testing-*")
+configure(subprojects.filter { it.path.startsWith(":platform:testing-") }) {
+    plugins.withType<JavaPlugin> {
+        dependencies {
+            "testImplementation"(platform("org.junit:junit-bom:$junitBomVersion"))
+            "testImplementation"("org.junit.jupiter:junit-jupiter")
+            "testImplementation"("org.mockito:mockito-core:$mockitoVersion")
+            "testImplementation"("org.mockito:mockito-junit-jupiter:$mockitoVersion")
+            "testImplementation"("org.assertj:assertj-core:$assertjVersion")
+            "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+        }
+
+        tasks.withType<Test>().configureEach {
+            useJUnitPlatform()
+        }
+    }
+}
+
 // All plugin subprojects (":plugins:*")
 val pluginProjects = subprojects.filter { it.path.startsWith(":plugins:") }
+val testingProjects = subprojects.filter { it.path.startsWith(":platform:testing-") }
+
+tasks.register("unitTest") {
+    group = "verification"
+    description = "Runs unit tests (excludes contract-tagged tests)."
+    dependsOn((pluginProjects + testingProjects).map { "${it.path}:test" })
+}
+
+tasks.register("contractTest") {
+    group = "verification"
+    description = "Runs contract-tagged tests across plugins and shared testing modules."
+    dependsOn((pluginProjects + testingProjects).map { "${it.path}:contractTest" })
+}
+
+tasks.register("verifyTests") {
+    group = "verification"
+    description = "Runs unit and contract test suites."
+    dependsOn("unitTest", "contractTest")
+}
 
 tasks.register<Delete>("cleanDeployedPlugins") {
     // Only delete jars that match your plugin project names, e.g. "skills-*.jar"
