@@ -24,6 +24,8 @@ import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -110,8 +112,10 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 		commandBuilder.set("#SectionTitle.Text", selectedTier().getSectionTitle("Equipment"));
 
 		commandBuilder.clear("#RecipeGrid");
-		List<CraftingRecipe> recipes = CraftingPlugin.getBenchRecipes(
-				BenchType.Crafting, this.craftingConfig.anvilBenchId(), selectedTier().getAnvilCategory());
+		List<CraftingRecipe> recipes = new ArrayList<>(CraftingPlugin.getBenchRecipes(
+				BenchType.Crafting, this.craftingConfig.anvilBenchId(), selectedTier().getAnvilCategory()));
+		recipes.sort(Comparator.comparingInt(recipe ->
+				CraftingPageSupport.getSmithingRequiredLevel(craftingRecipeTagService().getSkillRequirements(recipe))));
 
 		for (int i = 0; i < recipes.size(); i++) {
 			CraftingRecipe recipe = recipes.get(i);
