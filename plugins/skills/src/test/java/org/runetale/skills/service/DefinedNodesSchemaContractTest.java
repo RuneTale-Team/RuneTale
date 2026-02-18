@@ -51,8 +51,6 @@ class DefinedNodesSchemaContractTest {
 			"blockIds",
 			"blockId");
 
-	private static final Set<String> RECOGNIZED_TOOL_TIER_TOKENS = recognizedToolTierTokens();
-
 	@Test
 	void indexEntriesAreUniqueAndResolveToResources() throws IOException {
 		List<String> indexEntries = readNodeIndexEntries();
@@ -147,7 +145,9 @@ class DefinedNodesSchemaContractTest {
 				.isGreaterThanOrEqualTo(0.0D);
 
 		String rawToolTier = properties.getProperty("requiredToolTier").trim();
-		assertThat(RECOGNIZED_TOOL_TIER_TOKENS.contains(rawToolTier.toUpperCase(Locale.ROOT)))
+		ToolTier parsedToolTier = ToolTier.fromString(rawToolTier);
+		boolean recognized = "NONE".equalsIgnoreCase(rawToolTier) || parsedToolTier != ToolTier.NONE;
+		assertThat(recognized)
 				.as("requiredToolTier is recognized in %s", entry)
 				.isTrue();
 
@@ -252,17 +252,4 @@ class DefinedNodesSchemaContractTest {
 		}
 	}
 
-	private static Set<String> recognizedToolTierTokens() {
-		Set<String> tokens = new LinkedHashSet<>();
-		for (ToolTier tier : ToolTier.values()) {
-			tokens.add(tier.name());
-		}
-		tokens.add("BRONZE");
-		tokens.add("STEEL");
-		tokens.add("ADAMANT");
-		tokens.add("RUNE");
-		tokens.add("DRAGON");
-		tokens.add("CRYSTAL");
-		return Set.copyOf(tokens);
-	}
 }
