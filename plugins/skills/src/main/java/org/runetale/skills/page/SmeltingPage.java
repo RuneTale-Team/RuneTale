@@ -25,6 +25,7 @@ import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -253,6 +254,9 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 				}
 			}
 		}
+
+		filtered.sort(Comparator.comparingInt(recipe ->
+				CraftingPageSupport.getSmithingRequiredLevel(craftingRecipeTagService().getSkillRequirements(recipe))));
 
 		return filtered;
 	}
