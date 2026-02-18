@@ -1,0 +1,164 @@
+@RecipeNameStyle = LabelStyle(
+  FontSize: 16,
+  TextColor: #dde8f5,
+  RenderBold: true,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  FontName: "Secondary"
+);
+
+@RecipeMetaStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #8ea4bb,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  Wrap: true
+);
+
+@RecipeXpStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #53d891,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  RenderBold: true
+);
+
+@RecipeStatusStyle = LabelStyle(
+  FontSize: 11,
+  TextColor: #99afc6,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center
+);
+
+@OutputQuantityStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #c7d8ea,
+  HorizontalAlignment: Center,
+  VerticalAlignment: Center,
+  RenderBold: true
+);
+
+@SelectOverlayStyle = TextButtonStyle(
+  Default: (Background: #00000000, LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Hovered: (Background: #ffffff(0.04), LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Pressed: (Background: #ffffff(0.08), LabelStyle: (FontSize: 1, TextColor: #00000000))
+);
+
+Group {
+  Anchor: (Height: 118, Bottom: 6);
+  FlexWeight: 1;
+  Padding: (Full: 8);
+  Background: (TexturePath: "Assets/UI/RecipeCatalogueItemPatch.png", Border: 22);
+
+  Group #SelectedFrame {
+    Anchor: (Full: 1);
+    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22, Color: #ffffff(0.45));
+    Visible: false;
+  }
+
+  Group {
+    LayoutMode: Left;
+    FlexWeight: 1;
+
+    Group {
+      Anchor: (Width: 56, Height: 74, Right: 8, Top: 2);
+      LayoutMode: Top;
+
+      ItemSlot #RecipeOutputSlot {
+        Anchor: (Width: 56, Height: 56);
+        ShowQuantity: false;
+        ShowQualityBackground: false;
+        ShowDurabilityBar: false;
+      }
+
+      Label #RecipeOutputQuantity {
+        Text: "";
+        Anchor: (Height: 16);
+        Style: @OutputQuantityStyle;
+      }
+    }
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+
+      Label #RecipeName {
+        Text: "";
+        Anchor: (Height: 20);
+        Style: @RecipeNameStyle;
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Height: 24, Top: 2);
+
+        ItemSlot #IngredientSlot0 {
+          Anchor: (Width: 22, Height: 22, Right: 3);
+          ShowQuantity: false;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+
+        ItemSlot #IngredientSlot1 {
+          Anchor: (Width: 22, Height: 22, Right: 3);
+          ShowQuantity: false;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+
+        ItemSlot #IngredientSlot2 {
+          Anchor: (Width: 22, Height: 22, Right: 3);
+          ShowQuantity: false;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+      }
+
+      Label #RecipeIngredients {
+        Text: "";
+        Anchor: (Height: 20, Top: 1);
+        Style: @RecipeMetaStyle;
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Top: 2);
+
+        Label #RecipeXp {
+          Text: "";
+          Anchor: (Height: 17);
+          Style: @RecipeXpStyle;
+        }
+
+        Group { Anchor: (Width: 8); }
+
+        Label #RecipeStatus {
+          Text: "";
+          Anchor: (Height: 16);
+          Style: @RecipeStatusStyle;
+        }
+      }
+    }
+  }
+
+  Group #LockOverlay {
+    Anchor: (Full: 1);
+    Background: #05101a(0.42);
+    Visible: false;
+  }
+
+  Group #MissingMaterialsOutline {
+    Anchor: (Full: 1);
+    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22, Color: #d24d4d(0.80));
+    Visible: false;
+  }
+
+  TextButton #SelectBtn {
+    Text: "";
+    Anchor: (Full: 1);
+    Style: @SelectOverlayStyle;
+  }
+}

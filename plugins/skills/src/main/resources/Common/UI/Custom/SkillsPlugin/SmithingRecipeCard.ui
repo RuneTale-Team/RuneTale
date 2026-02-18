@@ -1,0 +1,164 @@
+@CardNameStyle = LabelStyle(
+  FontSize: 16,
+  TextColor: #dde8f5,
+  RenderBold: true,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  FontName: "Secondary"
+);
+
+@CardMetaStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #8ea4bb,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  Wrap: true
+);
+
+@CardXpStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #53d891,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center,
+  RenderBold: true
+);
+
+@CardStatusStyle = LabelStyle(
+  FontSize: 11,
+  TextColor: #99afc6,
+  HorizontalAlignment: Start,
+  VerticalAlignment: Center
+);
+
+@OutputQuantityStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #c7d8ea,
+  HorizontalAlignment: Center,
+  VerticalAlignment: Center,
+  RenderBold: true
+);
+
+@SelectOverlayStyle = TextButtonStyle(
+  Default: (Background: #00000000, LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Hovered: (Background: #ffffff(0.04), LabelStyle: (FontSize: 1, TextColor: #00000000)),
+  Pressed: (Background: #ffffff(0.08), LabelStyle: (FontSize: 1, TextColor: #00000000))
+);
+
+Group {
+  Anchor: (Height: 136, Bottom: 10);
+  FlexWeight: 1;
+  Padding: (Full: 11);
+  Background: (TexturePath: "Assets/UI/RecipeCatalogueItemPatch.png", Border: 22);
+
+  Group #SelectedFrame {
+    Anchor: (Full: 1);
+    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22, Color: #ffffff(0.45));
+    Visible: false;
+  }
+
+  Group {
+    LayoutMode: Left;
+    FlexWeight: 1;
+
+    Group {
+      Anchor: (Width: 72, Height: 88, Right: 10, Top: 2);
+      LayoutMode: Top;
+
+      ItemSlot #CardOutputSlot {
+        Anchor: (Width: 72, Height: 72);
+        ShowQuantity: false;
+        ShowQualityBackground: false;
+        ShowDurabilityBar: false;
+      }
+
+      Label #CardOutputQuantity {
+        Text: "";
+        Anchor: (Height: 16);
+        Style: @OutputQuantityStyle;
+      }
+    }
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+
+      Label #CardName {
+        Text: "";
+        Anchor: (Height: 22);
+        Style: @CardNameStyle;
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Height: 28, Top: 2);
+
+        ItemSlot #IngredientSlot0 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+
+        ItemSlot #IngredientSlot1 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+
+        ItemSlot #IngredientSlot2 {
+          Anchor: (Width: 26, Height: 26, Right: 4);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+      }
+
+      Label #CardIngredients {
+        Text: "";
+        Anchor: (Height: 22, Top: 2);
+        Style: @CardMetaStyle;
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Top: 4);
+
+        Label #CardXp {
+          Text: "";
+          Anchor: (Height: 17);
+          Style: @CardXpStyle;
+        }
+
+        Group { Anchor: (Width: 8); }
+
+        Label #CardStatus {
+          Text: "";
+          Anchor: (Height: 16);
+          Style: @CardStatusStyle;
+        }
+      }
+    }
+  }
+
+  Group #LockOverlay {
+    Anchor: (Full: 1);
+    Background: #05101a(0.42);
+    Visible: false;
+  }
+
+  Group #MissingMaterialsOutline {
+    Anchor: (Full: 1);
+    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22, Color: #d24d4d(0.80));
+    Visible: false;
+  }
+
+  TextButton #SelectBtn {
+    Text: "";
+    Anchor: (Full: 1);
+    Style: @SelectOverlayStyle;
+  }
+}

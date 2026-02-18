@@ -97,21 +97,13 @@ Group {
       Padding: (Full: 12);
       Background: #122235;
 
-      Label {
-        Text: "Navigation";
-        Anchor: (Height: 18);
-        Style: @SectionSubtle;
-      }
-
-      Group { Anchor: (Height: 6); }
-
       TextButton #BackButton {
         Text: "Back";
         Anchor: (Width: 170, Height: 40);
         Style: @PanelButton;
       }
 
-      Group { Anchor: (Height: 10); }
+      Group { Anchor: (Height: 6); }
 
       Group {
         Anchor: (Height: 1);
@@ -151,14 +143,6 @@ Group {
       FlexWeight: 1;
       Padding: (Full: 12);
       Background: #122235;
-
-      Label {
-        Text: "Details";
-        Anchor: (Height: 18);
-        Style: @SectionSubtle;
-      }
-
-      Group { Anchor: (Height: 6); }
 
       Label #SkillsSectionTitle {
         Text: "Overview";

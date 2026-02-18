@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
@@ -15,18 +16,16 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
 import org.runetale.skills.asset.SkillNodeDefinition;
+import org.runetale.skills.config.HeuristicsConfig;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
-import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
+import org.runetale.skills.service.DebugModeService;
 import org.runetale.skills.service.SkillNodeLookupService;
-import org.runetale.skills.service.ToolRequirementEvaluator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Handles block-break gathering flow:
@@ -34,24 +33,27 @@ import java.util.logging.Logger;
  */
 public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
 
-	private static final Logger LOGGER = Logger.getLogger(SkillNodeBreakBlockSystem.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final SkillXpDispatchService skillXpDispatchService;
 	private final SkillNodeLookupService nodeLookupService;
-	private final ToolRequirementEvaluator toolRequirementEvaluator;
+	private final HeuristicsConfig heuristicsConfig;
+	private final DebugModeService debugModeService;
 	private final Query<EntityStore> query;
 
 	public SkillNodeBreakBlockSystem(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull SkillXpDispatchService skillXpDispatchService,
 			@Nonnull SkillNodeLookupService nodeLookupService,
-			@Nonnull ToolRequirementEvaluator toolRequirementEvaluator) {
+			@Nonnull HeuristicsConfig heuristicsConfig,
+			@Nonnull DebugModeService debugModeService) {
 		super(BreakBlockEvent.class);
 		this.profileComponentType = profileComponentType;
 		this.skillXpDispatchService = skillXpDispatchService;
 		this.nodeLookupService = nodeLookupService;
-		this.toolRequirementEvaluator = toolRequirementEvaluator;
+		this.heuristicsConfig = heuristicsConfig;
+		this.debugModeService = debugModeService;
 		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
 	}
 
@@ -63,9 +65,24 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 		PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
 		BlockType brokenBlockType = event.getBlockType();
+		if (isSkillsDebugEnabled()) {
+			LOGGER.atInfo().log("[Skills][Diag] Break event received blockId=%s cancelled=%s player=%s",
+					brokenBlockType.getId(),
+					event.isCancelled(),
+					playerRef == null ? "<missing>" : playerRef.getUuid());
+		}
+
 		SkillNodeDefinition node = this.nodeLookupService.findByBlockId(brokenBlockType.getId());
 		if (node == null) {
+			if (isSkillsDebugEnabled()) {
+				LOGGER.atInfo().log("[Skills][Diag] Node lookup miss blockId=%s candidate=%s",
+						brokenBlockType.getId(),
+						looksLikeSkillNodeCandidate(brokenBlockType.getId()));
+			}
 			if (looksLikeSkillNodeCandidate(brokenBlockType.getId())) {
+				LOGGER.atWarning().log(
+						"[Skills] Unconfigured node-like block encountered id=%s. Add matching blockId/blockIds in Skills/Nodes.",
+						brokenBlockType.getId());
 				event.setCancelled(true);
 				sendPlayerNotification(
 						playerRef,
@@ -77,8 +94,13 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 		PlayerSkillProfileComponent profile = commandBuffer.getComponent(ref, this.profileComponentType);
 		if (profile == null) {
-			LOGGER.log(Level.WARNING,
+			LOGGER.atWarning().log(
 					"Player skill profile missing during break event; skipping skill processing for safety.");
+			if (isSkillsDebugEnabled()) {
+				LOGGER.atWarning().log("[Skills][Diag] Break event aborted due to missing profile blockId=%s player=%s",
+						brokenBlockType.getId(),
+						playerRef == null ? "<missing>" : playerRef.getUuid());
+			}
 			return;
 		}
 
@@ -86,6 +108,14 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		int levelBefore = profile.getLevel(skill);
 
 		if (levelBefore < node.getRequiredSkillLevel()) {
+			if (isSkillsDebugEnabled()) {
+				LOGGER.atInfo().log("[Skills][Diag] Level gate blocked break node=%s skill=%s level=%d required=%d block=%s",
+						node.getId(),
+						skill,
+						levelBefore,
+						node.getRequiredSkillLevel(),
+						brokenBlockType.getId());
+			}
 			event.setCancelled(true);
 			sendPlayerNotification(playerRef,
 					String.format("[Skills] %s level %d/%d (current/required).", formatSkillName(skill),
@@ -94,26 +124,21 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			return;
 		}
 
-		RequirementCheckResult toolCheck = this.toolRequirementEvaluator.evaluate(event.getItemInHand(),
-				node.getRequiredToolKeyword(), node.getRequiredToolTier());
-		if (!toolCheck.isSuccess()) {
-			event.setCancelled(true);
-			sendPlayerNotification(playerRef,
-					String.format("[Skills] Tool tier %s/%s (current/required) for %s.",
-							toolCheck.getDetectedTier().name().toLowerCase(Locale.ROOT),
-							node.getRequiredToolTier().name().toLowerCase(Locale.ROOT),
-							node.getRequiredToolKeyword()),
-					NotificationStyle.Warning);
-			return;
-		}
-
-		this.skillXpDispatchService.grantSkillXp(
+		boolean queued = this.skillXpDispatchService.grantSkillXp(
 				commandBuffer,
 				ref,
 				skill,
 				node.getExperienceReward(),
 				"node:" + node.getId(),
 				true);
+		if (isSkillsDebugEnabled()) {
+			LOGGER.atInfo().log("[Skills][Diag] Break XP dispatch node=%s skill=%s xp=%.4f queued=%s block=%s",
+					node.getId(),
+					skill,
+					node.getExperienceReward(),
+					queued,
+					brokenBlockType.getId());
+		}
 	}
 
 	@Nonnull
@@ -132,7 +157,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			try {
 				NotificationUtil.sendNotification(playerRef.getPacketHandler(), Message.raw(text), style);
 			} catch (Exception e) {
-				LOGGER.log(Level.FINE, "Failed to send skills notification; falling back to chat message.", e);
+				LOGGER.atFine().withCause(e).log("Failed to send skills notification; falling back to chat message.");
 				playerRef.sendMessage(Message.raw(text));
 			}
 		}
@@ -146,7 +171,16 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 	private boolean looksLikeSkillNodeCandidate(@Nonnull String blockId) {
 		String lowered = blockId.toLowerCase(Locale.ROOT);
-		return lowered.contains("log") || lowered.contains("tree") || lowered.contains("ore") || lowered.contains("rock");
+		for (String token : this.heuristicsConfig.nodeCandidateTokens()) {
+			if (lowered.contains(token)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean isSkillsDebugEnabled() {
+		return this.debugModeService.isEnabled("skills");
 	}
 
 }

@@ -5,6 +5,7 @@ import com.hypixel.hytale.component.system.DelayedSystem;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.config.HudConfig;
 import org.runetale.skills.service.SkillXpToastHudService;
 
 import javax.annotation.Nonnull;
@@ -16,8 +17,10 @@ public class SkillXpToastHudExpirySystem extends DelayedSystem<EntityStore> {
 
 	private final SkillXpToastHudService skillXpToastHudService;
 
-	public SkillXpToastHudExpirySystem(@Nonnull SkillXpToastHudService skillXpToastHudService) {
-		super(0.1F);
+	public SkillXpToastHudExpirySystem(
+			@Nonnull SkillXpToastHudService skillXpToastHudService,
+			@Nonnull HudConfig hudConfig) {
+		super(hudConfig.toastExpiryTickSeconds());
 		this.skillXpToastHudService = skillXpToastHudService;
 	}
 

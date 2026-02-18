@@ -7,13 +7,12 @@ import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.HolderSystem;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 
 import javax.annotation.Nonnull;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Ensures each player entity always has a persistent skill profile component.
@@ -24,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class EnsurePlayerSkillProfileSystem extends HolderSystem<EntityStore> {
 
-	private static final Logger LOGGER = Logger.getLogger(EnsurePlayerSkillProfileSystem.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final Query<EntityStore> query;
@@ -45,7 +44,7 @@ public class EnsurePlayerSkillProfileSystem extends HolderSystem<EntityStore> {
 	public void onEntityAdd(@Nonnull Holder<EntityStore> holder, @Nonnull AddReason reason,
 			@Nonnull Store<EntityStore> store) {
 		holder.ensureComponent(this.profileComponentType);
-		LOGGER.log(Level.FINER, String.format("Added missing player skill profile (reason=%s)", reason));
+		LOGGER.atFiner().log("Added missing player skill profile (reason=%s)", reason);
 	}
 
 	@Override

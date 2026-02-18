@@ -1,0 +1,380 @@
+$C = "../Common.ui";
+
+@HeaderTitleStyle = LabelStyle(
+  FontSize: 28,
+  TextColor: #efe3d7,
+  RenderBold: true,
+  FontName: "Secondary",
+  VerticalAlignment: Center
+);
+
+@HeaderMetaStyle = LabelStyle(
+  FontSize: 13,
+  TextColor: #b8aca0,
+  VerticalAlignment: Center
+);
+
+@PanelTitleStyle = LabelStyle(
+  FontSize: 15,
+  TextColor: #cfd6e0,
+  RenderUppercase: true,
+  RenderBold: true,
+  LetterSpacing: 1,
+  FontName: "Secondary",
+  VerticalAlignment: Center
+);
+
+@SectionTitleStyle = LabelStyle(
+  FontSize: 21,
+  TextColor: #f2f6fb,
+  RenderBold: true,
+  FontName: "Secondary",
+  VerticalAlignment: Center
+);
+
+@SubtleStyle = LabelStyle(
+  FontSize: 12,
+  TextColor: #8198b0,
+  VerticalAlignment: Center
+);
+
+@TierTabStyle = TextButtonStyle(
+  Default: (
+    Background: (TexturePath: "Assets/UI/Tab.png", Border: 3),
+    LabelStyle: (FontSize: 14, TextColor: #b7c7d5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Hovered: (
+    Background: (TexturePath: "Assets/UI/TabOverlay.png", Border: 3),
+    LabelStyle: (FontSize: 14, TextColor: #d2e1ef, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Pressed: (
+    Background: (TexturePath: "Assets/UI/Tab.png", Border: 3),
+    LabelStyle: (FontSize: 14, TextColor: #9fb1c1, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Disabled: (
+    Background: (TexturePath: "Assets/UI/Disabled.png", Border: 12),
+    LabelStyle: (FontSize: 14, TextColor: #73818f, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  )
+);
+
+@CraftButtonStyle = TextButtonStyle(
+  Default: (
+    Background: (TexturePath: "Assets/UI/Primary.png", VerticalBorder: 12, HorizontalBorder: 80),
+    LabelStyle: (FontSize: 14, TextColor: #bfcdd5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Hovered: (
+    Background: (TexturePath: "Assets/UI/Primary_Hovered.png", VerticalBorder: 12, HorizontalBorder: 80),
+    LabelStyle: (FontSize: 14, TextColor: #d4dde4, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Pressed: (
+    Background: (TexturePath: "Assets/UI/Primary_Pressed.png", VerticalBorder: 12, HorizontalBorder: 80),
+    LabelStyle: (FontSize: 14, TextColor: #aebcc5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  ),
+  Disabled: (
+    Background: (TexturePath: "Assets/UI/Disabled.png", VerticalBorder: 12, HorizontalBorder: 80),
+    LabelStyle: (FontSize: 14, TextColor: #748190, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center)
+  )
+);
+
+Group {
+  Anchor: (Width: 1040, Height: 650);
+  LayoutMode: Top;
+  Padding: (Left: 13, Right: 13, Top: 10, Bottom: 10);
+  Background: #101017(0.98);
+
+  Group {
+    Anchor: (Height: 68);
+    LayoutMode: Left;
+    Padding: (Left: 14, Right: 14, Top: 10, Bottom: 10);
+    Background: (TexturePath: "Assets/UI/ContainerHeaderNoRunes.png", HorizontalBorder: 35, VerticalBorder: 0);
+
+    Group {
+      Anchor: (Width: 44, Height: 44, Top: 2);
+      Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
+      LayoutMode: Middle;
+
+      Group {
+        Anchor: (Width: 32, Height: 32);
+        Background: "Assets/Icons/icon_smithing.png";
+      }
+    }
+
+    Group { Anchor: (Width: 12); }
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+
+      Label {
+        Text: "Smithing Anvil";
+        Anchor: (Height: 34);
+        Style: @HeaderTitleStyle;
+      }
+
+      Label {
+        Text: "Select a tier and recipe to smith.";
+        Anchor: (Height: 24);
+        Style: @HeaderMetaStyle;
+      }
+    }
+  }
+
+  Group { Anchor: (Height: 6); }
+
+  Group {
+    Anchor: (Height: 52);
+    LayoutMode: Left;
+    Padding: (Horizontal: 8, Top: 4, Bottom: 4);
+    Background: (TexturePath: "Assets/UI/ContainerPanelPatch.png", Border: 8);
+
+    Group {
+      Anchor: (Width: 118, Height: 44, Right: 6);
+      Group #TierBronzeSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
+      TextButton #TierBronze { Text: "Bronze"; Anchor: (Full: 1); Style: @TierTabStyle; }
+      Group #TierBronzeIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
+    }
+
+    Group {
+      Anchor: (Width: 118, Height: 44, Right: 6);
+      Group #TierIronSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
+      TextButton #TierIron { Text: "Iron"; Anchor: (Full: 1); Style: @TierTabStyle; }
+      Group #TierIronIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
+    }
+
+    Group {
+      Anchor: (Width: 118, Height: 44, Right: 6);
+      Group #TierSteelSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
+      TextButton #TierSteel { Text: "Steel"; Anchor: (Full: 1); Style: @TierTabStyle; }
+      Group #TierSteelIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
+    }
+
+    Group {
+      Anchor: (Width: 118, Height: 44, Right: 6);
+      Group #TierMithrilSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
+      TextButton #TierMithril { Text: "Mithril"; Anchor: (Full: 1); Style: @TierTabStyle; }
+      Group #TierMithrilIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
+    }
+
+    Group {
+      Anchor: (Width: 118, Height: 44, Right: 6);
+      Group #TierAdamantiteSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
+      TextButton #TierAdamantite { Text: "Adamantite"; Anchor: (Full: 1); Style: @TierTabStyle; }
+      Group #TierAdamantiteIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
+    }
+
+    Group {
+      Anchor: (Width: 118, Height: 44, Right: 6);
+      Group #TierRuniteSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png"); Visible: false; }
+      TextButton #TierRunite { Text: "Runite"; Anchor: (Full: 1); Style: @TierTabStyle; }
+      Group #TierRuniteIndicator { Anchor: (Height: 3, Left: 10, Right: 10, Bottom: 3); Background: #5ea9ff; Visible: false; }
+    }
+  }
+
+  Group { Anchor: (Height: 8); }
+
+  Group {
+    LayoutMode: Left;
+    FlexWeight: 1;
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+      Padding: (Full: 10);
+      Background: (TexturePath: "Assets/UI/ContainerPanelPatch.png", Border: 8);
+
+      Group { Anchor: (Height: 12); }
+
+      Label #SectionTitle {
+        Text: "Bronze Equipment";
+        Anchor: (Height: 32);
+        Style: @SectionTitleStyle;
+      }
+
+      Group { Anchor: (Height: 8); }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #2b3542;
+      }
+
+      Group { Anchor: (Height: 10); }
+
+      Group #RecipeGrid {
+        LayoutMode: TopScrolling;
+        FlexWeight: 1;
+        ScrollbarStyle: $C.@DefaultScrollbarStyle;
+        KeepScrollPosition: true;
+      }
+    }
+
+    Group { Anchor: (Width: 10); }
+
+    Group {
+      Anchor: (Width: 254);
+      LayoutMode: Top;
+      Padding: (Full: 10);
+      Background: (TexturePath: "Assets/UI/ContainerPanelPatch.png", Border: 8);
+
+      Label {
+        Text: "Preview";
+        Anchor: (Height: 35, Horizontal: 8);
+        Style: @PanelTitleStyle;
+      }
+
+      Group {
+        Anchor: (Height: 1);
+        Background: #1b2533;
+      }
+
+      Group { Anchor: (Height: 10); }
+
+      Group {
+        Anchor: (Height: 126);
+        Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
+        LayoutMode: MiddleCenter;
+
+        ItemSlot #SelectedOutputSlot {
+          Anchor: (Width: 74, Height: 74);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+        }
+      }
+
+      Group { Anchor: (Height: 6); }
+
+      Label #SelectedOutputName {
+        Text: "Select a recipe to preview";
+        Anchor: (Height: 28);
+        Style: (FontSize: 12, TextColor: #8fa3b8, Wrap: true, VerticalAlignment: Start);
+      }
+
+      Group { Anchor: (Height: 6); }
+
+      Label {
+        Text: "Flow";
+        Anchor: (Height: 16);
+        Style: (FontSize: 11, TextColor: #7f95aa, RenderUppercase: true, LetterSpacing: 1);
+      }
+
+      Group {
+        Anchor: (Height: 66);
+        Padding: (Left: 8, Right: 8, Top: 6, Bottom: 6);
+        Background: (TexturePath: "Assets/UI/ContainerPanelLightPatch.png", Border: 8);
+        LayoutMode: Left;
+
+        Group {
+          LayoutMode: Left;
+          FlexWeight: 1;
+
+          ItemSlot #FlowIngredientSlot0 {
+            Anchor: (Width: 34, Height: 34, Right: 4);
+            ShowQuantity: true;
+            ShowQualityBackground: false;
+            ShowDurabilityBar: false;
+            Visible: false;
+          }
+
+          ItemSlot #FlowIngredientSlot1 {
+            Anchor: (Width: 34, Height: 34, Right: 4);
+            ShowQuantity: true;
+            ShowQualityBackground: false;
+            ShowDurabilityBar: false;
+            Visible: false;
+          }
+
+          ItemSlot #FlowIngredientSlot2 {
+            Anchor: (Width: 34, Height: 34, Right: 4);
+            ShowQuantity: true;
+            ShowQualityBackground: false;
+            ShowDurabilityBar: false;
+            Visible: false;
+          }
+        }
+
+        Label {
+          Text: "->";
+          Anchor: (Width: 24, Height: 30, Top: 2);
+          Style: (FontSize: 16, TextColor: #9cb2c7, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+        }
+
+        ItemSlot #FlowOutputSlot {
+          Anchor: (Width: 40, Height: 40, Top: -1);
+          ShowQuantity: true;
+          ShowQualityBackground: false;
+          ShowDurabilityBar: false;
+          Visible: false;
+        }
+      }
+
+      Group { Anchor: (Height: 8); }
+
+      Label #CraftProgressLabel {
+        Text: "Ready";
+        Anchor: (Height: 18);
+        Style: @SubtleStyle;
+      }
+
+      ProgressBar #CraftProgressBar {
+        Value: 0;
+        Anchor: (Height: 8, Top: 6, Bottom: 8);
+        Background: (TexturePath: "Assets/UI/ProgressBar.png", Border: 3);
+        BarTexturePath: "Assets/UI/ProgressBarFill.png";
+      }
+
+      Group {
+        Anchor: (Height: 32, Bottom: 6);
+        LayoutMode: Left;
+
+        Group {
+          Anchor: (Width: 56, Height: 32, Right: 4);
+          Group #Qty1Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
+          TextButton #Qty1 { Text: "x1"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+
+        Group {
+          Anchor: (Width: 56, Height: 32, Right: 4);
+          Group #Qty5Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
+          TextButton #Qty5 { Text: "x5"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+
+        Group {
+          Anchor: (Width: 56, Height: 32, Right: 4);
+          Group #Qty10Selected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
+          TextButton #Qty10 { Text: "x10"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+
+        Group {
+          Anchor: (Width: 66, Height: 32);
+          Group #QtyAllSelected { Anchor: (Full: 1); Background: (TexturePath: "Assets/UI/TabSelectedOverlay.png", Border: 3); Visible: false; }
+          TextButton #QtyAll { Text: "All"; Anchor: (Full: 1); Style: @TierTabStyle; }
+        }
+      }
+
+      Group {
+        Anchor: (Height: 30, Bottom: 6);
+        LayoutMode: Left;
+
+        $C.@TextField #QtyCustomInput {
+          Anchor: (Width: 170, Height: 30, Right: 6);
+          Value: "1";
+          PlaceholderText: "Craft X";
+        }
+
+        TextButton #QtyCustomApply {
+          Text: "Set";
+          Anchor: (Width: 58, Height: 30);
+          Style: @TierTabStyle;
+        }
+      }
+
+      TextButton #StartCraftingButton {
+        Text: "Select a Recipe";
+        Anchor: (Height: 42);
+        Style: @CraftButtonStyle;
+      }
+
+      Group { FlexWeight: 1; }
+    }
+  }
+}

@@ -3,39 +3,53 @@ package org.runetale.skills;
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
+import org.runetale.skills.config.SkillsConfigService;
+import org.runetale.skills.config.SkillsExternalConfigBootstrap;
+import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.command.CombatStyleCommand;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.SkillsPageCommand;
+import org.runetale.skills.command.debug.RtDebugCommand;
 import org.runetale.skills.command.debug.SkillXpCommand;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.interaction.OpenSmeltingUIInteraction;
+import org.runetale.skills.interaction.OpenSmithingUIInteraction;
 import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
 import org.runetale.skills.service.CombatStyleService;
+import org.runetale.skills.service.CraftingPageTrackerService;
+import org.runetale.skills.service.CraftingRecipeTagService;
+import org.runetale.skills.service.DebugModeService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
-import org.runetale.skills.service.ToolRequirementEvaluator;
 import org.runetale.skills.system.CombatDamageXpSystem;
+import org.runetale.skills.system.CraftingRecipeUnlockSystem;
+import org.runetale.skills.system.CraftingPageProgressSystem;
+import org.runetale.skills.system.CraftingXpSystem;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
+import org.runetale.skills.system.PlayerJoinRecipeUnlockSystem;
+import org.runetale.skills.system.PlayerSessionCleanupSystem;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
 
 import javax.annotation.Nonnull;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 
 /**
  * SkillsPlugin - A Hytale server plugin.
  */
 public class SkillsPlugin extends JavaPlugin {
 
-    private static final Logger LOGGER = Logger.getLogger(SkillsPlugin.class.getName());
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     /**
      * Singleton plugin instance for simple static access from component helper
@@ -54,14 +68,14 @@ public class SkillsPlugin extends JavaPlugin {
     private XpService xpService;
 
     /**
+     * Config snapshot service for tunable gameplay/runtime values.
+     */
+    private SkillsConfigService skillsConfigService;
+
+    /**
      * Service that resolves data-driven skill-node assets for broken blocks.
      */
     private SkillNodeLookupService nodeLookupService;
-
-    /**
-     * Service that evaluates held-tool requirements against configured tiers.
-     */
-    private ToolRequirementEvaluator toolRequirementEvaluator;
 
     /**
      * Session-scoped telemetry used by skill UI and feedback messaging.
@@ -88,6 +102,26 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private SkillXpDispatchService xpDispatchService;
 
+    /**
+     * Runtime toggles for per-plugin deep diagnostics.
+     */
+    private DebugModeService debugModeService;
+
+    /**
+     * Stateless utility for extracting skill tags from crafting recipes.
+     */
+    private CraftingRecipeTagService craftingRecipeTagService;
+
+    /**
+     * Tracks players currently viewing timed crafting pages.
+     */
+    private CraftingPageTrackerService craftingPageTrackerService;
+
+    /**
+     * Runtime path layout for external config and plugin data.
+     */
+    private SkillsPathLayout pathLayout;
+
     public SkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
         instance = this;
@@ -113,6 +147,18 @@ public class SkillsPlugin extends JavaPlugin {
         return this.xpDispatchService;
     }
 
+    public CraftingRecipeTagService getCraftingRecipeTagService() {
+        return this.craftingRecipeTagService;
+    }
+
+    public CraftingPageTrackerService getCraftingPageTrackerService() {
+        return this.craftingPageTrackerService;
+    }
+
+    public SkillsConfigService getSkillsConfigService() {
+        return this.skillsConfigService;
+    }
+
     /**
      * Public plugin API: queue an XP grant by strict skill id.
      */
@@ -124,7 +170,7 @@ public class SkillsPlugin extends JavaPlugin {
             @Nonnull String source,
             boolean notifyPlayer) {
         if (this.xpDispatchService == null) {
-            LOGGER.log(Level.WARNING, "Rejected XP grant because dispatch service is unavailable.");
+            LOGGER.atWarning().log("Rejected XP grant because dispatch service is unavailable.");
             return false;
         }
         return this.xpDispatchService.grantSkillXp(accessor, playerRef, skillId, experience, source, notifyPlayer);
@@ -141,7 +187,7 @@ public class SkillsPlugin extends JavaPlugin {
             @Nonnull String source,
             boolean notifyPlayer) {
         if (this.xpDispatchService == null) {
-            LOGGER.log(Level.WARNING, "Rejected XP grant because dispatch service is unavailable.");
+            LOGGER.atWarning().log("Rejected XP grant because dispatch service is unavailable.");
             return false;
         }
         return this.xpDispatchService.grantSkillXp(accessor, playerRef, skillType, experience, source, notifyPlayer);
@@ -149,7 +195,7 @@ public class SkillsPlugin extends JavaPlugin {
 
     @Override
     protected void setup() {
-        LOGGER.log(Level.INFO, "Setting up skills runtime framework...");
+        LOGGER.atInfo().log("Setting up skills runtime framework...");
 
         // Deterministic setup ordering is intentional and documented by this method
         // sequence.
@@ -160,15 +206,15 @@ public class SkillsPlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService));
         this.getCommandRegistry().registerCommand(new CombatStyleCommand(this.combatStyleService));
         this.getCommandRegistry().registerCommand(new SkillXpCommand());
+        this.getCommandRegistry().registerCommand(new RtDebugCommand(this.debugModeService));
         this.getCommandRegistry().registerCommand(
                 new SkillsPageCommand(
                         this.playerSkillProfileComponentType,
                         this.xpService,
-                        this.nodeLookupService,
-                        this.sessionStatsService));
+                        this.nodeLookupService));
         registerSystems();
 
-        LOGGER.log(Level.INFO, "Skills runtime setup complete.");
+        LOGGER.atInfo().log("Skills runtime setup complete.");
     }
 
     /**
@@ -176,15 +222,24 @@ public class SkillsPlugin extends JavaPlugin {
      * component/system wiring.
      */
     private void registerServices() {
-        LOGGER.log(Level.INFO, "[Skills] Registering services...");
-        this.xpService = new XpService();
-        this.nodeLookupService = new SkillNodeLookupService();
-        this.toolRequirementEvaluator = new ToolRequirementEvaluator();
+        LOGGER.atInfo().log("[Skills] Registering services...");
+        this.pathLayout = SkillsPathLayout.fromDataDirectory(this.getDataDirectory());
+        LOGGER.atInfo().log("[Skills] Runtime paths mods=%s config=%s runtime=%s",
+                this.pathLayout.modsRoot(),
+                this.pathLayout.pluginConfigRoot(),
+                this.pathLayout.pluginRuntimeRoot());
+        SkillsExternalConfigBootstrap.seedMissingDefaults(this.pathLayout);
+        this.skillsConfigService = new SkillsConfigService(this.pathLayout.pluginConfigRoot());
+        this.xpService = new XpService(this.skillsConfigService.getXpConfig());
+        this.nodeLookupService = new SkillNodeLookupService(this.pathLayout.pluginConfigRoot());
         this.sessionStatsService = new SkillSessionStatsService();
         this.combatStyleService = new CombatStyleService();
-        this.skillXpToastHudService = new SkillXpToastHudService();
-        this.xpDispatchService = new SkillXpDispatchService();
-        LOGGER.log(Level.INFO, "[Skills] Services registered.");
+        this.skillXpToastHudService = new SkillXpToastHudService(this.skillsConfigService.getHudConfig());
+        this.debugModeService = new DebugModeService(List.of("skills"));
+        this.xpDispatchService = new SkillXpDispatchService(this.debugModeService);
+        this.craftingRecipeTagService = new CraftingRecipeTagService(this.skillsConfigService.getCraftingConfig());
+        this.craftingPageTrackerService = new CraftingPageTrackerService();
+        LOGGER.atInfo().log("[Skills] Services registered.");
     }
 
     /**
@@ -197,37 +252,40 @@ public class SkillsPlugin extends JavaPlugin {
      * logging.
      */
     private void registerCodecs() {
-        LOGGER.log(Level.INFO, "[Skills] Registering codecs...");
-        LOGGER.log(Level.FINE, "[Skills] No codec-map registrations required for current woodcutting runtime.");
-        LOGGER.log(Level.INFO, "[Skills] Codecs registered.");
+        LOGGER.atInfo().log("[Skills] Registering codecs...");
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenSmeltingUIInteraction.TYPE_NAME, OpenSmeltingUIInteraction.class, OpenSmeltingUIInteraction.CODEC);
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenSmithingUIInteraction.TYPE_NAME, OpenSmithingUIInteraction.class, OpenSmithingUIInteraction.CODEC);
+        LOGGER.atInfo().log("[Skills] Codecs registered.");
     }
 
     /**
      * Registers data-driven skill-node assets that define gathering behavior.
      */
     private void registerAssets() {
-        LOGGER.log(Level.INFO, "[Skills] Registering asset lookup hooks...");
+        LOGGER.atInfo().log("[Skills] Registering asset lookup hooks...");
         this.nodeLookupService.initializeDefaults();
-        LOGGER.log(Level.INFO, "[Skills] Asset lookup hooks registered.");
+        LOGGER.atInfo().log("[Skills] Asset lookup hooks registered.");
     }
 
     /**
      * Registers ECS components in deterministic order.
      */
     private void registerComponents() {
-        LOGGER.log(Level.INFO, "[Skills] Registering components...");
+        LOGGER.atInfo().log("[Skills] Registering components...");
         this.playerSkillProfileComponentType = this.getEntityStoreRegistry()
                 .registerComponent(PlayerSkillProfileComponent.class, "PlayerSkillProfile",
                         PlayerSkillProfileComponent.CODEC);
         this.progressionService = new SkillProgressionService(this.playerSkillProfileComponentType, this.xpService);
-        LOGGER.log(Level.INFO, "[Skills] Components registered.");
+        LOGGER.atInfo().log("[Skills] Components registered.");
     }
 
     /**
      * Registers ECS systems in deterministic order.
      */
     private void registerSystems() {
-        LOGGER.log(Level.INFO, "[Skills] Registering systems...");
+        LOGGER.atInfo().log("[Skills] Registering systems...");
 
         // First ensure all players receive a profile component for persistence
         // correctness.
@@ -236,14 +294,31 @@ public class SkillsPlugin extends JavaPlugin {
 
         // Apply all queued XP grants through the centralized progression pipeline.
         this.getEntityStoreRegistry().registerSystem(
-                new SkillXpGrantSystem(this.progressionService, this.sessionStatsService, this.skillXpToastHudService));
+                new SkillXpGrantSystem(
+                        this.progressionService,
+                        this.sessionStatsService,
+                        this.skillXpToastHudService,
+                        this.debugModeService));
 
         // Apply combat-derived XP from damage events (melee style + ranged).
         this.getEntityStoreRegistry().registerSystem(
-                new CombatDamageXpSystem(this.xpDispatchService, this.combatStyleService));
+                new CombatDamageXpSystem(this.xpDispatchService, this.combatStyleService, this.skillsConfigService.getCombatConfig()));
 
         // Keep custom XP toasts transient and auto-expiring.
-        this.getEntityStoreRegistry().registerSystem(new SkillXpToastHudExpirySystem(this.skillXpToastHudService));
+        this.getEntityStoreRegistry().registerSystem(
+                new SkillXpToastHudExpirySystem(this.skillXpToastHudService, this.skillsConfigService.getHudConfig()));
+
+        // Drive timed progress updates for custom smithing/smelting pages.
+        this.getEntityStoreRegistry().registerSystem(new CraftingPageProgressSystem(
+                this.skillsConfigService.getCraftingConfig(),
+                this.craftingPageTrackerService));
+
+        // Clear session-scoped state maps when a player entity is removed.
+        this.getEntityStoreRegistry().registerSystem(new PlayerSessionCleanupSystem(
+                this.combatStyleService,
+                this.sessionStatsService,
+                this.skillXpToastHudService,
+                this.craftingPageTrackerService));
 
         // Then process block-break events with requirement checks and XP grants.
         this.getEntityStoreRegistry().registerSystem(
@@ -251,30 +326,54 @@ public class SkillsPlugin extends JavaPlugin {
                         this.playerSkillProfileComponentType,
                         this.xpDispatchService,
                         this.nodeLookupService,
-                        this.toolRequirementEvaluator));
+                        this.skillsConfigService.getHeuristicsConfig(),
+                        this.debugModeService));
 
-        LOGGER.log(Level.INFO, "[Skills] Systems registered.");
+        // Grant XP from crafting recipes tagged with skill XP rewards.
+        this.getEntityStoreRegistry().registerSystem(
+                new CraftingXpSystem(
+                        this.playerSkillProfileComponentType,
+                        this.xpDispatchService,
+                        this.craftingRecipeTagService));
+
+        // Unlock recipes when a player levels up in a skill.
+        this.getEntityStoreRegistry().registerSystem(
+                new CraftingRecipeUnlockSystem(
+                        this.playerSkillProfileComponentType,
+                        this.craftingRecipeTagService));
+
+        // Sync recipe unlocks on player join for catch-up.
+        this.getEntityStoreRegistry().registerSystem(
+                new PlayerJoinRecipeUnlockSystem(
+                        this.playerSkillProfileComponentType,
+                        this.craftingRecipeTagService));
+
+        LOGGER.atInfo().log("[Skills] Systems registered.");
     }
 
     @Override
     protected void start() {
-        LOGGER.log(Level.INFO, "Started skills plugin.");
+        LOGGER.atInfo().log("Started skills plugin.");
     }
 
     @Override
     protected void shutdown() {
-        LOGGER.log(Level.INFO, "Shutting down skills plugin...");
+        LOGGER.atInfo().log("Shutting down skills plugin...");
 
         // Clear explicit singleton/state references for clean hot reload behavior.
         this.playerSkillProfileComponentType = null;
         this.xpService = null;
+        this.skillsConfigService = null;
         this.nodeLookupService = null;
-        this.toolRequirementEvaluator = null;
         this.sessionStatsService = null;
         this.combatStyleService = null;
         this.skillXpToastHudService = null;
         this.progressionService = null;
         this.xpDispatchService = null;
+        this.debugModeService = null;
+        this.craftingRecipeTagService = null;
+        this.craftingPageTrackerService = null;
+        this.pathLayout = null;
 
         instance = null;
     }

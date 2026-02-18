@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.bundling.Zip
 
 plugins {
@@ -97,11 +98,25 @@ tasks.register<Delete>("cleanDeployedPluginBundles") {
         fileTree(modsDir.asFile).apply {
             include("${rootProject.name}-plugin-jars-*.zip")
             include("*-plugin-jars-*.zip")
+            include("${rootProject.name}-mods-bundle-*.zip")
+            include("*-mods-bundle-*.zip")
         }
     )
 
     doLast {
         println("Cleaned deployed plugin bundle zips from: ${modsDir.asFile}")
+    }
+}
+
+val skillsConfigResourceDir = layout.projectDirectory.dir("plugins/skills/src/main/resources/Skills")
+val skillsConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/skills")
+
+tasks.register<Sync>("deploySkillsConfigToRun") {
+    from(skillsConfigResourceDir)
+    into(skillsConfigRunDir)
+
+    doLast {
+        println("Synced skills config to ${skillsConfigRunDir.asFile}")
     }
 }
 
@@ -119,10 +134,29 @@ tasks.register<Zip>("bundlePluginJars") {
     })
 }
 
+tasks.register<Zip>("bundleModsRelease") {
+    dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
+    dependsOn(pluginProjects.map { it.tasks.named("jar") })
+
+    archiveBaseName.set("${rootProject.name}-mods-bundle")
+    archiveVersion.set(project.version.toString())
+    archiveClassifier.set("")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+
+    from(pluginProjects.map { project ->
+        project.tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
+    })
+
+    from(skillsConfigResourceDir) {
+        into("runetale/config/skills")
+    }
+}
+
 tasks.register("deployPluginsToRun") {
     dependsOn("cleanDeployedPlugins")
     dependsOn("cleanDeployedPluginBundles")
     dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
+    dependsOn("deploySkillsConfigToRun")
 
     doLast {
         copy {

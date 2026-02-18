@@ -79,8 +79,9 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ## Notes / assumptions
 
-- Node definitions are loaded from classpath resources under `src/main/resources/Skills/Nodes/**/*.properties` via `index.list`; in-memory defaults remain as a fail-safe fallback only.
+- Node definitions are loaded external-first from `server/mods/runetale/config/skills/Nodes/**/*.properties` via `index.list`, then classpath resources under `src/main/resources/Skills/Nodes/**/*.properties` as fallback; in-memory defaults remain fail-safe only.
 - Unknown blocks remain a no-op path (fail-safe behavior).
+- Runtime tuning now loads external-first from `server/mods/runetale/config/skills/Config/*.properties` through `SkillsConfigService` (classpath resources remain defaults/fallbacks).
 
 ## Testing Guide
 
@@ -90,7 +91,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ./gradlew :plugins:skills:clean :plugins:skills:build
 ```
 
-- Confirms the plugin compiles and resource files under `src/main/resources/Skills/**` are packaged.
+- Confirms the plugin compiles and resource files under `src/main/resources/Skills/**` are packaged as fallback defaults.
 - Expected outcome: build succeeds with no compile/runtime wiring errors.
 
 ### 2) Manual in-game flow (quick checklist)
@@ -133,12 +134,16 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
    - `id`, `skill`, `blockIds` (preferred, comma-separated) or `blockId` (backward-compatible fallback),
    - `requiredSkillLevel`, `requiredToolKeyword`, `requiredToolTier`,
    - `experienceReward`.
+   - `blockIds` entries support `*` wildcard matching (for example `Ore_Copper_Surface_*`).
+     Exact `blockId` matches always win over wildcard matches.
+     If multiple wildcard patterns match, the first declared pattern is used and a warning is logged.
+     For namespaced runtime IDs (for example `mymod:Ore_Copper_Surface_A`), lookup also tries the id suffix (`Ore_Copper_Surface_A`).
 4. Rebuild and verify log line: `Loaded node resource=... id=... skill=...`.
 
 ### Add more nodes for an existing skill
 
 - Repeat the same pattern with additional `*.properties` files.
-- Use distinct mapped block ids per node for deterministic lookup (via `blockIds` or `blockId`).
+- Use distinct mapped block ids/patterns per node for deterministic lookup (via `blockIds` or `blockId`).
 - Keep progression coherent by increasing `requiredSkillLevel` / `requiredToolTier` / `experienceReward` gradually.
 
 ### Add a new skill end-to-end
@@ -150,15 +155,105 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 Runtime wiring expectation: no new system/service registration is required for basic gather-style skills as long as they fit the existing node schema and `SkillType` enum.
 
+### Add a timed crafting page (new crafting skill)
+
+Use this pattern for skills like Cooking/Crafting/Fletching that need custom recipe selection, quantity controls, and timed craft progress.
+
+1. Create a new page class under `org.runetale.skills.page` that extends `AbstractTimedCraftingPage<TEventData>`.
+2. Reuse `TimedCraftingEventData` for the event payload class and codec (`TimedCraftingEventData.createCodec(...)`).
+3. Provide page constants (`UI_PATH`, template selectors, bench id, and fixed craft duration).
+4. In `renderPage(...)`, call shared helpers:
+   - `CraftingPageSupport.syncQuantityControls(...)`
+   - `CraftingPageSupport.configureOutputSlot(...)`
+   - `CraftingPageSupport.configureIngredientSlots(...)`
+   - `CraftingPageSupport.syncSelectedRecipePreview(...)`
+5. Bind recipe selection rows/cards with `EventData.of("RecipeId", recipe.getId())`.
+6. Use `CraftingPageSupport.updateCraftButtonState(...)` for consistent craft button behavior.
+7. Implement `finishCraft(...)` by calling `CraftingPageSupport.executeCraft(...)`.
+8. Register/open the new page from your interaction entrypoint (system/command).
+9. Ensure the bench id and bench categories map to your recipe assets.
+10. Confirm `CraftingPageProgressSystem` is registered (already done in `SkillsPlugin`).
+
+#### Timed crafting implementation checklist
+
+- [ ] Page extends `AbstractTimedCraftingPage`.
+- [ ] Event data extends `TimedCraftingEventData`.
+- [ ] UI has required selectors:
+  - `#StartCraftingButton`
+  - `#CraftProgressBar`, `#CraftProgressLabel`
+  - quantity controls: `#Qty1`, `#Qty5`, `#Qty10`, `#QtyAll`, `#QtyCustomInput`, `#QtyCustomApply`
+- [ ] Recipe list/grid emits `RecipeId` selection events.
+- [ ] `renderPage(...)` drives tier state, quantity state, recipe collection, selected preview, craft button state.
+- [ ] `finishCraft(...)` emits success notification/context tags.
+- [ ] Build passes and in-game confirms: selection, x1/x5/x10/all/custom, timed queue, XP grant, lock/material states.
+
+#### Template skeleton
+
+```java
+public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCraftingPage.EventData> {
+
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+    private static final String UI_PATH = "SkillsPlugin/ExampleCrafting.ui";
+    private static final long CRAFT_DURATION_MILLIS = 3000L;
+
+    public ExampleCraftingPage(
+            @Nonnull PlayerRef playerRef,
+            @Nonnull BlockPosition blockPosition,
+            @Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
+            @Nonnull CraftingRecipeTagService craftingRecipeTagService) {
+        super(
+                playerRef,
+                blockPosition,
+                profileComponentType,
+                craftingRecipeTagService,
+                UI_PATH,
+                "example-crafting",
+                "Crafting",
+                CRAFT_DURATION_MILLIS,
+                EventData.CODEC);
+    }
+
+    @Override
+    protected boolean finishCraft(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull String recipeId) {
+        return CraftingPageSupport.executeCraft(
+                ref,
+                store,
+                recipeId,
+                profileComponentType(),
+                craftingRecipeTagService(),
+                LOGGER,
+                "Crafted",
+                "example-craft");
+    }
+
+    @Override
+    protected void renderPage(
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull Store<EntityStore> store,
+            @Nonnull UICommandBuilder commandBuilder,
+            @Nonnull UIEventBuilder eventBuilder) {
+        // Render tier state, quantity controls, recipe list, selected preview, and craft button state.
+    }
+
+    @Override
+    protected @Nonnull HytaleLogger getLogger() {
+        return LOGGER;
+    }
+
+    public static class EventData extends TimedCraftingEventData {
+        public static final BuilderCodec<EventData> CODEC = TimedCraftingEventData.createCodec(EventData.class, EventData::new);
+    }
+}
+```
+
 ### Tool tier / keyword mapping guidance
 
 - Keep node `requiredToolKeyword` aligned with item-id fragments (e.g. `axe`) because tool family checks are substring-based.
-- Keep node `requiredToolTier` within declared tiers in `Skills/tool-tier-defaults.properties` for authoring consistency.
-- Current tier detection is code-based token matching (`bronze`, `iron`, `steel`, ... `crystal`) against held item id.
+- Keep node `requiredToolTier` within declared tiers in `Skills/Config/tooling.properties` (legacy `Skills/tool-tier-defaults.properties` is used only as fallback metadata).
+- Current tier detection and family matching are config-driven via `Skills/Config/tooling.properties`.
 
 ### Caveats / staged behavior TODOs
 
-- `Skills/tool-tier-defaults.properties` is currently informational/logged metadata; runtime tool checks still rely on evaluator code paths.
 - Node resources now parse `skill` strictly. Missing/invalid `skill` values are skipped with a warning instead of silently routing to a default skill.
 - If node resources fail to load, in-memory fallback defaults are registered to keep runtime alive (use logs to detect this during testing).
 

@@ -1,5 +1,7 @@
 package org.runetale.skills.service;
 
+import com.hypixel.hytale.logger.HytaleLogger;
+import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.ToolTier;
@@ -7,19 +9,23 @@ import org.runetale.skills.domain.ToolTier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Resolves skill-node definitions from block identifiers.
@@ -32,7 +38,7 @@ import java.util.logging.Logger;
  */
 public class SkillNodeLookupService {
 
-	private static final Logger LOGGER = Logger.getLogger(SkillNodeLookupService.class.getName());
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 	private static final String NODE_INDEX_RESOURCE = "Skills/Nodes/index.list";
 	private static final String NODE_RESOURCE_PREFIX = "Skills/Nodes/";
 	private static final String XP_PROFILE_DEFAULTS_RESOURCE = "Skills/xp-profile-defaults.properties";
@@ -42,25 +48,35 @@ public class SkillNodeLookupService {
 	 * Keyed by block id for fast break-event matching.
 	 */
 	private final Map<String, SkillNodeDefinition> byBlockId = new ConcurrentHashMap<>();
+	private final List<WildcardBlockMapping> wildcardBlockMappings = new CopyOnWriteArrayList<>();
+	@Nullable
+	private final Path externalConfigRoot;
+
+	public SkillNodeLookupService() {
+		this(null);
+	}
+
+	public SkillNodeLookupService(@Nullable Path externalConfigRoot) {
+		this.externalConfigRoot = externalConfigRoot;
+	}
 
 	/**
 	 * Registers baseline defaults so runtime is operational even without external
 	 * data.
 	 */
 	public void initializeDefaults() {
-		LOGGER.log(Level.INFO, "[Skills] Initializing skill-node definitions from resources");
+		LOGGER.atInfo().log("[Skills] Initializing skill-node definitions from resources");
 		loadAndLogOptionalSharedDefaults();
 
 		int loadedFromResources = loadNodesFromResources();
 		if (loadedFromResources <= 0) {
-			LOGGER.log(Level.WARNING,
+			LOGGER.atWarning().log(
 					"[Skills] No node definitions loaded from resources. Falling back to in-memory safety defaults.");
 			registerFallbackDefaults();
 			return;
 		}
 
-		LOGGER.log(Level.INFO,
-				String.format("[Skills] Node resource bootstrap completed with %d definition(s)", loadedFromResources));
+		LOGGER.atInfo().log("[Skills] Node resource bootstrap completed with %d definition(s)", loadedFromResources);
 	}
 
 	/**
@@ -70,19 +86,17 @@ public class SkillNodeLookupService {
 	private void loadAndLogOptionalSharedDefaults() {
 		Properties xpProfileDefaults = loadPropertiesResource(XP_PROFILE_DEFAULTS_RESOURCE);
 		if (!xpProfileDefaults.isEmpty()) {
-			LOGGER.log(Level.INFO,
-					String.format("[Skills] XP defaults discovered: profileId=%s curveModel=%s maxLevel=%s",
-							value(xpProfileDefaults, "profileId", "<missing>"),
-							value(xpProfileDefaults, "curveModel", "<missing>"),
-							value(xpProfileDefaults, "maxLevel", "<missing>")));
+			LOGGER.atInfo().log("[Skills] XP defaults discovered: profileId=%s curveModel=%s maxLevel=%s",
+					value(xpProfileDefaults, "profileId", "<missing>"),
+					value(xpProfileDefaults, "curveModel", "<missing>"),
+					value(xpProfileDefaults, "maxLevel", "<missing>"));
 		}
 
 		Properties toolTierDefaults = loadPropertiesResource(TOOL_TIER_DEFAULTS_RESOURCE);
 		if (!toolTierDefaults.isEmpty()) {
-			LOGGER.log(Level.INFO,
-					String.format("[Skills] Tool-tier defaults discovered: keyword.default=%s tiers=%s",
-							value(toolTierDefaults, "keyword.default", "<missing>"),
-							value(toolTierDefaults, "tiers", "<missing>")));
+			LOGGER.atInfo().log("[Skills] Tool-tier defaults discovered: keyword.default=%s tiers=%s",
+					value(toolTierDefaults, "keyword.default", "<missing>"),
+					value(toolTierDefaults, "tiers", "<missing>"));
 		}
 	}
 
@@ -96,8 +110,7 @@ public class SkillNodeLookupService {
 	private int loadNodesFromResources() {
 		List<String> nodeFiles = readNodeIndex();
 		if (nodeFiles.isEmpty()) {
-			LOGGER.log(Level.WARNING,
-					String.format("[Skills] Node index empty or missing: resource=%s", NODE_INDEX_RESOURCE));
+			LOGGER.atWarning().log("[Skills] Node index empty or missing: resource=%s", NODE_INDEX_RESOURCE);
 			return 0;
 		}
 
@@ -113,42 +126,12 @@ public class SkillNodeLookupService {
 	@Nonnull
 	private List<String> readNodeIndex() {
 		List<String> files = new ArrayList<>();
-		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-		ClassLoader serviceClassLoader = SkillNodeLookupService.class.getClassLoader();
-		ClassLoader classLoader = serviceClassLoader != null ? serviceClassLoader : contextClassLoader;
-
-		LOGGER.log(Level.INFO,
-				String.format(
-						"[Skills][Diag] Node index loader selectedCL=%s contextVisible=%s serviceVisible=%s resource=%s",
-						describeClassLoader(classLoader),
-						probeResourceVisible(contextClassLoader, NODE_INDEX_RESOURCE),
-						probeResourceVisible(serviceClassLoader, NODE_INDEX_RESOURCE),
-						NODE_INDEX_RESOURCE));
-
-		if (classLoader == null) {
-			LOGGER.log(Level.SEVERE,
-					"[Skills] Cannot read node index because no classloader is available for the current runtime thread");
-			return files;
-		}
-
-		InputStream selectedInput = classLoader == null ? null : classLoader.getResourceAsStream(NODE_INDEX_RESOURCE);
-		if (selectedInput == null && contextClassLoader != null && contextClassLoader != classLoader) {
-			classLoader = contextClassLoader;
-			selectedInput = classLoader.getResourceAsStream(NODE_INDEX_RESOURCE);
-		}
-
-		if (selectedInput == null) {
-			LOGGER.log(Level.WARNING,
-					String.format(
-							"[Skills][Diag] Node index not found via selectedCL=%s resource=%s contextVisible=%s serviceVisible=%s",
-							describeClassLoader(classLoader),
-							NODE_INDEX_RESOURCE,
-							probeResourceVisible(contextClassLoader, NODE_INDEX_RESOURCE),
-							probeResourceVisible(serviceClassLoader, NODE_INDEX_RESOURCE)));
-			return files;
-		}
-
-		try (InputStream input = selectedInput) {
+		try (InputStream input = openResourceInput(NODE_INDEX_RESOURCE)) {
+			if (input == null) {
+				LOGGER.atWarning().log("[Skills] Node index not found in external config or classpath resource=%s",
+						NODE_INDEX_RESOURCE);
+				return files;
+			}
 
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
 				String line;
@@ -162,12 +145,10 @@ public class SkillNodeLookupService {
 				}
 			}
 		} catch (IOException e) {
-			LOGGER.log(Level.WARNING,
-					String.format("[Skills] Failed to read node index resource=%s", NODE_INDEX_RESOURCE), e);
+			LOGGER.atWarning().withCause(e).log("[Skills] Failed to read node index resource=%s", NODE_INDEX_RESOURCE);
 		}
 
-		LOGGER.log(Level.FINE,
-				String.format("[Skills] Node index resolved %d file(s) from %s", files.size(), NODE_INDEX_RESOURCE));
+		LOGGER.atFine().log("[Skills] Node index resolved %d file(s) from %s", files.size(), NODE_INDEX_RESOURCE);
 		return files;
 	}
 
@@ -175,8 +156,7 @@ public class SkillNodeLookupService {
 		String resourcePath = NODE_RESOURCE_PREFIX + fileName;
 		Properties properties = loadPropertiesResource(resourcePath);
 		if (properties.isEmpty()) {
-			LOGGER.log(Level.WARNING,
-					String.format("[Skills] Node resource is missing or empty: %s", resourcePath));
+			LOGGER.atWarning().log("[Skills] Node resource is missing or empty: %s", resourcePath);
 			return false;
 		}
 
@@ -185,12 +165,11 @@ public class SkillNodeLookupService {
 		String rawSkill = optionalValue(properties, "skill");
 		SkillType skillType = SkillType.tryParseStrict(rawSkill);
 		if (skillType == null) {
-			LOGGER.log(Level.WARNING,
-					String.format(
-							"[Skills] Skipping node resource=%s id=%s because skill is missing or invalid: %s",
-							resourcePath,
-							id,
-							rawSkill == null ? "<missing>" : rawSkill));
+			LOGGER.atWarning().log(
+					"[Skills] Skipping node resource=%s id=%s because skill is missing or invalid: %s",
+					resourcePath,
+					id,
+					rawSkill == null ? "<missing>" : rawSkill);
 			return false;
 		}
 		List<String> blockIds = resolveBlockIds(properties);
@@ -204,12 +183,11 @@ public class SkillNodeLookupService {
 				requiredToolTier, requiredToolKeyword, experienceReward);
 		register(definition, blockIds);
 
-		LOGGER.log(Level.INFO,
-				String.format(
-						"[Skills] Loaded node resource=%s id=%s skill=%s blocks=%s level=%d tier=%s keyword=%s xp=%.2f",
-						resourcePath, id, skillType, blockIds, requiredSkillLevel, requiredToolTier,
-						requiredToolKeyword,
-						experienceReward));
+		LOGGER.atInfo().log(
+				"[Skills] Loaded node resource=%s id=%s skill=%s blocks=%s level=%d tier=%s keyword=%s xp=%.2f",
+				resourcePath, id, skillType, blockIds, requiredSkillLevel, requiredToolTier,
+				requiredToolKeyword,
+				experienceReward);
 		return true;
 	}
 
@@ -238,19 +216,21 @@ public class SkillNodeLookupService {
 	public void register(@Nonnull SkillNodeDefinition definition, @Nonnull List<String> blockIds) {
 		for (String rawBlockId : blockIds) {
 			String normalized = normalize(rawBlockId);
+			if (isWildcardPattern(normalized)) {
+				registerWildcard(definition, rawBlockId, normalized);
+				continue;
+			}
+
 			SkillNodeDefinition previous = byBlockId.put(normalized, definition);
 			if (previous != null && previous != definition) {
-				LOGGER.log(Level.WARNING,
-						String.format(
-								"[Skills] Replaced node mapping for block=%s oldNode=%s newNode=%s",
-								rawBlockId,
-								previous.getId(),
-								definition.getId()));
+				LOGGER.atWarning().log("[Skills] Replaced node mapping for block=%s oldNode=%s newNode=%s",
+						rawBlockId,
+						previous.getId(),
+						definition.getId());
 			}
 		}
 
-		LOGGER.log(Level.FINE,
-				String.format("[Skills] Registered node definition id=%s blocks=%s", definition.getId(), blockIds));
+		LOGGER.atFine().log("[Skills] Registered node definition id=%s blocks=%s", definition.getId(), blockIds);
 	}
 
 	/**
@@ -259,20 +239,149 @@ public class SkillNodeLookupService {
 	@Nullable
 	public SkillNodeDefinition findByBlockId(@Nullable String blockId) {
 		if (blockId == null || blockId.isBlank()) {
-			LOGGER.log(Level.FINER, "[Skills] Node lookup skipped: missing block id");
+			LOGGER.atFiner().log("[Skills] Node lookup skipped: missing block id");
 			return null;
 		}
 
-		SkillNodeDefinition def = byBlockId.get(normalize(blockId));
+		String normalizedBlockId = normalize(blockId);
+		SkillNodeDefinition def = byBlockId.get(normalizedBlockId);
 		if (def == null) {
-			LOGGER.log(Level.FINER, String.format("[Skills] Node lookup miss for block=%s", blockId));
+			String simplifiedBlockId = simplifyBlockId(normalizedBlockId);
+			if (!simplifiedBlockId.equals(normalizedBlockId)) {
+				def = byBlockId.get(simplifiedBlockId);
+			}
+		}
+		if (def == null) {
+			def = findByWildcardBlockId(normalizedBlockId, blockId);
+		}
+
+		if (def == null) {
+			LOGGER.atFiner().log("[Skills] Node lookup miss for block=%s", blockId);
 		}
 		return def;
+	}
+
+	private void registerWildcard(@Nonnull SkillNodeDefinition definition, @Nonnull String rawPattern,
+			@Nonnull String normalizedPattern) {
+		WildcardBlockMapping previous = removeWildcardMapping(normalizedPattern);
+		if (previous != null && previous.definition() != definition) {
+			LOGGER.atWarning().log("[Skills] Replaced node wildcard mapping pattern=%s oldNode=%s newNode=%s",
+					rawPattern,
+					previous.definition().getId(),
+					definition.getId());
+		}
+
+		this.wildcardBlockMappings
+				.add(new WildcardBlockMapping(normalizedPattern, createWildcardPattern(normalizedPattern), definition));
+		LOGGER.atFine().log("[Skills] Registered node wildcard id=%s pattern=%s", definition.getId(), rawPattern);
+	}
+
+	@Nullable
+	private WildcardBlockMapping removeWildcardMapping(@Nonnull String normalizedPattern) {
+		for (WildcardBlockMapping mapping : this.wildcardBlockMappings) {
+			if (mapping.rawPattern().equals(normalizedPattern)) {
+				this.wildcardBlockMappings.remove(mapping);
+				return mapping;
+			}
+		}
+		return null;
+	}
+
+	@Nullable
+	private SkillNodeDefinition findByWildcardBlockId(@Nonnull String normalizedBlockId,
+			@Nonnull String originalBlockId) {
+		String simplifiedBlockId = simplifyBlockId(normalizedBlockId);
+		SkillNodeDefinition firstMatch = null;
+		String firstPattern = null;
+		for (WildcardBlockMapping mapping : this.wildcardBlockMappings) {
+			if (!matchesWildcard(mapping.pattern(), normalizedBlockId, simplifiedBlockId)) {
+				continue;
+			}
+
+			if (firstMatch == null) {
+				firstMatch = mapping.definition();
+				firstPattern = mapping.rawPattern();
+				continue;
+			}
+
+			LOGGER.atWarning().log(
+					"[Skills] Block id=%s matched multiple wildcard node mappings; using first pattern=%s node=%s over pattern=%s node=%s",
+					originalBlockId,
+					firstPattern,
+					firstMatch.getId(),
+					mapping.rawPattern(),
+					mapping.definition().getId());
+			break;
+		}
+
+		return firstMatch;
+	}
+
+	private static boolean matchesWildcard(@Nonnull Pattern pattern, @Nonnull String normalizedBlockId,
+			@Nonnull String simplifiedBlockId) {
+		if (pattern.matcher(normalizedBlockId).matches()) {
+			return true;
+		}
+		return !simplifiedBlockId.equals(normalizedBlockId) && pattern.matcher(simplifiedBlockId).matches();
+	}
+
+	@Nonnull
+	private static String simplifyBlockId(@Nonnull String normalizedBlockId) {
+		String simplified = normalizedBlockId;
+
+		int namespaceSeparator = simplified.lastIndexOf(':');
+		if (namespaceSeparator >= 0 && namespaceSeparator + 1 < simplified.length()) {
+			simplified = simplified.substring(namespaceSeparator + 1);
+		}
+
+		int pathSeparator = simplified.lastIndexOf('/');
+		if (pathSeparator >= 0 && pathSeparator + 1 < simplified.length()) {
+			simplified = simplified.substring(pathSeparator + 1);
+		}
+
+		return simplified;
+	}
+
+	private static boolean isWildcardPattern(@Nonnull String token) {
+		return token.indexOf('*') >= 0;
+	}
+
+	@Nonnull
+	private static Pattern createWildcardPattern(@Nonnull String normalizedPattern) {
+		StringBuilder regexBuilder = new StringBuilder(normalizedPattern.length() + 8);
+		regexBuilder.append('^');
+		int segmentStart = 0;
+		for (int i = 0; i < normalizedPattern.length(); i++) {
+			if (normalizedPattern.charAt(i) != '*') {
+				continue;
+			}
+
+			if (segmentStart < i) {
+				String literalSegment = normalizedPattern.substring(segmentStart, i);
+				regexBuilder.append(Pattern.quote(literalSegment));
+			}
+			regexBuilder.append(".*");
+			segmentStart = i + 1;
+		}
+
+		if (segmentStart < normalizedPattern.length()) {
+			String literalSegment = normalizedPattern.substring(segmentStart);
+			regexBuilder.append(Pattern.quote(literalSegment));
+		}
+		regexBuilder.append('$');
+		return Pattern.compile(regexBuilder.toString());
+	}
+
+	private record WildcardBlockMapping(@Nonnull String rawPattern, @Nonnull Pattern pattern,
+			@Nonnull SkillNodeDefinition definition) {
 	}
 
 	@Nonnull
 	public List<SkillNodeDefinition> listAllDefinitions() {
 		LinkedHashSet<SkillNodeDefinition> deduped = new LinkedHashSet<>(this.byBlockId.values());
+		for (WildcardBlockMapping mapping : this.wildcardBlockMappings) {
+			deduped.add(mapping.definition());
+		}
 		List<SkillNodeDefinition> definitions = new ArrayList<>(deduped);
 		definitions.sort(Comparator
 				.comparingInt(SkillNodeDefinition::getRequiredSkillLevel)
@@ -293,7 +402,7 @@ public class SkillNodeLookupService {
 
 	@Nonnull
 	private static String normalize(@Nonnull String input) {
-		return input.trim().toLowerCase();
+		return input.trim().toLowerCase(Locale.ROOT);
 	}
 
 	@Nonnull
@@ -315,9 +424,8 @@ public class SkillNodeLookupService {
 		try {
 			return Integer.parseInt(raw.trim());
 		} catch (NumberFormatException e) {
-			LOGGER.log(Level.WARNING,
-					String.format("[Skills] Invalid integer for key=%s value=%s; using default=%d", key, raw,
-							defaultValue));
+			LOGGER.atWarning().log("[Skills] Invalid integer for key=%s value=%s; using default=%d", key, raw,
+					defaultValue);
 			return defaultValue;
 		}
 	}
@@ -341,9 +449,8 @@ public class SkillNodeLookupService {
 		try {
 			return Double.parseDouble(raw.trim());
 		} catch (NumberFormatException e) {
-			LOGGER.log(Level.WARNING,
-					String.format("[Skills] Invalid decimal for key=%s value=%s; using default=%f", key, raw,
-							defaultValue));
+			LOGGER.atWarning().log("[Skills] Invalid decimal for key=%s value=%s; using default=%f", key, raw,
+					defaultValue);
 			return defaultValue;
 		}
 	}
@@ -371,17 +478,27 @@ public class SkillNodeLookupService {
 	}
 
 	@Nonnull
-	private static Properties loadPropertiesResource(@Nonnull String resourcePath) {
+	private Properties loadPropertiesResource(@Nonnull String resourcePath) {
 		Properties properties = new Properties();
+		Path externalPath = resolveExternalPath(resourcePath);
+		if (externalPath != null && Files.isRegularFile(externalPath)) {
+			try (InputStream input = Files.newInputStream(externalPath)) {
+				properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
+				LOGGER.atFine().log("[Skills] Loaded external node resource path=%s entries=%d", externalPath,
+						properties.size());
+				return properties;
+			} catch (IOException e) {
+				LOGGER.atWarning().withCause(e).log("[Skills] Failed loading external node resource path=%s", externalPath);
+			}
+		}
 
 		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 		ClassLoader serviceClassLoader = SkillNodeLookupService.class.getClassLoader();
 		ClassLoader classLoader = serviceClassLoader != null ? serviceClassLoader : contextClassLoader;
 
 		if (classLoader == null) {
-			LOGGER.log(Level.SEVERE,
-					String.format("[Skills] Cannot read resource=%s because no classloader is available",
-							resourcePath));
+			LOGGER.atSevere().log("[Skills] Cannot read resource=%s because no classloader is available",
+					resourcePath);
 			return properties;
 		}
 
@@ -392,26 +509,60 @@ public class SkillNodeLookupService {
 		}
 
 		if (selectedInput == null) {
-			LOGGER.log(Level.FINE, String.format("[Skills] Optional resource not found: %s", resourcePath));
-			LOGGER.log(Level.INFO,
-					String.format(
-							"[Skills][Diag] Resource miss via selectedCL=%s resource=%s contextVisible=%s serviceVisible=%s",
-							describeClassLoader(classLoader),
-							resourcePath,
-							probeResourceVisible(contextClassLoader, resourcePath),
-							probeResourceVisible(serviceClassLoader, resourcePath)));
+			LOGGER.atFine().log("[Skills] Optional resource not found: %s", resourcePath);
+			LOGGER.atInfo().log(
+					"[Skills][Diag] Resource miss via selectedCL=%s resource=%s contextVisible=%s serviceVisible=%s",
+					describeClassLoader(classLoader),
+					resourcePath,
+					probeResourceVisible(contextClassLoader, resourcePath),
+					probeResourceVisible(serviceClassLoader, resourcePath));
 			return properties;
 		}
 
 		try (InputStream input = selectedInput) {
 			properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
-			LOGGER.log(Level.FINE,
-					String.format("[Skills] Loaded resource=%s entries=%d", resourcePath, properties.size()));
+			LOGGER.atFine().log("[Skills] Loaded resource=%s entries=%d", resourcePath, properties.size());
 		} catch (IOException e) {
-			LOGGER.log(Level.WARNING, String.format("[Skills] Failed loading resource=%s", resourcePath), e);
+			LOGGER.atWarning().withCause(e).log("[Skills] Failed loading resource=%s", resourcePath);
 		}
 
 		return properties;
+	}
+
+	@Nullable
+	private InputStream openResourceInput(@Nonnull String resourcePath) {
+		Path externalPath = resolveExternalPath(resourcePath);
+		if (externalPath != null && Files.isRegularFile(externalPath)) {
+			try {
+				LOGGER.atInfo().log("[Skills] Loading external resource file=%s", externalPath);
+				return Files.newInputStream(externalPath);
+			} catch (IOException e) {
+				LOGGER.atWarning().withCause(e).log("[Skills] Failed opening external resource file=%s", externalPath);
+			}
+		}
+
+		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader serviceClassLoader = SkillNodeLookupService.class.getClassLoader();
+		ClassLoader classLoader = serviceClassLoader != null ? serviceClassLoader : contextClassLoader;
+		if (classLoader == null) {
+			return null;
+		}
+
+		InputStream selectedInput = classLoader.getResourceAsStream(resourcePath);
+		if (selectedInput == null && contextClassLoader != null && contextClassLoader != classLoader) {
+			selectedInput = contextClassLoader.getResourceAsStream(resourcePath);
+		}
+		return selectedInput;
+	}
+
+	@Nullable
+	private Path resolveExternalPath(@Nonnull String resourcePath) {
+		if (this.externalConfigRoot == null) {
+			return null;
+		}
+
+		String relative = SkillsPathLayout.externalRelativeResourcePath(resourcePath);
+		return this.externalConfigRoot.resolve(relative.replace('/', File.separatorChar));
 	}
 
 	@Nonnull

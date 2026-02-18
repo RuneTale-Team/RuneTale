@@ -4,7 +4,10 @@
 # Ignore Gradle build output directory
 build
 server
+AGENTS.md
+CLAUDE.md
 docs/community
+docs/hytalemodding
 .idea
 .vscode
 

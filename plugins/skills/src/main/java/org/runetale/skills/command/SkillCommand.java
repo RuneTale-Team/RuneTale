@@ -23,7 +23,6 @@ import java.util.Locale;
  */
 public class SkillCommand extends AbstractPlayerCommand {
 
-	private static final int MAX_LEVEL = 99;
 	private final XpService xpService;
 	private final OptionalArg<String> actionArg;
 
@@ -102,8 +101,9 @@ public class SkillCommand extends AbstractPlayerCommand {
 	}
 
 	private String formatProgress(int level, long experience) {
-		int safeLevel = Math.max(1, Math.min(MAX_LEVEL, level));
-		if (safeLevel >= MAX_LEVEL) {
+		int maxLevel = this.xpService.getMaxLevel();
+		int safeLevel = Math.max(1, Math.min(maxLevel, level));
+		if (safeLevel >= maxLevel) {
 			return "MAX";
 		}
 
@@ -118,7 +118,8 @@ public class SkillCommand extends AbstractPlayerCommand {
 	}
 
 	private long xpRequiredForNextLevel(int level) {
-		int safeLevel = Math.max(1, Math.min(MAX_LEVEL - 1, level));
+		int maxLevel = this.xpService.getMaxLevel();
+		int safeLevel = Math.max(1, Math.min(maxLevel - 1, level));
 		long currentLevelXp = this.xpService.xpForLevel(safeLevel);
 		long nextLevelXp = this.xpService.xpForLevel(safeLevel + 1);
 		return Math.max(1L, nextLevelXp - currentLevelXp);

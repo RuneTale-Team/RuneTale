@@ -1,24 +1,35 @@
 package org.runetale.skills.service;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.hypixel.hytale.logger.HytaleLogger;
+import org.runetale.skills.config.XpConfig;
+import org.runetale.skills.config.XpRoundingMode;
+
+import javax.annotation.Nonnull;
 
 /**
  * OSRS-inspired nonlinear XP/level math service.
  */
 public class XpService {
 
-	private static final Logger LOGGER = Logger.getLogger(XpService.class.getName());
-	private static final int MAX_LEVEL = 99;
-	private static final int[] XP_THRESHOLDS = buildThresholds();
+	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+
+	private final XpConfig config;
+	private final int maxLevel;
+	private final int[] xpThresholds;
+
+	public XpService(@Nonnull XpConfig config) {
+		this.config = config;
+		this.maxLevel = config.maxLevel();
+		this.xpThresholds = buildThresholds(config);
+	}
 
 	/**
-	 * Returns required XP to reach the given level (1..99).
+	 * Returns required XP to reach the given level.
 	 */
 	public long xpForLevel(int level) {
-		int clamped = Math.max(1, Math.min(MAX_LEVEL, level));
-		long threshold = XP_THRESHOLDS[clamped];
-		LOGGER.log(Level.FINER, String.format("xpForLevel(%d) -> %d", clamped, threshold));
+		int clamped = Math.max(1, Math.min(this.maxLevel, level));
+		long threshold = this.xpThresholds[clamped];
+		LOGGER.atFiner().log("xpForLevel(%d) -> %d", clamped, threshold);
 		return threshold;
 	}
 
@@ -28,14 +39,14 @@ public class XpService {
 	public int levelForXp(long xp) {
 		long safeXp = Math.max(0L, xp);
 		int level = 1;
-		for (int i = 2; i <= MAX_LEVEL; i++) {
-			if (safeXp >= XP_THRESHOLDS[i]) {
+		for (int i = 2; i <= this.maxLevel; i++) {
+			if (safeXp >= this.xpThresholds[i]) {
 				level = i;
 			} else {
 				break;
 			}
 		}
-		LOGGER.log(Level.FINER, String.format("levelForXp(%d) -> %d", safeXp, level));
+		LOGGER.atFiner().log("levelForXp(%d) -> %d", safeXp, level);
 		return level;
 	}
 
@@ -44,23 +55,40 @@ public class XpService {
 	 */
 	public long addXp(long currentXp, double gainedXp) {
 		long safeCurrent = Math.max(0L, currentXp);
-		long gain = Math.max(0L, Math.round(gainedXp));
+		long gain = Math.max(0L, roundByMode(gainedXp, this.config.roundingMode()));
 		long updated = safeCurrent + gain;
-		LOGGER.log(Level.FINE, String.format("XP mutation: current=%d gain=%d updated=%d", safeCurrent, gain, updated));
+		LOGGER.atFine().log("XP mutation: current=%d gain=%d updated=%d", safeCurrent, gain, updated);
 		return updated;
 	}
 
-	private static int[] buildThresholds() {
-		int[] thresholds = new int[MAX_LEVEL + 1];
+	public int getMaxLevel() {
+		return this.maxLevel;
+	}
+
+	private static int[] buildThresholds(@Nonnull XpConfig config) {
+		int[] thresholds = new int[config.maxLevel() + 1];
 		int points = 0;
-		for (int level = 1; level <= MAX_LEVEL; level++) {
-			points += Math.floor((double) level + 300.0 * Math.pow(2.0, (double) level / 7.0));
+		for (int level = 1; level <= config.maxLevel(); level++) {
+			points += (int) Math.floor(
+					(config.levelTermMultiplier() * (double) level)
+							+ config.growthScale() * Math.pow(config.growthBase(), (double) level / config.growthDivisor()));
 			if (level == 1) {
 				thresholds[level] = 0;
 			} else {
-				thresholds[level] = points / 4;
+				thresholds[level] = points / config.pointsDivisor();
 			}
 		}
 		return thresholds;
+	}
+
+	private static long roundByMode(double value, @Nonnull XpRoundingMode roundingMode) {
+		if (roundingMode == XpRoundingMode.FLOOR) {
+			return (long) Math.floor(value);
+		}
+		if (roundingMode == XpRoundingMode.CEIL) {
+			return (long) Math.ceil(value);
+		}
+
+		return Math.round(value);
 	}
 }

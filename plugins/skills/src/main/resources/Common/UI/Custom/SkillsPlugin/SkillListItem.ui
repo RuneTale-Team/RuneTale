@@ -27,7 +27,7 @@ Button {
 
     Group #SkillIcon {
       Anchor: (Width: 20, Height: 20, Top: 1);
-      Background: "SkillsPlugin/Assets/Icons/icon_unknown.png";
+      Background: "Assets/Icons/icon_unknown.png";
     }
 
     Group { Anchor: (Width: 10); }

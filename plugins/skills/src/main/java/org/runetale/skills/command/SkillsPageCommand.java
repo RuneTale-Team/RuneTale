@@ -17,7 +17,6 @@ import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.page.SkillsOverviewPage;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
-import org.runetale.skills.service.SkillSessionStatsService;
 
 import javax.annotation.Nonnull;
 import java.util.Locale;
@@ -27,20 +26,17 @@ public class SkillsPageCommand extends AbstractPlayerCommand {
 	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final XpService xpService;
 	private final SkillNodeLookupService nodeLookupService;
-	private final SkillSessionStatsService sessionStatsService;
 	private final OptionalArg<String> actionArg;
 
 	public SkillsPageCommand(
 			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
 			@Nonnull XpService xpService,
-			@Nonnull SkillNodeLookupService nodeLookupService,
-			@Nonnull SkillSessionStatsService sessionStatsService) {
+			@Nonnull SkillNodeLookupService nodeLookupService) {
 		super("skills", "Opens your skills overview page.");
 		this.setPermissionGroup(GameMode.Adventure);
 		this.profileComponentType = profileComponentType;
 		this.xpService = xpService;
 		this.nodeLookupService = nodeLookupService;
-		this.sessionStatsService = sessionStatsService;
 		this.actionArg = this.withOptionalArg("action", "Use 'help' to show command usage.", ArgTypes.STRING);
 	}
 
@@ -75,8 +71,7 @@ public class SkillsPageCommand extends AbstractPlayerCommand {
 						playerRef,
 						this.profileComponentType,
 						this.xpService,
-						this.nodeLookupService,
-						this.sessionStatsService));
+						this.nodeLookupService));
 	}
 
 	private boolean isHelpToken(String raw) {

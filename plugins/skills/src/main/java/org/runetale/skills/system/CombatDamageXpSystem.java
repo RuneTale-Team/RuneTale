@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.modules.entity.damage.DamageModule;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.config.CombatConfig;
 import org.runetale.skills.domain.CombatStyleType;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
@@ -31,21 +32,20 @@ import java.util.UUID;
  */
 public class CombatDamageXpSystem extends DamageEventSystem {
 
-	private static final double XP_PER_DAMAGE = 4.0D;
-	private static final String SOURCE_RANGED = "combat:ranged";
-	private static final String SOURCE_MELEE_PREFIX = "combat:melee:";
-	private static final String SOURCE_BLOCK_DEFENSE = "combat:block:defense";
 	private static final Field PROJECTILE_CREATOR_UUID_FIELD = resolveProjectileCreatorUuidField();
 
 	private final SkillXpDispatchService skillXpDispatchService;
 	private final CombatStyleService combatStyleService;
+	private final CombatConfig combatConfig;
 	private final Query<EntityStore> query;
 
 	public CombatDamageXpSystem(
 			@Nonnull SkillXpDispatchService skillXpDispatchService,
-			@Nonnull CombatStyleService combatStyleService) {
+			@Nonnull CombatStyleService combatStyleService,
+			@Nonnull CombatConfig combatConfig) {
 		this.skillXpDispatchService = skillXpDispatchService;
 		this.combatStyleService = combatStyleService;
+		this.combatConfig = combatConfig;
 		this.query = AllLegacyLivingEntityTypesQuery.INSTANCE;
 	}
 
@@ -112,13 +112,13 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 			@Nonnull Damage event,
 			@Nonnull Damage.Source source,
 			double finalDamage) {
-		long totalXp = Math.max(0L, Math.round(finalDamage * XP_PER_DAMAGE));
+		long totalXp = Math.max(0L, Math.round(finalDamage * this.combatConfig.xpPerDamage()));
 		if (totalXp <= 0L) {
 			return;
 		}
 
 		if (isRangedDamage(event, source)) {
-			grantXp(commandBuffer, attackerRef, SkillType.RANGED, totalXp, SOURCE_RANGED);
+			grantXp(commandBuffer, attackerRef, SkillType.RANGED, totalXp, this.combatConfig.sourceRanged());
 			return;
 		}
 
@@ -136,23 +136,29 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 				strengthXp++;
 			}
 
-			grantXp(commandBuffer, attackerRef, SkillType.ATTACK, attackXp, SOURCE_MELEE_PREFIX + "controlled:attack");
-			grantXp(commandBuffer, attackerRef, SkillType.STRENGTH, strengthXp, SOURCE_MELEE_PREFIX + "controlled:strength");
-			grantXp(commandBuffer, attackerRef, SkillType.DEFENSE, defenseXp, SOURCE_MELEE_PREFIX + "controlled:defense");
+			grantXp(commandBuffer, attackerRef, SkillType.ATTACK, attackXp,
+					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeControlledAttack());
+			grantXp(commandBuffer, attackerRef, SkillType.STRENGTH, strengthXp,
+					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeControlledStrength());
+			grantXp(commandBuffer, attackerRef, SkillType.DEFENSE, defenseXp,
+					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeControlledDefense());
 			return;
 		}
 
 		if (style == CombatStyleType.ACCURATE) {
-			grantXp(commandBuffer, attackerRef, SkillType.ATTACK, totalXp, SOURCE_MELEE_PREFIX + "accurate");
+			grantXp(commandBuffer, attackerRef, SkillType.ATTACK, totalXp,
+					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeAccurate());
 			return;
 		}
 
 		if (style == CombatStyleType.AGGRESSIVE) {
-			grantXp(commandBuffer, attackerRef, SkillType.STRENGTH, totalXp, SOURCE_MELEE_PREFIX + "aggressive");
+			grantXp(commandBuffer, attackerRef, SkillType.STRENGTH, totalXp,
+					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeAggressive());
 			return;
 		}
 
-		grantXp(commandBuffer, attackerRef, SkillType.DEFENSE, totalXp, SOURCE_MELEE_PREFIX + "defensive");
+		grantXp(commandBuffer, attackerRef, SkillType.DEFENSE, totalXp,
+				this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeDefensive());
 	}
 
 	private void grantXp(
@@ -189,7 +195,17 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 		}
 
 		String causeId = cause.getId();
-		return causeId != null && causeId.toLowerCase(Locale.ROOT).contains("projectile");
+		if (causeId == null) {
+			return false;
+		}
+
+		String normalizedCauseId = causeId.toLowerCase(Locale.ROOT);
+		for (String token : this.combatConfig.projectileCauseTokens()) {
+			if (normalizedCauseId.contains(token)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Nullable
@@ -270,8 +286,8 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 				commandBuffer,
 				defenderRef,
 				SkillType.DEFENSE,
-				preventedDamage * XP_PER_DAMAGE,
-				SOURCE_BLOCK_DEFENSE,
+				preventedDamage * this.combatConfig.xpPerDamage(),
+				this.combatConfig.sourceBlockDefense(),
 				true);
 	}
 }
