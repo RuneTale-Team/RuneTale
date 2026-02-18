@@ -2,6 +2,7 @@ package org.runetale.skills.service;
 
 import org.junit.jupiter.api.Test;
 import org.runetale.skills.asset.SkillNodeDefinition;
+import org.runetale.skills.config.SkillsConfigService;
 import org.runetale.testing.junit.ContractTest;
 
 import java.io.BufferedReader;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -18,6 +20,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @ContractTest
 class SkillsResourceSchemaContractTest {
+
+	@Test
+	void requiredConfigResourcesResolveFromClasspath() {
+		List<String> resources = List.of(
+				"Skills/Config/xp.properties",
+				"Skills/Config/combat.properties",
+				"Skills/Config/crafting.properties",
+				"Skills/Config/hud.properties",
+				"Skills/Config/tooling.properties",
+				"Skills/Config/heuristics.properties",
+				"Skills/tool-tier-defaults.properties",
+				"Skills/xp-profile-defaults.properties");
+
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		for (String resource : resources) {
+			assertThat(classLoader.getResource(resource))
+					.as("resource %s", resource)
+					.isNotNull();
+		}
+	}
 
 	@Test
 	void nodeIndexEntriesResolveToClasspathResources() throws IOException {
@@ -51,6 +73,18 @@ class SkillsResourceSchemaContractTest {
 		Set<String> ids = definitions.stream().map(SkillNodeDefinition::getId).collect(Collectors.toSet());
 		assertThat(ids).hasSameSizeAs(definitions);
 		assertThat(service.findByBlockId("mymod:Ore_Copper_Surface_A")).isNotNull();
+	}
+
+	@Test
+	void skillsConfigServiceLoadsAllConfigSlicesWithoutRuntimeContext() {
+		SkillsConfigService configService = new SkillsConfigService(Path.of("./non-existent-external-root"));
+
+		assertThat(configService.getXpConfig().maxLevel()).isGreaterThanOrEqualTo(2);
+		assertThat(configService.getCombatConfig().xpPerDamage()).isGreaterThanOrEqualTo(0.0D);
+		assertThat(configService.getCraftingConfig().maxCraftCount()).isGreaterThanOrEqualTo(1);
+		assertThat(configService.getHudConfig().toastDurationMillis()).isGreaterThanOrEqualTo(1L);
+		assertThat(configService.getToolingConfig()).isNotNull();
+		assertThat(configService.getHeuristicsConfig().nodeCandidateTokens()).isNotEmpty();
 	}
 
 	private static List<String> readNodeIndexEntries() throws IOException {

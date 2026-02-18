@@ -94,6 +94,101 @@ class CombatDamageXpSystemContractTest {
 	}
 
 	@Test
+	void aggressiveMeleeDamageRoutesAllXpToStrength() {
+		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		CombatStyleService styleService = mock(CombatStyleService.class);
+		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+
+		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
+		Ref<EntityStore> attackerRef = mock(Ref.class);
+		UUID attackerId = UUID.randomUUID();
+		when(styleService.getCombatStyle(attackerId)).thenReturn(CombatStyleType.AGGRESSIVE);
+
+		Damage event = mock(Damage.class);
+		when(event.getCause()).thenReturn(null);
+		Damage.Source source = mock(Damage.EntitySource.class);
+
+		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 3.0D);
+
+		verify(dispatchService).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
+				eq(SkillType.STRENGTH),
+				eq(12.0D),
+				eq("combat:melee:aggressive"),
+				eq(true));
+		verifyNoMoreInteractions(dispatchService);
+	}
+
+	@Test
+	void defensiveMeleeDamageRoutesAllXpToDefense() {
+		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		CombatStyleService styleService = mock(CombatStyleService.class);
+		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+
+		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
+		Ref<EntityStore> attackerRef = mock(Ref.class);
+		UUID attackerId = UUID.randomUUID();
+		when(styleService.getCombatStyle(attackerId)).thenReturn(CombatStyleType.DEFENSIVE);
+
+		Damage event = mock(Damage.class);
+		when(event.getCause()).thenReturn(null);
+		Damage.Source source = mock(Damage.EntitySource.class);
+
+		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 3.0D);
+
+		verify(dispatchService).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
+				eq(SkillType.DEFENSE),
+				eq(12.0D),
+				eq("combat:melee:defensive"),
+				eq(true));
+		verifyNoMoreInteractions(dispatchService);
+	}
+
+	@Test
+	void controlledMeleeDamageDistributesSingleRemainderToAttackFirst() {
+		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		CombatStyleService styleService = mock(CombatStyleService.class);
+		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+
+		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
+		Ref<EntityStore> attackerRef = mock(Ref.class);
+		UUID attackerId = UUID.randomUUID();
+		when(styleService.getCombatStyle(attackerId)).thenReturn(CombatStyleType.CONTROLLED);
+
+		Damage event = mock(Damage.class);
+		when(event.getCause()).thenReturn(null);
+		Damage.Source source = mock(Damage.EntitySource.class);
+
+		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 1.75D);
+
+		verify(dispatchService).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
+				eq(SkillType.ATTACK),
+				eq(3.0D),
+				eq("combat:melee:controlled:attack"),
+				eq(true));
+		verify(dispatchService).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
+				eq(SkillType.STRENGTH),
+				eq(2.0D),
+				eq("combat:melee:controlled:strength"),
+				eq(true));
+		verify(dispatchService).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
+				eq(SkillType.DEFENSE),
+				eq(2.0D),
+				eq("combat:melee:controlled:defense"),
+				eq(true));
+		verifyNoMoreInteractions(dispatchService);
+	}
+
+	@Test
 	void projectileDamageRoutesAllXpToRanged() {
 		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
@@ -127,6 +222,26 @@ class CombatDamageXpSystemContractTest {
 				eq(8.0D),
 				eq("combat:ranged"),
 				eq(true));
+		verifyNoMoreInteractions(dispatchService);
+	}
+
+	@Test
+	void zeroOrNegativeEffectiveDamageDoesNotDispatchXp() {
+		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		CombatStyleService styleService = mock(CombatStyleService.class);
+		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+
+		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
+		Ref<EntityStore> attackerRef = mock(Ref.class);
+		UUID attackerId = UUID.randomUUID();
+		when(styleService.getCombatStyle(attackerId)).thenReturn(CombatStyleType.ACCURATE);
+
+		Damage event = mock(Damage.class);
+		Damage.Source source = mock(Damage.EntitySource.class);
+
+		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 0.0D);
+		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, -4.0D);
+
 		verifyNoMoreInteractions(dispatchService);
 	}
 
