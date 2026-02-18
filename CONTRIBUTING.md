@@ -2,6 +2,15 @@
 
 Thanks for contributing to RuneTale. This guide covers local setup, build commands, and coding standards.
 
+## Contributor License Agreement (CLA)
+
+By submitting any contribution (code, documentation, assets, or other materials) to this repository, you agree that:
+- You have the legal right to submit the contribution.
+- You grant RuneTale maintainers a non-exclusive, irrevocable, worldwide, perpetual, royalty-free license to use, reproduce, modify, adapt, publish, distribute, sublicense, and otherwise make the contribution available as part of this project and related distributions.
+- You understand that contributions are public and may be redistributed under this project's license terms.
+
+If you do not agree to these terms, please do not submit a contribution.
+
 ## Development Environment
 
 ### Prerequisites
