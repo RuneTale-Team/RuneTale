@@ -8,6 +8,12 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 - `:plugins:skills-gathering` (`SkillsGatheringPlugin`): node lookup, gather block-break enforcement, `/skills` overview page command.
 - `:plugins:skills-crafting` (`SkillsCraftingPlugin`): smithing/smelting pages, crafting XP dispatch, recipe unlock synchronization.
 
+## Config ownership
+
+- Core-owned defaults: `xp.properties`, `combat.properties`, `hud.properties`.
+- Gathering-owned defaults: `heuristics.properties`, `tooling.properties`, `tool-tier-defaults.properties`, `xp-profile-defaults.properties`, and `Skills/Nodes/**`.
+- Crafting-owned defaults: `crafting.properties`.
+
 ## Runtime flow
 
 1. Plugin setup is split by responsibility: core wires progression services/systems; gathering wires node assets and gather systems; crafting wires crafting systems and UI interactions.

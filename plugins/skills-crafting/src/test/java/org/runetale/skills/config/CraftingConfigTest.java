@@ -22,7 +22,7 @@ class CraftingConfigTest {
 		assertThat(config.maxCraftCount()).isEqualTo(999);
 		assertThat(config.quantityPresets()).containsExactly(1, 5, 10);
 		assertThat(config.quantityAllToken()).isEqualTo("ALL");
-		assertThat(config.smeltingOutputContainsToken()).isEqualTo("bar_");
+		assertThat(config.smeltingOutputContainsToken()).isEqualTo("runetale_bar_");
 		assertThat(config.pageProgressTickSeconds()).isEqualTo(0.05F);
 	}
 

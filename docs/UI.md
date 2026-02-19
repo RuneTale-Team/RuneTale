@@ -47,7 +47,7 @@ This document explains how the Skills custom UI is wired, where assets live, and
 ## Node definition labels
 - Node files live in:
   - External runtime path: `server/mods/runetale/config/skills/Nodes/**/*.properties`
-  - Bundled fallback path: `plugins/skills/src/main/resources/Skills/Nodes/**/*.properties`
+  - Bundled fallback path: `plugins/skills-gathering/src/main/resources/Skills/Nodes/**/*.properties`
 - Optional display label key:
   - `label=Oak Tree`
 - Fallback behavior when label is missing/blank:

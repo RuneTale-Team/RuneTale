@@ -5,6 +5,9 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import org.runetale.skills.SkillsPlugin;
+import org.runetale.skills.config.CraftingConfig;
+import org.runetale.skills.config.SkillsPathLayout;
+import org.runetale.skills.crafting.config.CraftingExternalConfigBootstrap;
 import org.runetale.skills.interaction.OpenSmeltingUIInteraction;
 import org.runetale.skills.interaction.OpenSmithingUIInteraction;
 import org.runetale.skills.service.CraftingPageTrackerService;
@@ -22,6 +25,7 @@ public class CraftingSkillsPlugin extends JavaPlugin {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
     private static CraftingSkillsPlugin instance;
 
+    private CraftingConfig craftingConfig;
     private CraftingRecipeTagService craftingRecipeTagService;
     private CraftingPageTrackerService craftingPageTrackerService;
 
@@ -35,6 +39,10 @@ public class CraftingSkillsPlugin extends JavaPlugin {
 
     public CraftingPageTrackerService getCraftingPageTrackerService() {
         return this.craftingPageTrackerService;
+    }
+
+    public CraftingConfig getCraftingConfig() {
+        return this.craftingConfig;
     }
 
     public CraftingSkillsPlugin(@Nonnull JavaPluginInit init) {
@@ -58,7 +66,10 @@ public class CraftingSkillsPlugin extends JavaPlugin {
             return;
         }
 
-        this.craftingRecipeTagService = new CraftingRecipeTagService(corePlugin.getSkillsConfigService().getCraftingConfig());
+        SkillsPathLayout pathLayout = SkillsPathLayout.fromDataDirectory(this.getDataDirectory());
+        CraftingExternalConfigBootstrap.seedMissingDefaults(pathLayout);
+        this.craftingConfig = CraftingConfig.load(pathLayout.pluginConfigRoot());
+        this.craftingRecipeTagService = new CraftingRecipeTagService(this.craftingConfig);
         this.craftingPageTrackerService = new CraftingPageTrackerService();
     }
 
@@ -77,13 +88,13 @@ public class CraftingSkillsPlugin extends JavaPlugin {
             LOGGER.atSevere().log("Skills core plugin unavailable; crafting systems not registered.");
             return;
         }
-        if (this.craftingRecipeTagService == null || this.craftingPageTrackerService == null) {
+        if (this.craftingConfig == null || this.craftingRecipeTagService == null || this.craftingPageTrackerService == null) {
             LOGGER.atSevere().log("Crafting services unavailable; crafting systems not registered.");
             return;
         }
 
         this.getEntityStoreRegistry().registerSystem(new CraftingPageProgressSystem(
-                corePlugin.getSkillsConfigService().getCraftingConfig(),
+                this.craftingConfig,
                 this.craftingPageTrackerService));
 
         this.getEntityStoreRegistry().registerSystem(
@@ -113,6 +124,7 @@ public class CraftingSkillsPlugin extends JavaPlugin {
     @Override
     protected void shutdown() {
         LOGGER.atInfo().log("Shutting down skills crafting plugin...");
+        this.craftingConfig = null;
         this.craftingRecipeTagService = null;
         this.craftingPageTrackerService = null;
         instance = null;

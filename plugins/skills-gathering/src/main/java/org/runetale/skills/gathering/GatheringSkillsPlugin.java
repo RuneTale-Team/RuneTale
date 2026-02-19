@@ -5,7 +5,9 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import org.runetale.skills.SkillsPlugin;
 import org.runetale.skills.command.SkillsPageCommand;
+import org.runetale.skills.config.HeuristicsConfig;
 import org.runetale.skills.config.SkillsPathLayout;
+import org.runetale.skills.gathering.config.GatheringExternalConfigBootstrap;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 
@@ -17,6 +19,7 @@ public class GatheringSkillsPlugin extends JavaPlugin {
     private static GatheringSkillsPlugin instance;
 
     private SkillNodeLookupService nodeLookupService;
+    private HeuristicsConfig heuristicsConfig;
 
     public static GatheringSkillsPlugin getInstance() {
         return instance;
@@ -42,6 +45,8 @@ public class GatheringSkillsPlugin extends JavaPlugin {
 
     private void registerServices() {
         SkillsPathLayout pathLayout = SkillsPathLayout.fromDataDirectory(this.getDataDirectory());
+        GatheringExternalConfigBootstrap.seedMissingDefaults(pathLayout);
+        this.heuristicsConfig = HeuristicsConfig.load(pathLayout.pluginConfigRoot());
         this.nodeLookupService = new SkillNodeLookupService(pathLayout.pluginConfigRoot());
         this.nodeLookupService.initializeDefaults();
     }
@@ -72,7 +77,7 @@ public class GatheringSkillsPlugin extends JavaPlugin {
                         corePlugin.getPlayerSkillProfileComponentType(),
                         corePlugin.getXpDispatchService(),
                         this.nodeLookupService,
-                        corePlugin.getSkillsConfigService().getHeuristicsConfig(),
+                        this.heuristicsConfig,
                         corePlugin.getDebugModeService()));
     }
 
@@ -85,6 +90,7 @@ public class GatheringSkillsPlugin extends JavaPlugin {
     protected void shutdown() {
         LOGGER.atInfo().log("Shutting down skills gathering plugin...");
         this.nodeLookupService = null;
+        this.heuristicsConfig = null;
         instance = null;
     }
 }

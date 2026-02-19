@@ -181,11 +181,15 @@ tasks.register<Delete>("cleanDeployedPluginBundles") {
     }
 }
 
-val skillsConfigResourceDir = layout.projectDirectory.dir("plugins/skills/src/main/resources/Skills")
+val skillsConfigResourceDirs = listOf(
+    layout.projectDirectory.dir("plugins/skills/src/main/resources/Skills"),
+    layout.projectDirectory.dir("plugins/skills-gathering/src/main/resources/Skills"),
+    layout.projectDirectory.dir("plugins/skills-crafting/src/main/resources/Skills")
+)
 val skillsConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/skills")
 
 tasks.register<Sync>("deploySkillsConfigToRun") {
-    from(skillsConfigResourceDir)
+    from(skillsConfigResourceDirs)
     into(skillsConfigRunDir)
 
     doLast {
@@ -220,7 +224,7 @@ tasks.register<Zip>("bundleModsRelease") {
         project.tasks.named<Jar>("shadowJar").flatMap { it.archiveFile }
     })
 
-    from(skillsConfigResourceDir) {
+    from(skillsConfigResourceDirs) {
         into("runetale/config/skills")
     }
 }

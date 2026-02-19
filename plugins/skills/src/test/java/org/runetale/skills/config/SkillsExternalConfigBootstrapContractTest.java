@@ -7,7 +7,6 @@ import org.runetale.testing.junit.ContractTest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,11 +21,11 @@ class SkillsExternalConfigBootstrapContractTest {
 
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/xp.properties")).exists();
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/combat.properties")).exists();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.properties")).exists();
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/hud.properties")).exists();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/tooling.properties")).exists();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/heuristics.properties")).exists();
-		assertThat(layout.resolveConfigResourcePath("Skills/Nodes/index.list")).exists();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.properties")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/tooling.properties")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/heuristics.properties")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Nodes/index.list")).doesNotExist();
 	}
 
 	@Test
@@ -42,22 +41,13 @@ class SkillsExternalConfigBootstrapContractTest {
 	}
 
 	@Test
-	void seedMissingDefaultsCopiesAllNodeResourcesFromIndex(@TempDir Path tempDir) throws IOException {
+	void seedMissingDefaultsLeavesFeatureConfigsForFeaturePlugins(@TempDir Path tempDir) {
 		SkillsPathLayout layout = SkillsPathLayout.fromDataDirectory(tempDir.resolve("mods").resolve("skills-data"));
 
 		SkillsExternalConfigBootstrap.seedMissingDefaults(layout);
 
-		Path indexPath = layout.resolveConfigResourcePath("Skills/Nodes/index.list");
-		List<String> entries = Files.readAllLines(indexPath).stream()
-				.map(String::trim)
-				.filter(line -> !line.isBlank() && !line.startsWith("#"))
-				.toList();
-
-		assertThat(entries).isNotEmpty();
-		for (String entry : entries) {
-			assertThat(layout.resolveConfigResourcePath("Skills/Nodes/" + entry))
-					.as("node resource %s", entry)
-					.exists();
-		}
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.properties")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/tooling.properties")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/heuristics.properties")).doesNotExist();
 	}
 }

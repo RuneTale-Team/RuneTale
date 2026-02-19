@@ -85,7 +85,7 @@ public final class OpenSmeltingUIInteraction extends SimpleInstantInteraction {
 				corePlugin.getPlayerSkillProfileComponentType(),
 				craftingPlugin.getCraftingRecipeTagService(),
 				craftingPlugin.getCraftingPageTrackerService(),
-				corePlugin.getSkillsConfigService().getCraftingConfig());
+				craftingPlugin.getCraftingConfig());
 
 		player.getPageManager().openCustomPage(ref, store, page);
 		ctx.getState().state = InteractionState.Finished;

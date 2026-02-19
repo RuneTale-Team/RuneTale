@@ -2,7 +2,8 @@ package org.runetale.skills.service;
 
 import org.junit.jupiter.api.Test;
 import org.runetale.skills.asset.SkillNodeDefinition;
-import org.runetale.skills.config.SkillsConfigService;
+import org.runetale.skills.config.HeuristicsConfig;
+import org.runetale.skills.config.ToolingConfig;
 import org.runetale.testing.junit.ContractTest;
 
 import java.io.BufferedReader;
@@ -24,10 +25,6 @@ class SkillsResourceSchemaContractTest {
 	@Test
 	void requiredConfigResourcesResolveFromClasspath() {
 		List<String> resources = List.of(
-				"Skills/Config/xp.properties",
-				"Skills/Config/combat.properties",
-				"Skills/Config/crafting.properties",
-				"Skills/Config/hud.properties",
 				"Skills/Config/tooling.properties",
 				"Skills/Config/heuristics.properties",
 				"Skills/tool-tier-defaults.properties",
@@ -76,15 +73,12 @@ class SkillsResourceSchemaContractTest {
 	}
 
 	@Test
-	void skillsConfigServiceLoadsAllConfigSlicesWithoutRuntimeContext() {
-		SkillsConfigService configService = new SkillsConfigService(Path.of("./non-existent-external-root"));
+	void gatheringConfigSlicesLoadWithoutRuntimeContext() {
+		ToolingConfig toolingConfig = ToolingConfig.load(Path.of("./non-existent-external-root"));
+		HeuristicsConfig heuristicsConfig = HeuristicsConfig.load(Path.of("./non-existent-external-root"));
 
-		assertThat(configService.getXpConfig().maxLevel()).isGreaterThanOrEqualTo(2);
-		assertThat(configService.getCombatConfig().xpPerDamage()).isGreaterThanOrEqualTo(0.0D);
-		assertThat(configService.getCraftingConfig().maxCraftCount()).isGreaterThanOrEqualTo(1);
-		assertThat(configService.getHudConfig().toastDurationMillis()).isGreaterThanOrEqualTo(1L);
-		assertThat(configService.getToolingConfig()).isNotNull();
-		assertThat(configService.getHeuristicsConfig().nodeCandidateTokens()).isNotEmpty();
+		assertThat(toolingConfig.defaultKeyword()).isNotBlank();
+		assertThat(heuristicsConfig.nodeCandidateTokens()).isNotEmpty();
 	}
 
 	private static List<String> readNodeIndexEntries() throws IOException {
