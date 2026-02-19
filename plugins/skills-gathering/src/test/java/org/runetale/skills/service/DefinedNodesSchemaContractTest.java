@@ -10,7 +10,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -241,14 +244,35 @@ class DefinedNodesSchemaContractTest {
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		var nodesRootUrl = classLoader.getResource("Skills/Nodes");
 		assertThat(nodesRootUrl).as("node resource root exists").isNotNull();
-		Path nodesRoot = Path.of(nodesRootUrl.toURI());
-		try (var stream = Files.walk(nodesRoot)) {
-			return stream
-					.filter(Files::isRegularFile)
-					.filter(path -> path.getFileName().toString().endsWith(".properties"))
-					.map(path -> nodesRoot.relativize(path).toString().replace('\\', '/'))
-					.filter(path -> !path.equals(EXAMPLE_NODE_FILE))
-					.collect(Collectors.toCollection(LinkedHashSet::new));
+
+		URI nodesRootUri = nodesRootUrl.toURI();
+		if (!"jar".equalsIgnoreCase(nodesRootUri.getScheme())) {
+			Path nodesRoot = Path.of(nodesRootUri);
+			try (var stream = Files.walk(nodesRoot)) {
+				return stream
+						.filter(Files::isRegularFile)
+						.filter(path -> path.getFileName().toString().endsWith(".properties"))
+						.map(path -> nodesRoot.relativize(path).toString().replace('\\', '/'))
+						.filter(path -> !path.equals(EXAMPLE_NODE_FILE))
+						.collect(Collectors.toCollection(LinkedHashSet::new));
+			}
+		}
+
+		String raw = nodesRootUri.toString();
+		int separatorIndex = raw.indexOf("!/");
+		assertThat(separatorIndex).isGreaterThan(0);
+		URI jarUri = URI.create(raw.substring(0, separatorIndex));
+
+		try (FileSystem fileSystem = FileSystems.newFileSystem(jarUri, java.util.Map.of())) {
+			Path nodesRoot = fileSystem.getPath("/Skills/Nodes");
+			try (var stream = Files.walk(nodesRoot)) {
+				return stream
+						.filter(Files::isRegularFile)
+						.filter(path -> path.getFileName().toString().endsWith(".properties"))
+						.map(path -> nodesRoot.relativize(path).toString().replace('\\', '/'))
+						.filter(path -> !path.equals(EXAMPLE_NODE_FILE))
+						.collect(Collectors.toCollection(LinkedHashSet::new));
+			}
 		}
 	}
 
