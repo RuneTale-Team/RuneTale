@@ -10,6 +10,11 @@ docs/community
 docs/hytalemodding
 .idea
 .vscode
+.hytale/
+.secrets/
+**/auth.json
+**/*token*
+
 
 # Compiled class file
 *.class

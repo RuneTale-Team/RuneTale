@@ -46,6 +46,21 @@ If you do not agree to these terms, please do not submit a contribution.
 ./gradlew test
 ```
 
+### Run all unit tests across modules
+```bash
+./gradlew unitTest
+```
+
+### Run all contract tests across modules
+```bash
+./gradlew contractTest
+```
+
+### Run unit + contract suites
+```bash
+./gradlew verifyTests
+```
+
 ### Build one module
 ```bash
 ./gradlew :plugins:<module>:build
@@ -54,6 +69,7 @@ If you do not agree to these terms, please do not submit a contribution.
 ### Test one module
 ```bash
 ./gradlew :plugins:<module>:test
+./gradlew :plugins:<module>:contractTest
 ```
 
 ### Clean build outputs
@@ -100,16 +116,20 @@ Use this order for imports:
 - Keep log messages actionable and concise.
 
 ### Testing
-- Use JUnit 5.
-- Name test classes with `*Test`.
+- Use JUnit 5 (`5.14.3`).
+- Use Mockito (`5.21.0`) for behavioral seams and interactions.
+- Name unit test classes with `*Test`.
+- Name contract test classes with `*ContractTest` and annotate with `@ContractTest`.
+- Contract tests run through the dedicated `contractTest` Gradle task.
 - Test one behavior per test method.
 - Prefer direct tests of pure logic without unnecessary mocks.
+- For ECS-facing code, prefer the shared fakes in `:platform:testing-ecs`.
 
 ## Before Opening a PR
 
 Run at least:
 ```bash
-./gradlew build test
+./gradlew build verifyTests
 ```
 
 Make sure changes are scoped, readable, and consistent with the standards above.
