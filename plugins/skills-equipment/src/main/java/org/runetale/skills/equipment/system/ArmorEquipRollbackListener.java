@@ -146,7 +146,33 @@ public class ArmorEquipRollbackListener {
                 source,
                 sourceSlot,
                 false);
-        return rollback.succeeded();
+        if (rollback.succeeded()) {
+            return true;
+        }
+
+        if (!looksLikeSwap(moveTransaction, addSlot)) {
+            return false;
+        }
+
+        ItemStack sourceStack = source.getItemStack(sourceSlot);
+        if (sourceStack == null || ItemStack.isEmpty(sourceStack)) {
+            return false;
+        }
+
+        MoveTransaction<SlotTransaction> swapBack = source.moveItemStackFromSlotToSlot(
+                sourceSlot,
+                sourceStack.getQuantity(),
+                armor,
+                armorSlot,
+                false);
+        return swapBack.succeeded();
+    }
+
+    private boolean looksLikeSwap(@Nonnull MoveTransaction<?> moveTransaction, @Nonnull SlotTransaction addSlot) {
+        SlotTransaction removeSlot = moveTransaction.getRemoveTransaction();
+        return removeSlot.succeeded()
+                && !ItemStack.isEmpty(removeSlot.getSlotAfter())
+                && !ItemStack.isEmpty(addSlot.getSlotBefore());
     }
 
     @Nullable
