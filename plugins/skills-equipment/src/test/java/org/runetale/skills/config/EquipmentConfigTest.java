@@ -21,6 +21,8 @@ class EquipmentConfigTest {
         assertThat(config.enforceActiveHand()).isTrue();
         assertThat(config.activeSectionHotbar()).isEqualTo(-1);
         assertThat(config.activeSectionTools()).isEqualTo(-8);
+        assertThat(config.activeSelectionSlotsHotbar()).isEqualTo(9);
+        assertThat(config.activeSelectionSlotsTools()).isEqualTo(9);
         assertThat(config.locationAliases()).containsKeys("mainhand", "head", "chest", "hands", "legs");
     }
 
@@ -30,6 +32,7 @@ class EquipmentConfigTest {
                 enforce.armor=false
                 enforce.activeHand=true
                 activeSection.hotbar=-5
+                activeSelectionSlots.tools=7
                 armorScanTickSeconds=0.75
                 tag.skillRequired=EquipSkillRequirement
                 locationAlias.mainhand=main,mh
@@ -40,6 +43,7 @@ class EquipmentConfigTest {
         assertThat(config.enforceArmor()).isFalse();
         assertThat(config.enforceActiveHand()).isTrue();
         assertThat(config.activeSectionHotbar()).isEqualTo(-5);
+        assertThat(config.activeSelectionSlotsTools()).isEqualTo(7);
         assertThat(config.armorScanTickSeconds()).isEqualTo(0.75F);
         assertThat(config.tagSkillRequired()).isEqualTo("EquipSkillRequirement");
         assertThat(config.locationAliases().get("mainhand")).containsExactly("main", "mh");

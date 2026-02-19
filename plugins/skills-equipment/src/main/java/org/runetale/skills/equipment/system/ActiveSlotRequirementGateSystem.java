@@ -56,17 +56,22 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             return;
         }
 
-        byte newSlot = event.getNewSlot();
-        if (newSlot < 0) {
-            return;
-        }
-
         Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
         Player player = commandBuffer.getComponent(ref, Player.getComponentType());
         if (player == null) {
             player = store.getComponent(ref, Player.getComponentType());
         }
         if (player == null) {
+            return;
+        }
+
+        int selectionCapacity = selectionCapacity(sectionId, player);
+        if (selectionCapacity <= 0) {
+            return;
+        }
+
+        byte newSlot = event.getNewSlot();
+        if (newSlot < 0 || newSlot >= selectionCapacity) {
             return;
         }
 
@@ -85,7 +90,7 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             return;
         }
 
-        byte fallbackSlot = findFallbackAllowedSlot(commandBuffer, ref, event, section);
+        byte fallbackSlot = findFallbackAllowedSlot(commandBuffer, ref, event, section, selectionCapacity);
         if (fallbackSlot >= 0) {
             event.setNewSlot(fallbackSlot);
         } else {
@@ -112,8 +117,9 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             @Nonnull CommandBuffer<EntityStore> commandBuffer,
             @Nonnull Ref<EntityStore> ref,
             @Nonnull SwitchActiveSlotEvent event,
-            @Nonnull ItemContainer section) {
-        int capacity = section.getCapacity();
+            @Nonnull ItemContainer section,
+            int selectionCapacity) {
+        int capacity = Math.min(section.getCapacity(), selectionCapacity);
         if (capacity <= 0) {
             return -1;
         }
@@ -161,6 +167,26 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             wrapped += capacity;
         }
         return wrapped;
+    }
+
+    private int selectionCapacity(int sectionId, @Nonnull Player player) {
+        int sectionCapacity = sectionCapacity(sectionId, player);
+        if (sectionCapacity <= 0) {
+            return 0;
+        }
+
+        int configured = sectionId == this.equipmentConfig.activeSectionHotbar()
+                ? this.equipmentConfig.activeSelectionSlotsHotbar()
+                : this.equipmentConfig.activeSelectionSlotsTools();
+        return Math.min(sectionCapacity, Math.max(1, configured));
+    }
+
+    private int sectionCapacity(int sectionId, @Nonnull Player player) {
+        ItemContainer section = player.getInventory().getSectionById(sectionId);
+        if (section == null) {
+            return 0;
+        }
+        return section.getCapacity();
     }
 
     @Nullable

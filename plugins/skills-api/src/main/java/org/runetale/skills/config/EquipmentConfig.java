@@ -19,6 +19,8 @@ public record EquipmentConfig(
         boolean enforceActiveHand,
         int activeSectionHotbar,
         int activeSectionTools,
+        int activeSelectionSlotsHotbar,
+        int activeSelectionSlotsTools,
         float armorScanTickSeconds,
         long notificationCooldownMillis,
         @Nonnull String notificationMessageTemplate,
@@ -44,6 +46,8 @@ public record EquipmentConfig(
                 booleanValue(properties, "enforce.activeHand", true),
                 ConfigResourceLoader.intValue(properties, "activeSection.hotbar", -1),
                 ConfigResourceLoader.intValue(properties, "activeSection.tools", -8),
+                Math.max(1, ConfigResourceLoader.intValue(properties, "activeSelectionSlots.hotbar", 9)),
+                Math.max(1, ConfigResourceLoader.intValue(properties, "activeSelectionSlots.tools", 9)),
                 (float) Math.max(0.05D, ConfigResourceLoader.doubleValue(properties, "armorScanTickSeconds", 0.25D)),
                 Math.max(0L, ConfigResourceLoader.longValue(properties, "notification.cooldownMillis", 1500L)),
                 ConfigResourceLoader.stringValue(

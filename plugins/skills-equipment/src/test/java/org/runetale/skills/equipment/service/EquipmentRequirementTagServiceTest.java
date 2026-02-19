@@ -66,6 +66,8 @@ class EquipmentRequirementTagServiceTest {
                 true,
                 -1,
                 -8,
+                9,
+                9,
                 0.25F,
                 1000L,
                 "[Skills] %s level %d/%d required to equip %s in %s.",
