@@ -20,6 +20,7 @@ import org.runetale.skills.equipment.service.EquipmentGateNotificationService;
 import org.runetale.skills.equipment.service.EquipmentRequirementTagService;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntityStore, SwitchActiveSlotEvent> {
 
@@ -79,15 +80,8 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             return;
         }
 
-        SkillRequirement requirement = this.requirementTagService.getRequirementForLocation(
-                selectedStack.getItem(),
-                EquipmentLocation.MAINHAND);
-        if (requirement == null) {
-            return;
-        }
-
-        int currentLevel = this.runtimeApi.getSkillLevel(commandBuffer, ref, requirement.skillType());
-        if (currentLevel >= requirement.requiredLevel()) {
+        BlockedRequirement blocked = findFirstUnmetRequirement(commandBuffer, ref, selectedStack);
+        if (blocked == null) {
             return;
         }
 
@@ -103,15 +97,32 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
 
         this.notificationService.sendBlockedEquipNotice(
                 playerRef,
-                requirement,
-                currentLevel,
+                blocked.requirement(),
+                blocked.currentLevel(),
                 selectedStack.getItem().getId(),
                 EquipmentLocation.MAINHAND);
+    }
+
+    @Nullable
+    private BlockedRequirement findFirstUnmetRequirement(
+            @Nonnull CommandBuffer<EntityStore> commandBuffer,
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull ItemStack stack) {
+        for (SkillRequirement requirement : this.requirementTagService.getRequirements(stack.getItem())) {
+            int currentLevel = this.runtimeApi.getSkillLevel(commandBuffer, ref, requirement.skillType());
+            if (currentLevel < requirement.requiredLevel()) {
+                return new BlockedRequirement(requirement, currentLevel);
+            }
+        }
+        return null;
     }
 
     @Nonnull
     @Override
     public Query<EntityStore> getQuery() {
         return this.query;
+    }
+
+    private record BlockedRequirement(@Nonnull SkillRequirement requirement, int currentLevel) {
     }
 }

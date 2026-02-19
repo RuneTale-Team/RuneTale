@@ -21,6 +21,7 @@ import org.runetale.skills.equipment.service.EquipmentGateNotificationService;
 import org.runetale.skills.equipment.service.EquipmentRequirementTagService;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityStore> {
 
@@ -84,13 +85,8 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
 
             ItemArmorSlot armorSlot = ItemArmorSlot.fromValue(slotIndex);
             EquipmentLocation location = EquipmentLocation.fromArmorSlot(armorSlot);
-            SkillRequirement requirement = this.requirementTagService.getRequirementForLocation(equipped.getItem(), location);
-            if (requirement == null) {
-                continue;
-            }
-
-            int currentLevel = this.runtimeApi.getSkillLevel(store, ref, requirement.skillType());
-            if (currentLevel >= requirement.requiredLevel()) {
+            BlockedRequirement blocked = findFirstUnmetRequirement(store, ref, equipped);
+            if (blocked == null) {
                 continue;
             }
 
@@ -102,8 +98,8 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             if (transaction.succeeded()) {
                 this.notificationService.sendBlockedEquipNotice(
                         playerRef,
-                        requirement,
-                        currentLevel,
+                        blocked.requirement(),
+                        blocked.currentLevel(),
                         equipped.getItem().getId(),
                         location);
             }
@@ -146,13 +142,8 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             return;
         }
 
-        SkillRequirement requirement = this.requirementTagService.getRequirementForLocation(equipped.getItem(), EquipmentLocation.MAINHAND);
-        if (requirement == null) {
-            return;
-        }
-
-        int currentLevel = this.runtimeApi.getSkillLevel(store, ref, requirement.skillType());
-        if (currentLevel >= requirement.requiredLevel()) {
+        BlockedRequirement blocked = findFirstUnmetRequirement(store, ref, equipped);
+        if (blocked == null) {
             return;
         }
 
@@ -163,9 +154,26 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
         }
         this.notificationService.sendBlockedEquipNotice(
                 playerRef,
-                requirement,
-                currentLevel,
+                blocked.requirement(),
+                blocked.currentLevel(),
                 equipped.getItem().getId(),
                 EquipmentLocation.MAINHAND);
+    }
+
+    @Nullable
+    private BlockedRequirement findFirstUnmetRequirement(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull ItemStack equipped) {
+        for (SkillRequirement requirement : this.requirementTagService.getRequirements(equipped.getItem())) {
+            int currentLevel = this.runtimeApi.getSkillLevel(store, ref, requirement.skillType());
+            if (currentLevel < requirement.requiredLevel()) {
+                return new BlockedRequirement(requirement, currentLevel);
+            }
+        }
+        return null;
+    }
+
+    private record BlockedRequirement(@Nonnull SkillRequirement requirement, int currentLevel) {
     }
 }

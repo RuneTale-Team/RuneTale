@@ -15,7 +15,7 @@ class EquipmentConfigTest {
     void loadUsesClasspathDefaultsWhenExternalFileMissing(@TempDir Path tempDir) {
         EquipmentConfig config = EquipmentConfig.load(tempDir);
 
-        assertThat(config.tagSkillRequired()).isEqualTo("EquipSkillRequired");
+        assertThat(config.tagSkillRequired()).isEqualTo("EquipSkillRequirement");
         assertThat(config.tagLevelRequirement()).isEqualTo("EquipLevelRequirement");
         assertThat(config.enforceArmor()).isTrue();
         assertThat(config.enforceActiveHand()).isTrue();
@@ -31,7 +31,7 @@ class EquipmentConfigTest {
                 enforce.activeHand=true
                 activeSection.hotbar=-5
                 armorScanTickSeconds=0.75
-                tag.valueSeparator==>
+                tag.skillRequired=EquipSkillRequirement
                 locationAlias.mainhand=main,mh
                 """);
 
@@ -41,8 +41,17 @@ class EquipmentConfigTest {
         assertThat(config.enforceActiveHand()).isTrue();
         assertThat(config.activeSectionHotbar()).isEqualTo(-5);
         assertThat(config.armorScanTickSeconds()).isEqualTo(0.75F);
-        assertThat(config.tagValueSeparator()).isEqualTo("=>");
+        assertThat(config.tagSkillRequired()).isEqualTo("EquipSkillRequirement");
         assertThat(config.locationAliases().get("mainhand")).containsExactly("main", "mh");
+    }
+
+    @Test
+    void loadMigratesOldSkillTagKeyValue(@TempDir Path tempDir) throws IOException {
+        write(tempDir, "Config/equipment.properties", "tag.skillRequired=EquipSkillRequired\n");
+
+        EquipmentConfig config = EquipmentConfig.load(tempDir);
+
+        assertThat(config.tagSkillRequired()).isEqualTo("EquipSkillRequirement");
     }
 
     private static void write(Path root, String relativePath, String content) throws IOException {

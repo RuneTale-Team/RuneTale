@@ -33,9 +33,13 @@ public record EquipmentConfig(
         Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH, externalConfigRoot);
 
         int defaultRequiredLevel = Math.max(1, ConfigResourceLoader.intValue(properties, "defaultRequiredLevel", 1));
+        String tagSkillRequired = ConfigResourceLoader.stringValue(properties, "tag.skillRequired", "EquipSkillRequirement");
+        if ("EquipSkillRequired".equals(tagSkillRequired)) {
+            tagSkillRequired = "EquipSkillRequirement";
+        }
 
         return new EquipmentConfig(
-                ConfigResourceLoader.stringValue(properties, "tag.skillRequired", "EquipSkillRequired"),
+                tagSkillRequired,
                 ConfigResourceLoader.stringValue(properties, "tag.levelRequirement", "EquipLevelRequirement"),
                 ConfigResourceLoader.stringValue(properties, "tag.valueSeparator", ":"),
                 booleanValue(properties, "requireLocationMatchBetweenTags", false),
