@@ -151,40 +151,26 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             return;
         }
 
-        byte fallbackSlot = findNextAllowedSlot(store, ref, section, activeSlot, capacity);
-        try {
-            inventory.setActiveSlot(sectionId, fallbackSlot);
-        } catch (IllegalArgumentException ignored) {
+        MoveTransaction<ItemStackTransaction> transaction = section.moveItemStackFromSlot(
+                activeSlot,
+                equipped.getQuantity(),
+                inventory.getBackpack());
+        if (!transaction.succeeded()) {
+            this.notificationService.sendBlockedEquipNotice(
+                    playerRef,
+                    blocked.requirement(),
+                    blocked.currentLevel(),
+                    equipped.getItem().getId(),
+                    EquipmentLocation.MAINHAND);
             return;
         }
+
         this.notificationService.sendBlockedEquipNotice(
                 playerRef,
                 blocked.requirement(),
                 blocked.currentLevel(),
                 equipped.getItem().getId(),
                 EquipmentLocation.MAINHAND);
-    }
-
-    private byte findNextAllowedSlot(
-            @Nonnull Store<EntityStore> store,
-            @Nonnull Ref<EntityStore> ref,
-            @Nonnull ItemContainer section,
-            byte blockedSlot,
-            int capacity) {
-        int start = wrap(blockedSlot, capacity);
-        for (int offset = 1; offset < capacity; offset++) {
-            int slot = wrap(start + offset, capacity);
-            ItemStack candidate = section.getItemStack((short) slot);
-            if (candidate == null || ItemStack.isEmpty(candidate)) {
-                return (byte) slot;
-            }
-
-            if (findFirstUnmetRequirement(store, ref, candidate) == null) {
-                return (byte) slot;
-            }
-        }
-
-        return Inventory.INACTIVE_SLOT_INDEX;
     }
 
     private int selectionCapacity(int sectionId) {
@@ -195,14 +181,6 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             return this.equipmentConfig.activeSelectionSlotsTools();
         }
         return Integer.MAX_VALUE;
-    }
-
-    private int wrap(int slot, int capacity) {
-        int wrapped = slot % capacity;
-        if (wrapped < 0) {
-            wrapped += capacity;
-        }
-        return wrapped;
     }
 
     @Nullable
