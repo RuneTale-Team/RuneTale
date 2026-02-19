@@ -4,7 +4,8 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 
 ## Plugin topology
 
-- `:plugins:skills` (`SkillsPlugin`): progression core (profile component, XP dispatch/grant pipeline, combat XP, shared config).
+- `:plugins:skills-api` (`SkillsApiPlugin`): shared cross-plugin contracts (`SkillsRuntimeApi`, config/domain models).
+- `:plugins:skills` (`SkillsPlugin`): progression core (profile component, XP dispatch/grant pipeline, combat XP, runtime API provider).
 - `:plugins:skills-gathering` (`SkillsGatheringPlugin`): node lookup, gather block-break enforcement, `/skills` overview page command.
 - `:plugins:skills-crafting` (`SkillsCraftingPlugin`): smithing/smelting pages, crafting XP dispatch, recipe unlock synchronization.
 
@@ -16,7 +17,7 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 
 ## Runtime flow
 
-1. Plugin setup is split by responsibility: core wires progression services/systems; gathering wires node assets and gather systems; crafting wires crafting systems and UI interactions.
+1. Plugin setup is split by responsibility: core wires progression services/systems and publishes `SkillsRuntimeApi`; gathering wires node assets and gather systems; crafting wires crafting systems and UI interactions.
 2. A profile bootstrap system ensures every player has a persistent skill profile component.
 3. `/skill` is a player-only self-inspection command that prints every declared skill with current level and XP.
 4. Any runtime source can queue XP grants through `SkillXpDispatchService` (strict skill id parsing, no silent fallback).
@@ -30,6 +31,8 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 ## Core pieces
 
 - `SkillType`: skill identity enum.
+- `SkillsRuntimeApi`: stable cross-plugin progression surface used by gathering/crafting.
+- `SkillsRuntimeRegistry`: runtime bridge registration for `SkillsRuntimeApi` provider discovery.
 - `PlayerSkillProfileComponent`: persistent per-player map of skill progress.
 - `SkillProgress`: per-skill XP + level state.
 - `XpService`: XP thresholds and level calculation.
@@ -84,6 +87,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ## Programmatic XP grants
 
 - Use `SkillsPlugin#grantSkillXp(...)` or `SkillXpDispatchService#grantSkillXp(...)` from any system/command that has a `ComponentAccessor<EntityStore>` and player `Ref<EntityStore>`.
+- Feature plugins should prefer `SkillsRuntimeRegistry.get()` + `SkillsRuntimeApi#grantSkillXp(...)` instead of direct core-plugin singleton access.
 - Preferred inputs:
   - `skillId` (strict parse; unknown values are rejected),
   - `experience` (non-positive values are ignored),
@@ -102,7 +106,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ### 1) Local compile/run verification
 
 ```bash
-./gradlew :plugins:skills:clean :plugins:skills:build :plugins:skills-gathering:build :plugins:skills-crafting:build
+./gradlew :plugins:skills-api:build :plugins:skills:clean :plugins:skills:build :plugins:skills-gathering:build :plugins:skills-crafting:build
 ```
 
 - Confirms the plugin compiles and resource files under `src/main/resources/Skills/**` are packaged as fallback defaults.
@@ -210,13 +214,17 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
     public ExampleCraftingPage(
             @Nonnull PlayerRef playerRef,
             @Nonnull BlockPosition blockPosition,
-            @Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-            @Nonnull CraftingRecipeTagService craftingRecipeTagService) {
+            @Nonnull SkillsRuntimeApi runtimeApi,
+            @Nonnull CraftingRecipeTagService craftingRecipeTagService,
+            @Nonnull CraftingPageTrackerService craftingPageTrackerService,
+            @Nonnull CraftingConfig craftingConfig) {
         super(
                 playerRef,
                 blockPosition,
-                profileComponentType,
+                runtimeApi,
                 craftingRecipeTagService,
+                craftingPageTrackerService,
+                craftingConfig,
                 UI_PATH,
                 "example-crafting",
                 "Crafting",
@@ -230,7 +238,7 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
                 ref,
                 store,
                 recipeId,
-                profileComponentType(),
+                runtimeApi(),
                 craftingRecipeTagService(),
                 LOGGER,
                 "Crafted",

@@ -107,6 +107,8 @@ Run both suites:
 Run one plugin module:
 
 ```bash
+./gradlew :plugins:skills-api:test
+./gradlew :plugins:skills-api:contractTest
 ./gradlew :plugins:skills:test
 ./gradlew :plugins:skills:contractTest
 ./gradlew :plugins:skills-gathering:test
