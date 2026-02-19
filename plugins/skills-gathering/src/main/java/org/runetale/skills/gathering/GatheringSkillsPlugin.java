@@ -13,6 +13,7 @@ import org.runetale.skills.gathering.config.GatheringExternalConfigBootstrap;
 import org.runetale.skills.service.GatheringBypassService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
+import org.runetale.skills.system.SkillNodeDamageBlockGateSystem;
 
 import javax.annotation.Nonnull;
 
@@ -70,6 +71,14 @@ public class GatheringSkillsPlugin extends JavaPlugin {
             LOGGER.atSevere().log("Skills core plugin unavailable; gathering systems not registered.");
             return;
         }
+
+        this.getEntityStoreRegistry().registerSystem(
+                new SkillNodeDamageBlockGateSystem(
+                        runtimeApi,
+                        this.nodeLookupService,
+                        this.heuristicsConfig,
+                        this.bypassService,
+                        "skills"));
 
         this.getEntityStoreRegistry().registerSystem(
                 new SkillNodeBreakBlockSystem(

@@ -12,7 +12,7 @@ import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
+import com.hypixel.hytale.server.core.event.events.ecs.DamageBlockEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
@@ -26,14 +26,17 @@ import org.runetale.skills.service.SkillNodeLookupService;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Handles block-break gathering flow:
- * lookup -> requirements -> XP dispatch.
+ * Handles early gather gating on block-hit (damage) interactions.
  */
-public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, BreakBlockEvent> {
+public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStore, DamageBlockEvent> {
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+	private static final long NOTIFICATION_COOLDOWN_MILLIS = 1500L;
 
 	private final SkillsRuntimeApi runtimeApi;
 	private final SkillNodeLookupService nodeLookupService;
@@ -41,14 +44,15 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	private final GatheringBypassService bypassService;
 	private final String debugPluginKey;
 	private final Query<EntityStore> query;
+	private final Map<UUID, Long> lastNoticeByPlayer = new ConcurrentHashMap<>();
 
-	public SkillNodeBreakBlockSystem(
+	public SkillNodeDamageBlockGateSystem(
 			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull SkillNodeLookupService nodeLookupService,
 			@Nonnull HeuristicsConfig heuristicsConfig,
 			@Nonnull GatheringBypassService bypassService,
 			@Nonnull String debugPluginKey) {
-		super(BreakBlockEvent.class);
+		super(DamageBlockEvent.class);
 		this.runtimeApi = runtimeApi;
 		this.nodeLookupService = nodeLookupService;
 		this.heuristicsConfig = heuristicsConfig;
@@ -60,48 +64,49 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	@Override
 	public void handle(int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
 			@Nonnull Store<EntityStore> store,
-			@Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull BreakBlockEvent event) {
+			@Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull DamageBlockEvent event) {
 		if (event.isCancelled()) {
 			return;
 		}
 
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 		PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
+		if (playerRef == null) {
+			playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+		}
 		Player player = commandBuffer.getComponent(ref, Player.getComponentType());
 		if (player == null) {
 			player = store.getComponent(ref, Player.getComponentType());
 		}
+
 		boolean bypassActive = isBreakGateBypassed(player);
 		String bypassMode = bypassMode(player);
-		BlockType brokenBlockType = event.getBlockType();
+		BlockType damagedBlockType = event.getBlockType();
 		if (isSkillsDebugEnabled()) {
-			LOGGER.atInfo().log("[Skills][Diag] Break event received blockId=%s cancelled=%s player=%s bypass=%s",
-					brokenBlockType.getId(),
+			LOGGER.atInfo().log("[Skills][Diag] Hit event received blockId=%s cancelled=%s player=%s bypass=%s",
+					damagedBlockType.getId(),
 					event.isCancelled(),
 					playerRef == null ? "<missing>" : playerRef.getUuid(),
 					bypassMode);
 		}
 
-		SkillNodeDefinition node = this.nodeLookupService.findByBlockId(brokenBlockType.getId());
+		SkillNodeDefinition node = this.nodeLookupService.findByBlockId(damagedBlockType.getId());
 		if (node == null) {
 			if (isSkillsDebugEnabled()) {
-				LOGGER.atInfo().log("[Skills][Diag] Node lookup miss blockId=%s candidate=%s",
-						brokenBlockType.getId(),
-						looksLikeSkillNodeCandidate(brokenBlockType.getId()));
+				LOGGER.atInfo().log("[Skills][Diag] Node lookup miss on hit blockId=%s candidate=%s",
+						damagedBlockType.getId(),
+						looksLikeSkillNodeCandidate(damagedBlockType.getId()));
 			}
-			if (looksLikeSkillNodeCandidate(brokenBlockType.getId())) {
+			if (looksLikeSkillNodeCandidate(damagedBlockType.getId())) {
 				if (bypassActive) {
 					if (isSkillsDebugEnabled()) {
-						LOGGER.atInfo().log("[Skills][Diag] Bypass allowed unconfigured node-like block mode=%s block=%s player=%s",
+						LOGGER.atInfo().log("[Skills][Diag] Bypass allowed unconfigured node-like hit mode=%s block=%s player=%s",
 								bypassMode,
-								brokenBlockType.getId(),
+								damagedBlockType.getId(),
 								playerRef == null ? "<missing>" : playerRef.getUuid());
 					}
 					return;
 				}
-				LOGGER.atWarning().log(
-						"[Skills] Unconfigured node-like block encountered id=%s. Add matching blockId/blockIds in Skills/Nodes.",
-						brokenBlockType.getId());
 				event.setCancelled(true);
 				sendPlayerNotification(
 						playerRef,
@@ -113,10 +118,10 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 		if (!this.runtimeApi.hasSkillProfile(commandBuffer, ref)) {
 			LOGGER.atWarning().log(
-					"Player skill profile missing during break event; skipping skill processing for safety.");
+					"Player skill profile missing during hit event; skipping gather gate processing for safety.");
 			if (isSkillsDebugEnabled()) {
-				LOGGER.atWarning().log("[Skills][Diag] Break event aborted due to missing profile blockId=%s player=%s",
-						brokenBlockType.getId(),
+				LOGGER.atWarning().log("[Skills][Diag] Hit event aborted due to missing profile blockId=%s player=%s",
+						damagedBlockType.getId(),
 						playerRef == null ? "<missing>" : playerRef.getUuid());
 			}
 			return;
@@ -124,15 +129,14 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 		SkillType skill = node.getSkillType();
 		int levelBefore = this.runtimeApi.getSkillLevel(commandBuffer, ref, skill);
-
 		if (levelBefore < node.getRequiredSkillLevel() && !bypassActive) {
 			if (isSkillsDebugEnabled()) {
-				LOGGER.atInfo().log("[Skills][Diag] Level gate blocked break node=%s skill=%s level=%d required=%d block=%s",
+				LOGGER.atInfo().log("[Skills][Diag] Level gate blocked hit node=%s skill=%s level=%d required=%d block=%s",
 						node.getId(),
 						skill,
 						levelBefore,
 						node.getRequiredSkillLevel(),
-						brokenBlockType.getId());
+						damagedBlockType.getId());
 			}
 			event.setCancelled(true);
 			sendPlayerNotification(playerRef,
@@ -142,29 +146,13 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			return;
 		}
 		if (levelBefore < node.getRequiredSkillLevel() && isSkillsDebugEnabled()) {
-			LOGGER.atInfo().log("[Skills][Diag] Bypass ignored level gate mode=%s node=%s skill=%s level=%d required=%d block=%s",
+			LOGGER.atInfo().log("[Skills][Diag] Bypass ignored level gate on hit mode=%s node=%s skill=%s level=%d required=%d block=%s",
 					bypassMode,
 					node.getId(),
 					skill,
 					levelBefore,
 					node.getRequiredSkillLevel(),
-					brokenBlockType.getId());
-		}
-
-		boolean queued = this.runtimeApi.grantSkillXp(
-				commandBuffer,
-				ref,
-				skill,
-				node.getExperienceReward(),
-				"node:" + node.getId(),
-				true);
-		if (isSkillsDebugEnabled()) {
-			LOGGER.atInfo().log("[Skills][Diag] Break XP dispatch node=%s skill=%s xp=%.4f queued=%s block=%s",
-					node.getId(),
-					skill,
-					node.getExperienceReward(),
-					queued,
-					brokenBlockType.getId());
+					damagedBlockType.getId());
 		}
 	}
 
@@ -174,20 +162,29 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		return this.query;
 	}
 
-	private void sendPlayerNotification(@Nullable PlayerRef playerRef, @Nonnull String text) {
-		sendPlayerNotification(playerRef, text, NotificationStyle.Default);
-	}
-
 	private void sendPlayerNotification(@Nullable PlayerRef playerRef, @Nonnull String text,
 			@Nonnull NotificationStyle style) {
-		if (playerRef != null) {
-			try {
-				NotificationUtil.sendNotification(playerRef.getPacketHandler(), Message.raw(text), style);
-			} catch (Exception e) {
-				LOGGER.atFine().withCause(e).log("Failed to send skills notification; falling back to chat message.");
-				playerRef.sendMessage(Message.raw(text));
-			}
+		if (playerRef == null || isNotificationCoolingDown(playerRef)) {
+			return;
 		}
+
+		try {
+			NotificationUtil.sendNotification(playerRef.getPacketHandler(), Message.raw(text), style);
+		} catch (Exception e) {
+			LOGGER.atFine().withCause(e).log("Failed to send skills notification; falling back to chat message.");
+			playerRef.sendMessage(Message.raw(text));
+		}
+	}
+
+	private boolean isNotificationCoolingDown(@Nonnull PlayerRef playerRef) {
+		long now = System.currentTimeMillis();
+		UUID playerId = playerRef.getUuid();
+		Long lastNotifiedAt = this.lastNoticeByPlayer.get(playerId);
+		if (lastNotifiedAt != null && now - lastNotifiedAt < NOTIFICATION_COOLDOWN_MILLIS) {
+			return true;
+		}
+		this.lastNoticeByPlayer.put(playerId, now);
+		return false;
 	}
 
 	@Nonnull

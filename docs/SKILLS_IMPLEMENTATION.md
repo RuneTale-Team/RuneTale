@@ -22,7 +22,12 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 3. `/skill` is a player-only self-inspection command that prints every declared skill with current level and XP.
 4. Any runtime source can queue XP grants through `SkillXpDispatchService` (strict skill id parsing, no silent fallback).
 5. `SkillXpGrantSystem` applies queued grants via `SkillProgressionService`.
-6. On block break:
+6. On block hit (damage), then block break fallback:
+    - Resolve the targeted block to a skill node definition.
+    - Enforce skill-level requirements early on hit.
+    - Reject unconfigured node-like blocks (candidate-token heuristic) on hit.
+    - Apply a per-player notification cooldown to avoid spam while holding hit input.
+7. On block break:
     - Resolve the broken block to a skill node definition.
     - Enforce skill-level requirements.
     - Reject unconfigured node-like blocks (candidate-token heuristic).
@@ -43,7 +48,8 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 - `SkillNodeLookupService`: lookup hooks + default node bootstrap.
 - `ToolRequirementEvaluator`: keyword + tier validation from held `ItemStack`.
 - `EnsurePlayerSkillProfileSystem`: auto-add missing profile components.
-- `SkillNodeBreakBlockSystem`: main break-block rules and XP progression.
+- `SkillNodeDamageBlockGateSystem`: early gather gate checks on block-hit interactions.
+- `SkillNodeBreakBlockSystem`: break-block fallback gate checks and XP progression.
 - `SkillCommand`: prints `SkillType.values()` as `level` + `xp` for the executing player.
 
 ## `/skill` command semantics
