@@ -1,0 +1,17 @@
+{
+  "Group": "RuneTale",
+  "Name": "SkillsCraftingPlugin",
+  "Version": "0.1.0",
+  "Main": "org.runetale.skills.crafting.CraftingSkillsPlugin",
+  "Dependencies": {
+    "RuneTale:SkillsPlugin": ">=0.1.0"
+  },
+  "Authors": [
+    {
+      "Name": "Nico Piel",
+      "Email": "nicopiel@mailbox.org"
+    }
+  ],
+  "ServerVersion": "2026.02.18-f3b8fff95",
+  "IncludesAssetPack": false
+}

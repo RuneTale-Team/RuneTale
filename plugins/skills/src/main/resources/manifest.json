@@ -1,6 +1,7 @@
 {
   "Group": "RuneTale",
   "Name": "SkillsPlugin",
+  "Version": "0.1.0",
   "Main": "org.runetale.skills.SkillsPlugin",
   "IncludesAssetPack": true,
   "Authors": [
