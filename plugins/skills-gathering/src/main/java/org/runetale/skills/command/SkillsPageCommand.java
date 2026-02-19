@@ -1,6 +1,5 @@
 package org.runetale.skills.command;
 
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.GameMode;
@@ -13,9 +12,8 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.page.SkillsOverviewPage;
-import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 
 import javax.annotation.Nonnull;
@@ -23,19 +21,16 @@ import java.util.Locale;
 
 public class SkillsPageCommand extends AbstractPlayerCommand {
 
-	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
-	private final XpService xpService;
+	private final SkillsRuntimeApi runtimeApi;
 	private final SkillNodeLookupService nodeLookupService;
 	private final OptionalArg<String> actionArg;
 
 	public SkillsPageCommand(
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull XpService xpService,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull SkillNodeLookupService nodeLookupService) {
 		super("skills", "Opens your skills overview page.");
 		this.setPermissionGroup(GameMode.Adventure);
-		this.profileComponentType = profileComponentType;
-		this.xpService = xpService;
+		this.runtimeApi = runtimeApi;
 		this.nodeLookupService = nodeLookupService;
 		this.actionArg = this.withOptionalArg("action", "Use 'help' to show command usage.", ArgTypes.STRING);
 	}
@@ -69,8 +64,7 @@ public class SkillsPageCommand extends AbstractPlayerCommand {
 				store,
 				new SkillsOverviewPage(
 						playerRef,
-						this.profileComponentType,
-						this.xpService,
+						this.runtimeApi,
 						this.nodeLookupService));
 	}
 

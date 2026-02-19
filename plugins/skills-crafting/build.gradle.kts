@@ -1,12 +1,12 @@
 dependencies {
-    compileOnly(project(":plugins:skills"))
-    testImplementation(project(":plugins:skills"))
+    compileOnly(project(":plugins:skills-api"))
+    testImplementation(project(":plugins:skills-api"))
 }
 
 tasks.named("compileJava") {
-    dependsOn(":plugins:skills:shadowJar")
+    dependsOn(":plugins:skills-api:shadowJar")
 }
 
 tasks.named("compileTestJava") {
-    dependsOn(":plugins:skills:shadowJar")
+    dependsOn(":plugins:skills-api:shadowJar")
 }

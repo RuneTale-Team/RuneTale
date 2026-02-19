@@ -3,7 +3,6 @@ package org.runetale.skills.page;
 import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
@@ -14,10 +13,9 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.asset.SkillNodeDefinition;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillNodeLookupService;
 
 import javax.annotation.Nonnull;
@@ -33,8 +31,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 10); }";
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
 
-	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
-	private final XpService xpService;
+	private final SkillsRuntimeApi runtimeApi;
 	private final SkillNodeLookupService nodeLookupService;
 
 	@Nullable
@@ -42,12 +39,10 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 
 	public SkillsOverviewPage(
 			@Nonnull PlayerRef playerRef,
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull XpService xpService,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull SkillNodeLookupService nodeLookupService) {
 		super(playerRef, CustomPageLifetime.CanDismiss, SkillsPageEventData.CODEC);
-		this.profileComponentType = profileComponentType;
-		this.xpService = xpService;
+		this.runtimeApi = runtimeApi;
 		this.nodeLookupService = nodeLookupService;
 	}
 
@@ -113,13 +108,12 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 			@Nonnull Store<EntityStore> store,
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder) {
-		PlayerSkillProfileComponent profile = store.getComponent(ref, this.profileComponentType);
 		configureStaticLayout(commandBuilder);
-		buildSkillList(profile, commandBuilder, eventBuilder);
+		buildSkillList(ref, store, commandBuilder, eventBuilder);
 		if (this.selectedSkill == null) {
-			renderOverview(profile, commandBuilder, eventBuilder);
+			renderOverview(ref, store, commandBuilder, eventBuilder);
 		} else {
-			renderDetail(profile, commandBuilder, eventBuilder, this.selectedSkill);
+			renderDetail(ref, store, commandBuilder, eventBuilder, this.selectedSkill);
 		}
 	}
 
@@ -132,13 +126,14 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	private void buildSkillList(
-			@Nullable PlayerSkillProfileComponent profile,
+			@Nonnull Ref<EntityStore> ref,
+			@Nonnull Store<EntityStore> store,
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder) {
 		commandBuilder.clear("#CommandList");
 		for (int i = 0; i < SkillType.values().length; i++) {
 			SkillType skill = SkillType.values()[i];
-			int level = profile == null ? 1 : profile.getLevel(skill);
+			int level = this.runtimeApi.getSkillLevel(store, ref, skill);
 			boolean selected = this.selectedSkill == skill;
 			String selector = "#CommandList[" + i + "]";
 			commandBuilder.append("#CommandList", SKILL_LIST_ITEM_TEMPLATE);
@@ -154,15 +149,16 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	private void renderOverview(
-			@Nullable PlayerSkillProfileComponent profile,
+			@Nonnull Ref<EntityStore> ref,
+			@Nonnull Store<EntityStore> store,
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder) {
 		long totalXp = 0L;
 		int totalLevel = 0;
 
 		for (SkillType skill : SkillType.values()) {
-			int level = profile == null ? 1 : profile.getLevel(skill);
-			long xp = profile == null ? 0L : profile.getExperience(skill);
+			int level = this.runtimeApi.getSkillLevel(store, ref, skill);
+			long xp = this.runtimeApi.getSkillExperience(store, ref, skill);
 			totalXp += xp;
 			totalLevel += level;
 		}
@@ -177,11 +173,11 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		commandBuilder.clear("#SubcommandCards");
 
 		int cardIndex = 0;
-		int maxLevel = this.xpService.getMaxLevel();
+		int maxLevel = this.runtimeApi.getMaxLevel();
 		for (SkillType skill : SkillType.values()) {
 			int skillIndex = skill.ordinal();
-			int level = profile == null ? 1 : profile.getLevel(skill);
-			long xp = profile == null ? 0L : profile.getExperience(skill);
+			int level = this.runtimeApi.getSkillLevel(store, ref, skill);
+			long xp = this.runtimeApi.getSkillExperience(store, ref, skill);
 			long current = xpProgressCurrent(level, xp);
 			long required = xpProgressRequired(level);
 			String usage = level >= maxLevel ? "Lv " + maxLevel + " (MAX)" : "Lv " + level + "  Progress " + current + "/" + required;
@@ -190,16 +186,17 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	private void renderDetail(
-			@Nullable PlayerSkillProfileComponent profile,
+			@Nonnull Ref<EntityStore> ref,
+			@Nonnull Store<EntityStore> store,
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder,
 			@Nonnull SkillType skill) {
-		int level = profile == null ? 1 : profile.getLevel(skill);
-		long xp = profile == null ? 0L : profile.getExperience(skill);
+		int level = this.runtimeApi.getSkillLevel(store, ref, skill);
+		long xp = this.runtimeApi.getSkillExperience(store, ref, skill);
 		long current = xpProgressCurrent(level, xp);
 		long required = xpProgressRequired(level);
 		long nextLevelGap = xpToNextLevel(level, xp);
-		int maxLevel = this.xpService.getMaxLevel();
+		int maxLevel = this.runtimeApi.getMaxLevel();
 
 		commandBuilder.set("#BackButton.Visible", true);
 		commandBuilder.set("#CommandName.Text", formatSkillName(skill) + " Details");
@@ -393,30 +390,30 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 	}
 
 	private long xpProgressCurrent(int level, long totalXp) {
-		int maxLevel = this.xpService.getMaxLevel();
+		int maxLevel = this.runtimeApi.getMaxLevel();
 		int safeLevel = Math.max(1, Math.min(maxLevel, level));
 		if (safeLevel >= maxLevel) {
 			return 0L;
 		}
-		long levelStartXp = this.xpService.xpForLevel(safeLevel);
+		long levelStartXp = this.runtimeApi.xpForLevel(safeLevel);
 		long required = xpProgressRequired(safeLevel);
 		long current = Math.max(0L, totalXp - levelStartXp);
 		return Math.min(current, required);
 	}
 
 	private long xpProgressRequired(int level) {
-		int maxLevel = this.xpService.getMaxLevel();
+		int maxLevel = this.runtimeApi.getMaxLevel();
 		int safeLevel = Math.max(1, Math.min(maxLevel, level));
 		if (safeLevel >= maxLevel) {
 			return 0L;
 		}
-		long start = this.xpService.xpForLevel(safeLevel);
-		long next = this.xpService.xpForLevel(safeLevel + 1);
+		long start = this.runtimeApi.xpForLevel(safeLevel);
+		long next = this.runtimeApi.xpForLevel(safeLevel + 1);
 		return Math.max(1L, next - start);
 	}
 
 	private long xpToNextLevel(int level, long totalXp) {
-		if (level >= this.xpService.getMaxLevel()) {
+		if (level >= this.runtimeApi.getMaxLevel()) {
 			return 0L;
 		}
 		long required = xpProgressRequired(level);

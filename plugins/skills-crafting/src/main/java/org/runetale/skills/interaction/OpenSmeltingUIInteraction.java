@@ -14,7 +14,8 @@ import com.hypixel.hytale.server.core.modules.interaction.interaction.CooldownHa
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInstantInteraction;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import org.runetale.skills.SkillsPlugin;
+import org.runetale.skills.api.SkillsRuntimeApi;
+import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.crafting.CraftingSkillsPlugin;
 import org.runetale.skills.page.SmeltingPage;
 
@@ -68,9 +69,9 @@ public final class OpenSmeltingUIInteraction extends SimpleInstantInteraction {
 			return;
 		}
 
-		SkillsPlugin corePlugin = SkillsPlugin.getInstance();
+		SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
 		CraftingSkillsPlugin craftingPlugin = CraftingSkillsPlugin.getInstance();
-		if (corePlugin == null || craftingPlugin == null) {
+		if (runtimeApi == null || craftingPlugin == null) {
 			LOGGER.atWarning().log("SkillsPlugin not available; cannot open smelting UI");
 			ctx.getState().state = InteractionState.Failed;
 			return;
@@ -82,7 +83,7 @@ public final class OpenSmeltingUIInteraction extends SimpleInstantInteraction {
 		SmeltingPage page = new SmeltingPage(
 				playerRef,
 				targetBlock,
-				corePlugin.getPlayerSkillProfileComponentType(),
+				runtimeApi,
 				craftingPlugin.getCraftingRecipeTagService(),
 				craftingPlugin.getCraftingPageTrackerService(),
 				craftingPlugin.getCraftingConfig());

@@ -4,6 +4,7 @@
   "Version": "0.1.0",
   "Main": "org.runetale.skills.crafting.CraftingSkillsPlugin",
   "Dependencies": {
+    "RuneTale:SkillsApiPlugin": ">=0.1.0",
     "RuneTale:SkillsPlugin": ">=0.1.0"
   },
   "Authors": [

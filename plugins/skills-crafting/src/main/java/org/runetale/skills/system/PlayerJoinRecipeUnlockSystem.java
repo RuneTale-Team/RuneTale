@@ -2,7 +2,6 @@ package org.runetale.skills.system;
 
 import com.hypixel.hytale.component.AddReason;
 import com.hypixel.hytale.component.CommandBuffer;
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
@@ -13,7 +12,7 @@ import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
 import com.hypixel.hytale.builtin.crafting.CraftingPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
@@ -33,16 +32,16 @@ public class PlayerJoinRecipeUnlockSystem extends RefSystem<EntityStore> {
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
+	private final SkillsRuntimeApi runtimeApi;
 	private final CraftingRecipeTagService craftingRecipeTagService;
 	private final Query<EntityStore> query;
 
 	public PlayerJoinRecipeUnlockSystem(
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService) {
-		this.profileComponentType = profileComponentType;
+		this.runtimeApi = runtimeApi;
 		this.craftingRecipeTagService = craftingRecipeTagService;
-		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
+		this.query = Query.and(PlayerRef.getComponentType());
 	}
 
 	@Nonnull
@@ -55,8 +54,7 @@ public class PlayerJoinRecipeUnlockSystem extends RefSystem<EntityStore> {
 	public void onEntityAdded(@Nonnull Ref<EntityStore> ref, @Nonnull AddReason reason,
 			@Nonnull Store<EntityStore> store, @Nonnull CommandBuffer<EntityStore> commandBuffer) {
 
-		PlayerSkillProfileComponent profile = commandBuffer.getComponent(ref, this.profileComponentType);
-		if (profile == null) {
+		if (!this.runtimeApi.hasSkillProfile(commandBuffer, ref)) {
 			LOGGER.atWarning().log("Player skill profile missing during join recipe sync; skipping.");
 			return;
 		}
@@ -70,7 +68,7 @@ public class PlayerJoinRecipeUnlockSystem extends RefSystem<EntityStore> {
 
 			boolean allMet = true;
 			for (SkillRequirement req : requirements) {
-				if (profile.getLevel(req.skillType()) < req.requiredLevel()) {
+				if (this.runtimeApi.getSkillLevel(commandBuffer, ref, req.skillType()) < req.requiredLevel()) {
 					allMet = false;
 					break;
 				}

@@ -1,12 +1,8 @@
 {
   "Group": "RuneTale",
-  "Name": "SkillsGatheringPlugin",
+  "Name": "SkillsApiPlugin",
   "Version": "0.1.0",
-  "Main": "org.runetale.skills.gathering.GatheringSkillsPlugin",
-  "Dependencies": {
-    "RuneTale:SkillsApiPlugin": ">=0.1.0",
-    "RuneTale:SkillsPlugin": ">=0.1.0"
-  },
+  "Main": "org.runetale.skills.api.SkillsApiPlugin",
   "Authors": [
     {
       "Name": "Nico Piel",

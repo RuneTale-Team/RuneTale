@@ -2,7 +2,6 @@ package org.runetale.skills.system;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
@@ -12,9 +11,8 @@ import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
 import com.hypixel.hytale.server.core.event.events.ecs.CraftRecipeEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.domain.SkillRequirement;
-import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
@@ -31,18 +29,17 @@ public class CraftingXpSystem extends EntityEventSystem<EntityStore, CraftRecipe
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-	private final SkillXpDispatchService skillXpDispatchService;
+	private final SkillsRuntimeApi runtimeApi;
 	private final CraftingRecipeTagService craftingRecipeTagService;
 	private final Query<EntityStore> query;
 
 	public CraftingXpSystem(
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull SkillXpDispatchService skillXpDispatchService,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService) {
 		super(CraftRecipeEvent.Post.class);
-		this.skillXpDispatchService = skillXpDispatchService;
+		this.runtimeApi = runtimeApi;
 		this.craftingRecipeTagService = craftingRecipeTagService;
-		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
+		this.query = Query.and(PlayerRef.getComponentType());
 	}
 
 	@Override
@@ -70,7 +67,7 @@ public class CraftingXpSystem extends EntityEventSystem<EntityStore, CraftRecipe
 
 		for (SkillRequirement req : requirements) {
 			String source = "craft:" + req.skillType().name().toLowerCase(Locale.ROOT) + ":" + recipe.getId();
-			this.skillXpDispatchService.grantSkillXp(commandBuffer, ref, req.skillType(), totalXp, source, true);
+			this.runtimeApi.grantSkillXp(commandBuffer, ref, req.skillType(), totalXp, source, true);
 			LOGGER.atFine().log("Granted %.1f %s XP for crafting %s (qty=%d)",
 					totalXp, req.skillType(), recipe.getId(), event.getQuantity());
 		}

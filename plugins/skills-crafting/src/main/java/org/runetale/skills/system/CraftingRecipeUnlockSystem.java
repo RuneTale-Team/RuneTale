@@ -2,7 +2,6 @@ package org.runetale.skills.system;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
@@ -12,7 +11,7 @@ import com.hypixel.hytale.server.core.asset.type.item.config.CraftingRecipe;
 import com.hypixel.hytale.builtin.crafting.CraftingPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.progression.event.SkillLevelUpEvent;
 import org.runetale.skills.service.CraftingRecipeTagService;
@@ -32,17 +31,17 @@ public class CraftingRecipeUnlockSystem extends EntityEventSystem<EntityStore, S
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
+	private final SkillsRuntimeApi runtimeApi;
 	private final CraftingRecipeTagService craftingRecipeTagService;
 	private final Query<EntityStore> query;
 
 	public CraftingRecipeUnlockSystem(
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService) {
 		super(SkillLevelUpEvent.class);
-		this.profileComponentType = profileComponentType;
+		this.runtimeApi = runtimeApi;
 		this.craftingRecipeTagService = craftingRecipeTagService;
-		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
+		this.query = Query.and(PlayerRef.getComponentType());
 	}
 
 	@Override
@@ -52,8 +51,7 @@ public class CraftingRecipeUnlockSystem extends EntityEventSystem<EntityStore, S
 
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 
-		PlayerSkillProfileComponent profile = commandBuffer.getComponent(ref, this.profileComponentType);
-		if (profile == null) {
+		if (!this.runtimeApi.hasSkillProfile(commandBuffer, ref)) {
 			LOGGER.atWarning().log("Player skill profile missing during recipe unlock; skipping.");
 			return;
 		}
@@ -74,7 +72,7 @@ public class CraftingRecipeUnlockSystem extends EntityEventSystem<EntityStore, S
 						break;
 					}
 				} else {
-					if (profile.getLevel(req.skillType()) < req.requiredLevel()) {
+					if (this.runtimeApi.getSkillLevel(commandBuffer, ref, req.skillType()) < req.requiredLevel()) {
 						allMet = false;
 						break;
 					}

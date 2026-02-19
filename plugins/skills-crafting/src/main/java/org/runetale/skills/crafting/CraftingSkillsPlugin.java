@@ -4,7 +4,8 @@ import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
-import org.runetale.skills.SkillsPlugin;
+import org.runetale.skills.api.SkillsRuntimeApi;
+import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.config.CraftingConfig;
 import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.crafting.config.CraftingExternalConfigBootstrap;
@@ -60,8 +61,8 @@ public class CraftingSkillsPlugin extends JavaPlugin {
     }
 
     private void registerServices() {
-        SkillsPlugin corePlugin = SkillsPlugin.getInstance();
-        if (corePlugin == null) {
+        SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
+        if (runtimeApi == null) {
             LOGGER.atSevere().log("Skills core plugin unavailable; crafting services not initialized.");
             return;
         }
@@ -83,8 +84,8 @@ public class CraftingSkillsPlugin extends JavaPlugin {
     }
 
     private void registerSystems() {
-        SkillsPlugin corePlugin = SkillsPlugin.getInstance();
-        if (corePlugin == null) {
+        SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
+        if (runtimeApi == null) {
             LOGGER.atSevere().log("Skills core plugin unavailable; crafting systems not registered.");
             return;
         }
@@ -99,18 +100,17 @@ public class CraftingSkillsPlugin extends JavaPlugin {
 
         this.getEntityStoreRegistry().registerSystem(
                 new CraftingXpSystem(
-                        corePlugin.getPlayerSkillProfileComponentType(),
-                        corePlugin.getXpDispatchService(),
+                        runtimeApi,
                         this.craftingRecipeTagService));
 
         this.getEntityStoreRegistry().registerSystem(
                 new CraftingRecipeUnlockSystem(
-                        corePlugin.getPlayerSkillProfileComponentType(),
+                        runtimeApi,
                         this.craftingRecipeTagService));
 
         this.getEntityStoreRegistry().registerSystem(
                 new PlayerJoinRecipeUnlockSystem(
-                        corePlugin.getPlayerSkillProfileComponentType(),
+                        runtimeApi,
                         this.craftingRecipeTagService));
 
         this.getEntityStoreRegistry().registerSystem(new CraftingSessionCleanupSystem(this.craftingPageTrackerService));

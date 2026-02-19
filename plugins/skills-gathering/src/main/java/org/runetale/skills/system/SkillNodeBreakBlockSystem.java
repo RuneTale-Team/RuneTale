@@ -2,7 +2,6 @@ package org.runetale.skills.system;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
@@ -15,12 +14,10 @@ import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.config.HeuristicsConfig;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.progression.service.SkillXpDispatchService;
-import org.runetale.skills.service.DebugModeService;
 import org.runetale.skills.service.SkillNodeLookupService;
 
 import javax.annotation.Nonnull;
@@ -35,26 +32,23 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
-	private final SkillXpDispatchService skillXpDispatchService;
+	private final SkillsRuntimeApi runtimeApi;
 	private final SkillNodeLookupService nodeLookupService;
 	private final HeuristicsConfig heuristicsConfig;
-	private final DebugModeService debugModeService;
+	private final String debugPluginKey;
 	private final Query<EntityStore> query;
 
 	public SkillNodeBreakBlockSystem(
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-			@Nonnull SkillXpDispatchService skillXpDispatchService,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull SkillNodeLookupService nodeLookupService,
 			@Nonnull HeuristicsConfig heuristicsConfig,
-			@Nonnull DebugModeService debugModeService) {
+			@Nonnull String debugPluginKey) {
 		super(BreakBlockEvent.class);
-		this.profileComponentType = profileComponentType;
-		this.skillXpDispatchService = skillXpDispatchService;
+		this.runtimeApi = runtimeApi;
 		this.nodeLookupService = nodeLookupService;
 		this.heuristicsConfig = heuristicsConfig;
-		this.debugModeService = debugModeService;
-		this.query = Query.and(PlayerRef.getComponentType(), profileComponentType);
+		this.debugPluginKey = debugPluginKey;
+		this.query = Query.and(PlayerRef.getComponentType());
 	}
 
 	@Override
@@ -92,8 +86,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			return;
 		}
 
-		PlayerSkillProfileComponent profile = commandBuffer.getComponent(ref, this.profileComponentType);
-		if (profile == null) {
+		if (!this.runtimeApi.hasSkillProfile(commandBuffer, ref)) {
 			LOGGER.atWarning().log(
 					"Player skill profile missing during break event; skipping skill processing for safety.");
 			if (isSkillsDebugEnabled()) {
@@ -105,7 +98,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		}
 
 		SkillType skill = node.getSkillType();
-		int levelBefore = profile.getLevel(skill);
+		int levelBefore = this.runtimeApi.getSkillLevel(commandBuffer, ref, skill);
 
 		if (levelBefore < node.getRequiredSkillLevel()) {
 			if (isSkillsDebugEnabled()) {
@@ -124,7 +117,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			return;
 		}
 
-		boolean queued = this.skillXpDispatchService.grantSkillXp(
+		boolean queued = this.runtimeApi.grantSkillXp(
 				commandBuffer,
 				ref,
 				skill,
@@ -180,7 +173,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	}
 
 	private boolean isSkillsDebugEnabled() {
-		return this.debugModeService.isEnabled("skills");
+		return this.runtimeApi.isDebugEnabled(this.debugPluginKey);
 	}
 
 }

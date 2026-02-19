@@ -1,7 +1,6 @@
 package org.runetale.skills.page;
 
 import com.hypixel.hytale.builtin.crafting.component.CraftingManager;
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.logger.HytaleLogger;
@@ -22,7 +21,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.SmithingMaterialTier;
@@ -144,7 +143,7 @@ final class CraftingPageSupport {
 			@Nonnull Ref<EntityStore> ref,
 			@Nonnull Store<EntityStore> store,
 			@Nullable String selectedRecipeId,
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
 			@Nonnull HytaleLogger logger,
 			@Nonnull String craftVerb,
@@ -162,15 +161,14 @@ final class CraftingPageSupport {
 			return false;
 		}
 
-		PlayerSkillProfileComponent profile = store.getComponent(ref, profileComponentType);
-		if (profile == null) {
+		if (!runtimeApi.hasSkillProfile(store, ref)) {
 			sendDanger(playerRef, "[Skills] Could not verify your skill profile. Try reopening the station.");
 			return false;
 		}
 
 		List<SkillRequirement> requirements = craftingRecipeTagService.getSkillRequirements(recipe);
 		int requiredLevel = getSmithingRequiredLevel(requirements);
-		int playerLevel = profile.getLevel(SkillType.SMITHING);
+		int playerLevel = runtimeApi.getSkillLevel(store, ref, SkillType.SMITHING);
 		if (playerLevel < requiredLevel) {
 			sendDanger(playerRef, "[Skills] You need Smithing level " + requiredLevel);
 			return false;

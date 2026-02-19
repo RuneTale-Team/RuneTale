@@ -1,7 +1,6 @@
 package org.runetale.skills.page;
 
 import com.hypixel.hytale.builtin.crafting.CraftingPlugin;
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.logger.HytaleLogger;
@@ -15,8 +14,8 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.config.CraftingConfig;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.SmithingMaterialTier;
@@ -45,14 +44,14 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 	public SmithingPage(
 			@Nonnull PlayerRef playerRef,
 			@Nonnull BlockPosition blockPosition,
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
 			@Nonnull CraftingPageTrackerService craftingPageTrackerService,
 			@Nonnull CraftingConfig craftingConfig) {
 		super(
 				playerRef,
 				blockPosition,
-				profileComponentType,
+				runtimeApi,
 				craftingRecipeTagService,
 				craftingPageTrackerService,
 				craftingConfig,
@@ -73,7 +72,7 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 				ref,
 				store,
 				recipeId,
-				profileComponentType(),
+				runtimeApi(),
 				craftingRecipeTagService(),
 				LOGGER,
 				"Crafted",
@@ -91,9 +90,8 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 			@Nonnull Store<EntityStore> store,
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder) {
-		PlayerSkillProfileComponent profile = store.getComponent(ref, profileComponentType());
 		Player player = store.getComponent(ref, Player.getComponentType());
-		int smithingLevel = profile == null ? 1 : profile.getLevel(SkillType.SMITHING);
+		int smithingLevel = runtimeApi().getSkillLevel(store, ref, SkillType.SMITHING);
 
 		for (SmithingMaterialTier tier : SmithingMaterialTier.values()) {
 			String selector = "#Tier" + tier.getDisplayName();

@@ -7,6 +7,8 @@ import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.api.SkillsRuntimeApi;
+import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.config.SkillsConfigService;
 import org.runetale.skills.config.SkillsExternalConfigBootstrap;
 import org.runetale.skills.config.SkillsPathLayout;
@@ -35,7 +37,7 @@ import java.util.List;
 /**
  * SkillsPlugin - A Hytale server plugin.
  */
-public class SkillsPlugin extends JavaPlugin {
+public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
@@ -132,6 +134,29 @@ public class SkillsPlugin extends JavaPlugin {
         return this.debugModeService;
     }
 
+    @Override
+    public boolean hasSkillProfile(@Nonnull ComponentAccessor<EntityStore> accessor, @Nonnull Ref<EntityStore> playerRef) {
+        return accessor.getComponent(playerRef, this.playerSkillProfileComponentType) != null;
+    }
+
+    @Override
+    public int getSkillLevel(
+            @Nonnull ComponentAccessor<EntityStore> accessor,
+            @Nonnull Ref<EntityStore> playerRef,
+            @Nonnull SkillType skillType) {
+        PlayerSkillProfileComponent profile = accessor.getComponent(playerRef, this.playerSkillProfileComponentType);
+        return profile == null ? 1 : profile.getLevel(skillType);
+    }
+
+    @Override
+    public long getSkillExperience(
+            @Nonnull ComponentAccessor<EntityStore> accessor,
+            @Nonnull Ref<EntityStore> playerRef,
+            @Nonnull SkillType skillType) {
+        PlayerSkillProfileComponent profile = accessor.getComponent(playerRef, this.playerSkillProfileComponentType);
+        return profile == null ? 0L : profile.getExperience(skillType);
+    }
+
     /**
      * Public plugin API: queue an XP grant by strict skill id.
      */
@@ -167,6 +192,30 @@ public class SkillsPlugin extends JavaPlugin {
     }
 
     @Override
+    public int getMaxLevel() {
+        if (this.xpService == null) {
+            return 1;
+        }
+        return this.xpService.getMaxLevel();
+    }
+
+    @Override
+    public long xpForLevel(int level) {
+        if (this.xpService == null) {
+            return 0L;
+        }
+        return this.xpService.xpForLevel(level);
+    }
+
+    @Override
+    public boolean isDebugEnabled(@Nonnull String pluginKey) {
+        if (this.debugModeService == null) {
+            return false;
+        }
+        return this.debugModeService.isEnabled(pluginKey);
+    }
+
+    @Override
     protected void setup() {
         LOGGER.atInfo().log("Setting up skills runtime framework...");
 
@@ -180,6 +229,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new SkillXpCommand(this.xpDispatchService));
         this.getCommandRegistry().registerCommand(new RtDebugCommand(this.debugModeService));
         registerSystems();
+        SkillsRuntimeRegistry.register(this);
 
         LOGGER.atInfo().log("Skills runtime setup complete.");
     }
@@ -288,6 +338,7 @@ public class SkillsPlugin extends JavaPlugin {
         this.xpDispatchService = null;
         this.debugModeService = null;
         this.pathLayout = null;
+        SkillsRuntimeRegistry.clear(this);
 
         instance = null;
     }

@@ -3,7 +3,8 @@ package org.runetale.skills.gathering;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
-import org.runetale.skills.SkillsPlugin;
+import org.runetale.skills.api.SkillsRuntimeApi;
+import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.command.SkillsPageCommand;
 import org.runetale.skills.config.HeuristicsConfig;
 import org.runetale.skills.config.SkillsPathLayout;
@@ -52,33 +53,31 @@ public class GatheringSkillsPlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        SkillsPlugin corePlugin = SkillsPlugin.getInstance();
-        if (corePlugin == null) {
+        SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
+        if (runtimeApi == null) {
             LOGGER.atSevere().log("Skills core plugin unavailable; gathering command registration skipped.");
             return;
         }
 
         this.getCommandRegistry().registerCommand(
                 new SkillsPageCommand(
-                        corePlugin.getPlayerSkillProfileComponentType(),
-                        corePlugin.getXpService(),
+                        runtimeApi,
                         this.nodeLookupService));
     }
 
     private void registerSystems() {
-        SkillsPlugin corePlugin = SkillsPlugin.getInstance();
-        if (corePlugin == null) {
+        SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
+        if (runtimeApi == null) {
             LOGGER.atSevere().log("Skills core plugin unavailable; gathering systems not registered.");
             return;
         }
 
         this.getEntityStoreRegistry().registerSystem(
                 new SkillNodeBreakBlockSystem(
-                        corePlugin.getPlayerSkillProfileComponentType(),
-                        corePlugin.getXpDispatchService(),
+                        runtimeApi,
                         this.nodeLookupService,
                         this.heuristicsConfig,
-                        corePlugin.getDebugModeService()));
+                        "skills"));
     }
 
     @Override

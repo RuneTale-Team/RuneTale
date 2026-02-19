@@ -1,6 +1,5 @@
 package org.runetale.skills.page;
 
-import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.logger.HytaleLogger;
@@ -15,8 +14,8 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.config.CraftingConfig;
-import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillRequirement;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.SmithingMaterialTier;
@@ -31,7 +30,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 		extends InteractiveCustomUIPage<TEventData> {
 
 	private final BlockPosition blockPosition;
-	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
+	private final SkillsRuntimeApi runtimeApi;
 	private final CraftingRecipeTagService craftingRecipeTagService;
 	private final CraftingPageTrackerService craftingPageTrackerService;
 
@@ -52,7 +51,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 	AbstractTimedCraftingPage(
 			@Nonnull PlayerRef playerRef,
 			@Nonnull BlockPosition blockPosition,
-			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
 			@Nonnull CraftingPageTrackerService craftingPageTrackerService,
 			@Nonnull CraftingConfig craftingConfig,
@@ -63,7 +62,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull com.hypixel.hytale.codec.builder.BuilderCodec<TEventData> codec) {
 		super(playerRef, CustomPageLifetime.CanDismiss, codec);
 		this.blockPosition = blockPosition;
-		this.profileComponentType = profileComponentType;
+		this.runtimeApi = runtimeApi;
 		this.craftingRecipeTagService = craftingRecipeTagService;
 		this.craftingPageTrackerService = craftingPageTrackerService;
 		this.uiPath = uiPath;
@@ -203,13 +202,12 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			return false;
 		}
 
-		PlayerSkillProfileComponent profile = store.getComponent(ref, this.profileComponentType);
 		Player player = store.getComponent(ref, Player.getComponentType());
-		if (profile == null || player == null) {
+		if (player == null) {
 			return false;
 		}
 
-		int smithingLevel = profile.getLevel(SkillType.SMITHING);
+		int smithingLevel = this.runtimeApi.getSkillLevel(store, ref, SkillType.SMITHING);
 		List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(selectedRecipe);
 		int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
 		if (smithingLevel < requiredLevel || !CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe)) {
@@ -266,8 +264,8 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 	}
 
 	@Nonnull
-	protected final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType() {
-		return this.profileComponentType;
+	protected final SkillsRuntimeApi runtimeApi() {
+		return this.runtimeApi;
 	}
 
 	@Nonnull
