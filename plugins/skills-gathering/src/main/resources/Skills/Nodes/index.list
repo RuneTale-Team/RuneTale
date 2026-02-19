@@ -7,6 +7,12 @@
 woodcutting/oak_tree.properties
 woodcutting/beech_tree.properties
 woodcutting/birch_tree.properties
+woodcutting/Tree.properties
+woodcutting/Tree_Oak.properties
+woodcutting/Tree_Willow.properties
+woodcutting/Tree_Maple.properties
+woodcutting/Tree_Yew.properties
+woodcutting/Tree_Magic.properties
 
 # MINING
 mining/tin.properties
