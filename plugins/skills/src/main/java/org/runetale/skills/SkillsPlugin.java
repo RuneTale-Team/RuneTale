@@ -203,9 +203,9 @@ public class SkillsPlugin extends JavaPlugin {
         registerCodecs();
         registerAssets();
         registerComponents();
-        this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService));
+        this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService, this.playerSkillProfileComponentType));
         this.getCommandRegistry().registerCommand(new CombatStyleCommand(this.combatStyleService));
-        this.getCommandRegistry().registerCommand(new SkillXpCommand());
+        this.getCommandRegistry().registerCommand(new SkillXpCommand(this.xpDispatchService));
         this.getCommandRegistry().registerCommand(new RtDebugCommand(this.debugModeService));
         this.getCommandRegistry().registerCommand(
                 new SkillsPageCommand(

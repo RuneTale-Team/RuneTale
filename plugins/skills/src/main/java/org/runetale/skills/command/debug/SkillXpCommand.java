@@ -12,8 +12,8 @@ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayer
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import org.runetale.skills.SkillsPlugin;
 import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.progression.service.SkillXpDispatchService;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -29,10 +29,12 @@ public class SkillXpCommand extends AbstractPlayerCommand {
 	private final OptionalArg<Double> xpArg;
 	private final OptionalArg<String> sourceArg;
 	private final FlagArg silentFlag;
+	private final SkillXpDispatchService skillXpDispatchService;
 
-	public SkillXpCommand() {
+	public SkillXpCommand(@Nonnull SkillXpDispatchService skillXpDispatchService) {
 		super("skillxp", "Queues a debug XP grant for one of your skills.");
 		this.setPermissionGroup(GameMode.Creative);
+		this.skillXpDispatchService = skillXpDispatchService;
 		this.skillArg = this.withOptionalArg("skill", "Skill id (e.g. MINING)", ArgTypes.STRING);
 		this.xpArg = this.withOptionalArg("xp", "XP amount to grant", ArgTypes.DOUBLE);
 		this.sourceArg = this.withOptionalArg("source", "Optional telemetry source label", ArgTypes.STRING);
@@ -84,7 +86,7 @@ public class SkillXpCommand extends AbstractPlayerCommand {
 				: "command:skillxp";
 		boolean notifyPlayer = !this.silentFlag.get(context);
 
-		boolean queued = SkillsPlugin.getInstance().grantSkillXp(
+		boolean queued = this.skillXpDispatchService.grantSkillXp(
 				store,
 				ref,
 				skillType,

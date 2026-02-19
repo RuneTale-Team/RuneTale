@@ -2,6 +2,7 @@ package org.runetale.skills.command;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
@@ -24,12 +25,16 @@ import java.util.Locale;
 public class SkillCommand extends AbstractPlayerCommand {
 
 	private final XpService xpService;
+	private final ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType;
 	private final OptionalArg<String> actionArg;
 
-	public SkillCommand(@Nonnull XpService xpService) {
+	public SkillCommand(
+			@Nonnull XpService xpService,
+			@Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType) {
 		super("skill", "Displays your skill levels and XP.");
 		this.setPermissionGroup(GameMode.Adventure);
 		this.xpService = xpService;
+		this.profileComponentType = profileComponentType;
 		this.actionArg = this.withOptionalArg("action", "Use 'help' to show command usage.", ArgTypes.STRING);
 	}
 
@@ -52,12 +57,12 @@ public class SkillCommand extends AbstractPlayerCommand {
 			return;
 		}
 
-		if (PlayerSkillProfileComponent.getComponentType() == null) {
+		if (this.profileComponentType == null) {
 			playerRef.sendMessage(Message.raw("Skills profile is currently unavailable."));
 			return;
 		}
 
-		PlayerSkillProfileComponent profile = store.getComponent(ref, PlayerSkillProfileComponent.getComponentType());
+		PlayerSkillProfileComponent profile = store.getComponent(ref, this.profileComponentType);
 		if (profile == null) {
 			playerRef.sendMessage(Message.raw("[Skills] Profile missing; showing defaults."));
 			for (SkillType skillType : SkillType.values()) {
