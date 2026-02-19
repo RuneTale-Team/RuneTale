@@ -18,7 +18,7 @@ This document explains how the Skills custom UI is wired, where assets live, and
 - Right card template: `plugins/skills/src/main/resources/Common/UI/Custom/SkillsPlugin/SkillSubmenuCard.ui`
 
 ## Java rendering entrypoint
-- Page controller: `plugins/skills/src/main/java/org/runetale/skills/page/SkillsOverviewPage.java`
+- Page controller: `plugins/skills-gathering/src/main/java/org/runetale/skills/page/SkillsOverviewPage.java`
 - Event model:
   - `Action=Back`
   - `Action=ToggleTrack`
@@ -74,7 +74,7 @@ This document explains how the Skills custom UI is wired, where assets live, and
 - `#CommandList` and `#SubcommandCards` are scrollable.
 - `KeepScrollPosition: true` is enabled on both containers.
 - Detail cards are still intentionally capped by `MAX_ROADMAP_CARDS` in
-  `plugins/skills/src/main/java/org/runetale/skills/page/SkillsOverviewPage.java`.
+  `plugins/skills-gathering/src/main/java/org/runetale/skills/page/SkillsOverviewPage.java`.
 
 ## Guardrails for future edits
 - Do not rename existing selectors used by Java bindings unless Java is updated in lockstep.

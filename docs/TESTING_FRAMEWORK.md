@@ -109,4 +109,8 @@ Run one plugin module:
 ```bash
 ./gradlew :plugins:skills:test
 ./gradlew :plugins:skills:contractTest
+./gradlew :plugins:skills-gathering:test
+./gradlew :plugins:skills-gathering:contractTest
+./gradlew :plugins:skills-crafting:test
+./gradlew :plugins:skills-crafting:contractTest
 ```
