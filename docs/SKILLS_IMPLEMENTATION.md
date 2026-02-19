@@ -1,10 +1,23 @@
 # Skills Plugin Implementation Notes
 
-This plugin implements an OSRS-inspired, data-driven skills runtime with a centralized XP grant pipeline and gather-node content.
+The skills runtime now uses a split-plugin topology while preserving the same OSRS-inspired, data-driven progression behavior.
+
+## Plugin topology
+
+- `:plugins:skills-api` (`SkillsApiPlugin`): shared cross-plugin contracts (`SkillsRuntimeApi`, config/domain models).
+- `:plugins:skills` (`SkillsPlugin`): progression core (profile component, XP dispatch/grant pipeline, combat XP, runtime API provider).
+- `:plugins:skills-gathering` (`SkillsGatheringPlugin`): node lookup, gather block-break enforcement, `/skills` overview page command.
+- `:plugins:skills-crafting` (`SkillsCraftingPlugin`): smithing/smelting pages, crafting XP dispatch, recipe unlock synchronization.
+
+## Config ownership
+
+- Core-owned defaults: `xp.properties`, `combat.properties`, `hud.properties`.
+- Gathering-owned defaults: `heuristics.properties`, `tooling.properties`, `tool-tier-defaults.properties`, `xp-profile-defaults.properties`, and `Skills/Nodes/**`.
+- Crafting-owned defaults: `crafting.properties`.
 
 ## Runtime flow
 
-1. Plugin setup wires services, codecs, assets, components, then systems in deterministic order.
+1. Plugin setup is split by responsibility: core wires progression services/systems and publishes `SkillsRuntimeApi`; gathering wires node assets and gather systems; crafting wires crafting systems and UI interactions.
 2. A profile bootstrap system ensures every player has a persistent skill profile component.
 3. `/skill` is a player-only self-inspection command that prints every declared skill with current level and XP.
 4. Any runtime source can queue XP grants through `SkillXpDispatchService` (strict skill id parsing, no silent fallback).
@@ -18,6 +31,8 @@ This plugin implements an OSRS-inspired, data-driven skills runtime with a centr
 ## Core pieces
 
 - `SkillType`: skill identity enum.
+- `SkillsRuntimeApi`: stable cross-plugin progression surface used by gathering/crafting.
+- `SkillsRuntimeRegistry`: runtime bridge registration for `SkillsRuntimeApi` provider discovery.
 - `PlayerSkillProfileComponent`: persistent per-player map of skill progress.
 - `SkillProgress`: per-skill XP + level state.
 - `XpService`: XP thresholds and level calculation.
@@ -72,6 +87,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ## Programmatic XP grants
 
 - Use `SkillsPlugin#grantSkillXp(...)` or `SkillXpDispatchService#grantSkillXp(...)` from any system/command that has a `ComponentAccessor<EntityStore>` and player `Ref<EntityStore>`.
+- Feature plugins should prefer `SkillsRuntimeRegistry.get()` + `SkillsRuntimeApi#grantSkillXp(...)` instead of direct core-plugin singleton access.
 - Preferred inputs:
   - `skillId` (strict parse; unknown values are rejected),
   - `experience` (non-positive values are ignored),
@@ -90,7 +106,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 ### 1) Local compile/run verification
 
 ```bash
-./gradlew :plugins:skills:clean :plugins:skills:build
+./gradlew :plugins:skills-api:build :plugins:skills:clean :plugins:skills:build :plugins:skills-gathering:build :plugins:skills-crafting:build
 ```
 
 - Confirms the plugin compiles and resource files under `src/main/resources/Skills/**` are packaged as fallback defaults.
@@ -98,7 +114,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ### 2) Manual in-game flow (quick checklist)
 
-1. Start the game/server with this plugin enabled.
+1. Start the game/server with `SkillsPlugin`, `SkillsGatheringPlugin`, and `SkillsCraftingPlugin` enabled.
 2. Try breaking a configured node block (from `Skills/Nodes/**/*.properties`) with low skill level.
    Expected: break is cancelled and a warning is shown.
 3. Use any held item and break again after meeting the level requirement.
@@ -152,7 +168,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 3. Ensure your content (blocks/skills) can satisfy the same runtime checks already used by break handling.
 4. Rebuild and test requirement + XP paths exactly as in the Testing Guide.
 
-Runtime wiring expectation: no new system/service registration is required for basic gather-style skills as long as they fit the existing node schema and `SkillType` enum.
+Runtime wiring expectation: no new progression-core registration is required for basic gather-style skills as long as they fit the existing node schema and `SkillType` enum, and the gathering plugin is enabled.
 
 ### Add a timed crafting page (new crafting skill)
 
@@ -198,13 +214,17 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
     public ExampleCraftingPage(
             @Nonnull PlayerRef playerRef,
             @Nonnull BlockPosition blockPosition,
-            @Nonnull ComponentType<EntityStore, PlayerSkillProfileComponent> profileComponentType,
-            @Nonnull CraftingRecipeTagService craftingRecipeTagService) {
+            @Nonnull SkillsRuntimeApi runtimeApi,
+            @Nonnull CraftingRecipeTagService craftingRecipeTagService,
+            @Nonnull CraftingPageTrackerService craftingPageTrackerService,
+            @Nonnull CraftingConfig craftingConfig) {
         super(
                 playerRef,
                 blockPosition,
-                profileComponentType,
+                runtimeApi,
                 craftingRecipeTagService,
+                craftingPageTrackerService,
+                craftingConfig,
                 UI_PATH,
                 "example-crafting",
                 "Crafting",
@@ -218,7 +238,7 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
                 ref,
                 store,
                 recipeId,
-                profileComponentType(),
+                runtimeApi(),
                 craftingRecipeTagService(),
                 LOGGER,
                 "Crafted",

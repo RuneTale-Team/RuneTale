@@ -30,30 +30,9 @@ class DefaultConfigSchemaContractTest {
 							"source.melee.controlled.strength", "source.melee.controlled.defense",
 							"source.block.defense", "projectileCauseTokens")),
 			ConfigSchema.exact(
-					"Skills/Config/crafting.properties",
-					Set.of("bench.anvil.id", "bench.furnace.id", "smithing.craftDurationMillis",
-							"smelting.craftDurationMillis", "craft.maxCount", "craft.quantityPresets",
-							"craft.quantityAllToken", "smelting.outputContainsToken", "pageProgressTickSeconds")),
-			ConfigSchema.exact(
 					"Skills/Config/hud.properties",
 					Set.of("toast.durationMillis", "toast.fadeDurationMillis", "toast.fade.rootBackground",
-							"toast.fade.innerBackground", "toast.expiryTickSeconds")),
-			ConfigSchema.withPrefixes(
-					"Skills/Config/tooling.properties",
-					Set.of("keyword.default"),
-					List.of("family.", "tier.")),
-			ConfigSchema.exact(
-					"Skills/Config/heuristics.properties",
-					Set.of("nodeCandidateTokens")),
-			ConfigSchema.withAllowedPrefixes(
-					"Skills/tool-tier-defaults.properties",
-					Set.of("keyword.default", "tiers"),
-					List.of("alias.", "keyword.")),
-			ConfigSchema.withAllowedExactAndPrefixes(
-					"Skills/xp-profile-defaults.properties",
-					Set.of("profileId", "curveModel", "maxLevel", "roundingMode"),
-					Set.of("description"),
-					List.of()));
+							"toast.fade.innerBackground", "toast.expiryTickSeconds")));
 
 	@Test
 	void defaultConfigFilesHaveRequiredKeysAndWarnOnUnknown(TestReporter reporter) throws IOException {
@@ -121,41 +100,5 @@ class DefaultConfigSchemaContractTest {
 			return new ConfigSchema(resourcePath, Set.copyOf(requiredExactKeys), Set.of(), List.of(), List.of());
 		}
 
-		private static ConfigSchema withPrefixes(
-				String resourcePath,
-				Set<String> requiredExactKeys,
-				List<String> requiredPrefixes) {
-			return new ConfigSchema(
-					resourcePath,
-					Set.copyOf(requiredExactKeys),
-					Set.of(),
-					List.copyOf(requiredPrefixes),
-					List.copyOf(requiredPrefixes));
-		}
-
-		private static ConfigSchema withAllowedPrefixes(
-				String resourcePath,
-				Set<String> requiredExactKeys,
-				List<String> allowedPrefixes) {
-			return new ConfigSchema(
-					resourcePath,
-					Set.copyOf(requiredExactKeys),
-					Set.of(),
-					List.of(),
-					List.copyOf(allowedPrefixes));
-		}
-
-		private static ConfigSchema withAllowedExactAndPrefixes(
-				String resourcePath,
-				Set<String> requiredExactKeys,
-				Set<String> allowedExactKeys,
-				List<String> allowedPrefixes) {
-			return new ConfigSchema(
-					resourcePath,
-					Set.copyOf(requiredExactKeys),
-					Set.copyOf(allowedExactKeys),
-					List.of(),
-					List.copyOf(allowedPrefixes));
-		}
 	}
 }

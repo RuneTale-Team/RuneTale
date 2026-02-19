@@ -1,7 +1,11 @@
 {
   "Group": "RuneTale",
   "Name": "SkillsPlugin",
+  "Version": "0.1.0",
   "Main": "org.runetale.skills.SkillsPlugin",
+  "Dependencies": {
+    "RuneTale:SkillsApiPlugin": ">=0.1.0"
+  },
   "IncludesAssetPack": true,
   "Authors": [
     {

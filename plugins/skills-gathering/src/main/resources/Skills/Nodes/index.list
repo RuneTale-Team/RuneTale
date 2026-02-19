@@ -1,0 +1,26 @@
+# Index of skill node definition resources.
+#
+# Keep this file explicit and deterministic so classpath/JAR loading works
+# consistently across local dev and packaged runtime environments.
+
+# WOODCUTTING
+woodcutting/oak_tree.properties
+woodcutting/beech_tree.properties
+woodcutting/birch_tree.properties
+woodcutting/Tree.properties
+woodcutting/Tree_Oak.properties
+woodcutting/Tree_Willow.properties
+woodcutting/Tree_Maple.properties
+woodcutting/Tree_Yew.properties
+woodcutting/Tree_Magic.properties
+
+# MINING
+mining/tin.properties
+mining/copper.properties
+mining/iron.properties
+mining/silver.properties
+mining/coal.properties
+mining/gold.properties
+mining/mithril.properties
+mining/adamantite.properties
+mining/runite.properties

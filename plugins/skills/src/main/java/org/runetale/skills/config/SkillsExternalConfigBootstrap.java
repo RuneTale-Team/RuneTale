@@ -6,9 +6,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,8 +14,6 @@ import java.util.List;
 public final class SkillsExternalConfigBootstrap {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-    private static final String NODE_INDEX_RESOURCE = "Skills/Nodes/index.list";
-
     private SkillsExternalConfigBootstrap() {
     }
 
@@ -52,46 +47,9 @@ public final class SkillsExternalConfigBootstrap {
         List<String> resources = new ArrayList<>();
         resources.add("Skills/Config/xp.properties");
         resources.add("Skills/Config/combat.properties");
-        resources.add("Skills/Config/crafting.properties");
         resources.add("Skills/Config/hud.properties");
-        resources.add("Skills/Config/tooling.properties");
-        resources.add("Skills/Config/heuristics.properties");
-        resources.add("Skills/tool-tier-defaults.properties");
-        resources.add("Skills/xp-profile-defaults.properties");
-        resources.add(NODE_INDEX_RESOURCE);
-
-        for (String nodePath : readNodeIndexFromClasspath()) {
-            resources.add("Skills/Nodes/" + nodePath);
-        }
         LOGGER.atFine().log("[Skills] Bootstrap resource manifest contains %d resource(s)", resources.size());
         return resources;
-    }
-
-    @Nonnull
-    private static List<String> readNodeIndexFromClasspath() {
-        List<String> files = new ArrayList<>();
-        try (InputStream input = openClasspathResource(NODE_INDEX_RESOURCE)) {
-            if (input == null) {
-                LOGGER.atWarning().log("[Skills] Missing bundled node index resource=%s during bootstrap", NODE_INDEX_RESOURCE);
-                return files;
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String trimmed = line.trim();
-                    if (trimmed.isEmpty() || trimmed.startsWith("#")) {
-                        continue;
-                    }
-                    files.add(trimmed);
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.atWarning().withCause(e).log("[Skills] Failed reading bundled node index during bootstrap");
-        }
-
-        LOGGER.atFine().log("[Skills] Bootstrap node index resolved %d node resource(s)", files.size());
-        return files;
     }
 
     private static boolean copyClasspathResourceIfMissing(
