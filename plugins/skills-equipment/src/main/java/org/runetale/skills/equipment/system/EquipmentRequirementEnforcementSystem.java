@@ -45,7 +45,7 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
 
     @Override
     public void delayedTick(float deltaTime, int systemIndex, @Nonnull Store<EntityStore> store) {
-        if (!this.equipmentConfig.enforceArmor() && !this.equipmentConfig.enforceActiveHandReconcile()) {
+        if (!this.equipmentConfig.enforceArmor()) {
             return;
         }
 
@@ -66,9 +66,6 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
 
             if (this.equipmentConfig.enforceArmor()) {
                 enforceArmor(store, ref, playerRef, player);
-            }
-            if (this.equipmentConfig.enforceActiveHandReconcile()) {
-                enforceActiveHand(store, ref, playerRef, player);
             }
         }
     }
@@ -108,102 +105,6 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
                         location);
             }
         }
-    }
-
-    private void enforceActiveHand(
-            @Nonnull Store<EntityStore> store,
-            @Nonnull Ref<EntityStore> ref,
-            @Nonnull PlayerRef playerRef,
-            @Nonnull Player player) {
-        Inventory inventory = player.getInventory();
-        enforceActiveSection(store, ref, playerRef, inventory, this.equipmentConfig.activeSectionHotbar());
-        enforceActiveSection(store, ref, playerRef, inventory, this.equipmentConfig.activeSectionTools());
-    }
-
-    private void enforceActiveSection(
-            @Nonnull Store<EntityStore> store,
-            @Nonnull Ref<EntityStore> ref,
-            @Nonnull PlayerRef playerRef,
-            @Nonnull Inventory inventory,
-            int sectionId) {
-        byte activeSlot;
-        try {
-            activeSlot = inventory.getActiveSlot(sectionId);
-        } catch (IllegalArgumentException ignored) {
-            return;
-        }
-        if (activeSlot < 0) {
-            return;
-        }
-
-        ItemContainer section = inventory.getSectionById(sectionId);
-        if (section == null) {
-            return;
-        }
-        int capacity = Math.min(section.getCapacity(), selectionCapacity(sectionId));
-        if (capacity <= 0) {
-            return;
-        }
-
-        ItemStack equipped = section.getItemStack(activeSlot);
-        if (equipped == null || ItemStack.isEmpty(equipped)) {
-            return;
-        }
-
-        BlockedRequirement blocked = findFirstUnmetRequirement(store, ref, equipped);
-        if (blocked == null) {
-            return;
-        }
-
-        if (!relocateBlockedActiveItem(section, activeSlot, equipped, inventory)) {
-            this.notificationService.sendBlockedEquipNotice(
-                    playerRef,
-                    blocked.requirement(),
-                    blocked.currentLevel(),
-                    equipped.getItem().getId(),
-                    EquipmentLocation.MAINHAND);
-            return;
-        }
-
-        this.notificationService.sendBlockedEquipNotice(
-                playerRef,
-                blocked.requirement(),
-                blocked.currentLevel(),
-                equipped.getItem().getId(),
-                EquipmentLocation.MAINHAND);
-    }
-
-    private boolean relocateBlockedActiveItem(
-            @Nonnull ItemContainer section,
-            byte activeSlot,
-            @Nonnull ItemStack equipped,
-            @Nonnull Inventory inventory) {
-        ItemContainer backpack = inventory.getBackpack();
-        if (backpack.getCapacity() > 0) {
-            MoveTransaction<ItemStackTransaction> toBackpack = section.moveItemStackFromSlot(
-                    activeSlot,
-                    equipped.getQuantity(),
-                    backpack);
-            if (toBackpack.succeeded()) {
-                return true;
-            }
-        }
-
-        MoveTransaction<ItemStackTransaction> toStorage = section.moveItemStackFromSlot(
-                activeSlot,
-                equipped.getQuantity(),
-                inventory.getStorage());
-        return toStorage.succeeded();
-    }
-
-    private int selectionCapacity(int sectionId) {
-        if (sectionId == this.equipmentConfig.activeSectionHotbar()) {
-            return this.equipmentConfig.activeSelectionSlotsHotbar();
-        }
-        if (sectionId == this.equipmentConfig.activeSectionTools()) {
-            return this.equipmentConfig.activeSelectionSlotsTools();
-        }
-        return Integer.MAX_VALUE;
     }
 
     @Nullable

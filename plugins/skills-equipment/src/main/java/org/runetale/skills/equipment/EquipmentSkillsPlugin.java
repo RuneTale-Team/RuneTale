@@ -10,8 +10,10 @@ import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.equipment.config.EquipmentExternalConfigBootstrap;
 import org.runetale.skills.equipment.service.EquipmentGateNotificationService;
 import org.runetale.skills.equipment.service.EquipmentRequirementTagService;
-import org.runetale.skills.equipment.system.ActiveSlotRequirementGateSystem;
 import org.runetale.skills.equipment.system.EquipmentRequirementEnforcementSystem;
+import org.runetale.skills.equipment.system.ToolUseBreakBlockGateSystem;
+import org.runetale.skills.equipment.system.ToolUseDamageBlockGateSystem;
+import org.runetale.skills.equipment.system.ToolUseEntityDamageGateSystem;
 
 import javax.annotation.Nonnull;
 
@@ -55,15 +57,28 @@ public class EquipmentSkillsPlugin extends JavaPlugin {
             return;
         }
 
-        if (this.equipmentConfig.enforceActiveHand()) {
-            this.getEntityStoreRegistry().registerSystem(new ActiveSlotRequirementGateSystem(
+        if (this.equipmentConfig.enforceToolUseBlockDamage()) {
+            this.getEntityStoreRegistry().registerSystem(new ToolUseDamageBlockGateSystem(
                     runtimeApi,
-                    this.equipmentConfig,
                     this.requirementTagService,
                     this.notificationService));
         }
 
-        if (this.equipmentConfig.enforceArmor() || this.equipmentConfig.enforceActiveHandReconcile()) {
+        if (this.equipmentConfig.enforceToolUseBreakBlock()) {
+            this.getEntityStoreRegistry().registerSystem(new ToolUseBreakBlockGateSystem(
+                    runtimeApi,
+                    this.requirementTagService,
+                    this.notificationService));
+        }
+
+        if (this.equipmentConfig.enforceToolUseEntityDamage()) {
+            this.getEntityStoreRegistry().registerSystem(new ToolUseEntityDamageGateSystem(
+                    runtimeApi,
+                    this.requirementTagService,
+                    this.notificationService));
+        }
+
+        if (this.equipmentConfig.enforceArmor()) {
             this.getEntityStoreRegistry().registerSystem(new EquipmentRequirementEnforcementSystem(
                     runtimeApi,
                     this.equipmentConfig,
