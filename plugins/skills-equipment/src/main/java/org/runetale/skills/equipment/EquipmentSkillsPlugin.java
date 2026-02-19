@@ -8,6 +8,10 @@ import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.config.EquipmentConfig;
 import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.equipment.config.EquipmentExternalConfigBootstrap;
+import org.runetale.skills.equipment.service.EquipmentGateNotificationService;
+import org.runetale.skills.equipment.service.EquipmentRequirementTagService;
+import org.runetale.skills.equipment.system.ActiveSlotRequirementGateSystem;
+import org.runetale.skills.equipment.system.EquipmentRequirementEnforcementSystem;
 
 import javax.annotation.Nonnull;
 
@@ -16,6 +20,8 @@ public class EquipmentSkillsPlugin extends JavaPlugin {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     private EquipmentConfig equipmentConfig;
+    private EquipmentRequirementTagService requirementTagService;
+    private EquipmentGateNotificationService notificationService;
 
     public EquipmentSkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -33,6 +39,8 @@ public class EquipmentSkillsPlugin extends JavaPlugin {
         SkillsPathLayout pathLayout = SkillsPathLayout.fromDataDirectory(this.getDataDirectory());
         EquipmentExternalConfigBootstrap.seedMissingDefaults(pathLayout);
         this.equipmentConfig = EquipmentConfig.load(pathLayout.pluginConfigRoot());
+        this.requirementTagService = new EquipmentRequirementTagService(this.equipmentConfig);
+        this.notificationService = new EquipmentGateNotificationService(this.equipmentConfig);
     }
 
     private void registerSystems() {
@@ -42,8 +50,25 @@ public class EquipmentSkillsPlugin extends JavaPlugin {
             return;
         }
 
-        if (this.equipmentConfig == null) {
+        if (this.equipmentConfig == null || this.requirementTagService == null || this.notificationService == null) {
             LOGGER.atSevere().log("Equipment config unavailable; equipment systems not registered.");
+            return;
+        }
+
+        if (this.equipmentConfig.enforceActiveHand()) {
+            this.getEntityStoreRegistry().registerSystem(new ActiveSlotRequirementGateSystem(
+                    runtimeApi,
+                    this.equipmentConfig,
+                    this.requirementTagService,
+                    this.notificationService));
+        }
+
+        if (this.equipmentConfig.enforceArmor() || this.equipmentConfig.enforceActiveHand()) {
+            this.getEntityStoreRegistry().registerSystem(new EquipmentRequirementEnforcementSystem(
+                    runtimeApi,
+                    this.equipmentConfig,
+                    this.requirementTagService,
+                    this.notificationService));
         }
     }
 
@@ -56,5 +81,7 @@ public class EquipmentSkillsPlugin extends JavaPlugin {
     protected void shutdown() {
         LOGGER.atInfo().log("Shutting down skills equipment plugin...");
         this.equipmentConfig = null;
+        this.requirementTagService = null;
+        this.notificationService = null;
     }
 }
