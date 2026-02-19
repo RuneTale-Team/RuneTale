@@ -17,14 +17,9 @@ import javax.annotation.Nonnull;
 public class GatheringSkillsPlugin extends JavaPlugin {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-    private static GatheringSkillsPlugin instance;
 
     private SkillNodeLookupService nodeLookupService;
     private HeuristicsConfig heuristicsConfig;
-
-    public static GatheringSkillsPlugin getInstance() {
-        return instance;
-    }
 
     public SkillNodeLookupService getNodeLookupService() {
         return this.nodeLookupService;
@@ -32,7 +27,6 @@ public class GatheringSkillsPlugin extends JavaPlugin {
 
     public GatheringSkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
-        instance = this;
     }
 
     @Override
@@ -90,6 +84,5 @@ public class GatheringSkillsPlugin extends JavaPlugin {
         LOGGER.atInfo().log("Shutting down skills gathering plugin...");
         this.nodeLookupService = null;
         this.heuristicsConfig = null;
-        instance = null;
     }
 }

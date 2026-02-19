@@ -16,7 +16,8 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.api.SkillsRuntimeRegistry;
-import org.runetale.skills.crafting.CraftingSkillsPlugin;
+import org.runetale.skills.crafting.CraftingRuntimeRegistry;
+import org.runetale.skills.crafting.CraftingRuntimeState;
 import org.runetale.skills.page.SmithingPage;
 
 import javax.annotation.Nonnull;
@@ -70,9 +71,9 @@ public final class OpenSmithingUIInteraction extends SimpleInstantInteraction {
 		}
 
 		SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
-		CraftingSkillsPlugin craftingPlugin = CraftingSkillsPlugin.getInstance();
-		if (runtimeApi == null || craftingPlugin == null) {
-			LOGGER.atWarning().log("SkillsPlugin not available; cannot open smithing UI");
+		CraftingRuntimeState craftingRuntime = CraftingRuntimeRegistry.get();
+		if (runtimeApi == null || craftingRuntime == null) {
+			LOGGER.atWarning().log("Skills runtime not available; cannot open smithing UI");
 			ctx.getState().state = InteractionState.Failed;
 			return;
 		}
@@ -84,9 +85,9 @@ public final class OpenSmithingUIInteraction extends SimpleInstantInteraction {
 				playerRef,
 				targetBlock,
 				runtimeApi,
-				craftingPlugin.getCraftingRecipeTagService(),
-				craftingPlugin.getCraftingPageTrackerService(),
-				craftingPlugin.getCraftingConfig());
+				craftingRuntime.craftingRecipeTagService(),
+				craftingRuntime.craftingPageTrackerService(),
+				craftingRuntime.craftingConfig());
 
 		player.getPageManager().openCustomPage(ref, store, page);
 		ctx.getState().state = InteractionState.Finished;

@@ -24,31 +24,14 @@ import javax.annotation.Nonnull;
 public class CraftingSkillsPlugin extends JavaPlugin {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-    private static CraftingSkillsPlugin instance;
 
+    private CraftingRuntimeState runtimeState;
     private CraftingConfig craftingConfig;
     private CraftingRecipeTagService craftingRecipeTagService;
     private CraftingPageTrackerService craftingPageTrackerService;
 
-    public static CraftingSkillsPlugin getInstance() {
-        return instance;
-    }
-
-    public CraftingRecipeTagService getCraftingRecipeTagService() {
-        return this.craftingRecipeTagService;
-    }
-
-    public CraftingPageTrackerService getCraftingPageTrackerService() {
-        return this.craftingPageTrackerService;
-    }
-
-    public CraftingConfig getCraftingConfig() {
-        return this.craftingConfig;
-    }
-
     public CraftingSkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
-        instance = this;
     }
 
     @Override
@@ -72,6 +55,8 @@ public class CraftingSkillsPlugin extends JavaPlugin {
         this.craftingConfig = CraftingConfig.load(pathLayout.pluginConfigRoot());
         this.craftingRecipeTagService = new CraftingRecipeTagService(this.craftingConfig);
         this.craftingPageTrackerService = new CraftingPageTrackerService();
+        this.runtimeState = new CraftingRuntimeState(this.craftingConfig, this.craftingRecipeTagService, this.craftingPageTrackerService);
+        CraftingRuntimeRegistry.register(this.runtimeState);
     }
 
     private void registerCodecs() {
@@ -124,9 +109,12 @@ public class CraftingSkillsPlugin extends JavaPlugin {
     @Override
     protected void shutdown() {
         LOGGER.atInfo().log("Shutting down skills crafting plugin...");
+        if (this.runtimeState != null) {
+            CraftingRuntimeRegistry.clear(this.runtimeState);
+        }
+        this.runtimeState = null;
         this.craftingConfig = null;
         this.craftingRecipeTagService = null;
         this.craftingPageTrackerService = null;
-        instance = null;
     }
 }

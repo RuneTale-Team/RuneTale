@@ -42,12 +42,6 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     /**
-     * Singleton plugin instance for simple static access from component helper
-     * methods.
-     */
-    private static SkillsPlugin instance;
-
-    /**
      * Persistent, serialized per-player progression component for all skills.
      */
     private ComponentType<EntityStore, PlayerSkillProfileComponent> playerSkillProfileComponentType;
@@ -99,11 +93,6 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
 
     public SkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
-        instance = this;
-    }
-
-    public static SkillsPlugin getInstance() {
-        return instance;
     }
 
     /**
@@ -339,7 +328,5 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
         this.debugModeService = null;
         this.pathLayout = null;
         SkillsRuntimeRegistry.clear(this);
-
-        instance = null;
     }
 }
