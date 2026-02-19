@@ -85,7 +85,12 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             return;
         }
 
-        event.setCancelled(true);
+        byte fallbackSlot = findFallbackAllowedSlot(commandBuffer, ref, event, section);
+        if (fallbackSlot >= 0) {
+            event.setNewSlot(fallbackSlot);
+        } else {
+            event.setCancelled(true);
+        }
 
         PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
         if (playerRef == null) {
@@ -101,6 +106,61 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
                 blocked.currentLevel(),
                 selectedStack.getItem().getId(),
                 EquipmentLocation.MAINHAND);
+    }
+
+    private byte findFallbackAllowedSlot(
+            @Nonnull CommandBuffer<EntityStore> commandBuffer,
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull SwitchActiveSlotEvent event,
+            @Nonnull ItemContainer section) {
+        int capacity = section.getCapacity();
+        if (capacity <= 0) {
+            return -1;
+        }
+
+        int previousSlot = event.getPreviousSlot();
+        int direction = selectionDirection(previousSlot, event.getNewSlot(), capacity);
+        int start = wrapSlot(event.getNewSlot(), capacity);
+
+        for (int i = 1; i < capacity; i++) {
+            int candidateSlot = wrapSlot(start + (i * direction), capacity);
+            ItemStack candidateStack = section.getItemStack((short) candidateSlot);
+            if (candidateStack == null || ItemStack.isEmpty(candidateStack)) {
+                return (byte) candidateSlot;
+            }
+
+            if (findFirstUnmetRequirement(commandBuffer, ref, candidateStack) == null) {
+                return (byte) candidateSlot;
+            }
+        }
+
+        if (previousSlot >= 0 && previousSlot < capacity) {
+            return (byte) previousSlot;
+        }
+        return -1;
+    }
+
+    private int selectionDirection(int previousSlot, int newSlot, int capacity) {
+        if (capacity <= 1) {
+            return 1;
+        }
+
+        int prev = wrapSlot(previousSlot, capacity);
+        int next = wrapSlot(newSlot, capacity);
+        int forwardDistance = (next - prev + capacity) % capacity;
+        int backwardDistance = (prev - next + capacity) % capacity;
+        if (forwardDistance == 0) {
+            return 1;
+        }
+        return forwardDistance <= backwardDistance ? 1 : -1;
+    }
+
+    private int wrapSlot(int slot, int capacity) {
+        int wrapped = slot % capacity;
+        if (wrapped < 0) {
+            wrapped += capacity;
+        }
+        return wrapped;
     }
 
     @Nullable
