@@ -136,6 +136,10 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
         if (section == null) {
             return;
         }
+        int capacity = Math.min(section.getCapacity(), selectionCapacity(sectionId));
+        if (capacity <= 0) {
+            return;
+        }
 
         ItemStack equipped = section.getItemStack(activeSlot);
         if (equipped == null || ItemStack.isEmpty(equipped)) {
@@ -147,8 +151,9 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             return;
         }
 
+        byte fallbackSlot = findNextAllowedSlot(store, ref, section, activeSlot, capacity);
         try {
-            inventory.setActiveSlot(sectionId, Inventory.INACTIVE_SLOT_INDEX);
+            inventory.setActiveSlot(sectionId, fallbackSlot);
         } catch (IllegalArgumentException ignored) {
             return;
         }
@@ -158,6 +163,46 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
                 blocked.currentLevel(),
                 equipped.getItem().getId(),
                 EquipmentLocation.MAINHAND);
+    }
+
+    private byte findNextAllowedSlot(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull ItemContainer section,
+            byte blockedSlot,
+            int capacity) {
+        int start = wrap(blockedSlot, capacity);
+        for (int offset = 1; offset < capacity; offset++) {
+            int slot = wrap(start + offset, capacity);
+            ItemStack candidate = section.getItemStack((short) slot);
+            if (candidate == null || ItemStack.isEmpty(candidate)) {
+                return (byte) slot;
+            }
+
+            if (findFirstUnmetRequirement(store, ref, candidate) == null) {
+                return (byte) slot;
+            }
+        }
+
+        return Inventory.INACTIVE_SLOT_INDEX;
+    }
+
+    private int selectionCapacity(int sectionId) {
+        if (sectionId == this.equipmentConfig.activeSectionHotbar()) {
+            return this.equipmentConfig.activeSelectionSlotsHotbar();
+        }
+        if (sectionId == this.equipmentConfig.activeSectionTools()) {
+            return this.equipmentConfig.activeSelectionSlotsTools();
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    private int wrap(int slot, int capacity) {
+        int wrapped = slot % capacity;
+        if (wrapped < 0) {
+            wrapped += capacity;
+        }
+        return wrapped;
     }
 
     @Nullable

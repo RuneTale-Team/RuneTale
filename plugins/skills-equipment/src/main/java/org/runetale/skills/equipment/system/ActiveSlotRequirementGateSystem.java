@@ -52,9 +52,6 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
         }
 
         int sectionId = event.getInventorySectionId();
-        if (sectionId != this.equipmentConfig.activeSectionHotbar() && sectionId != this.equipmentConfig.activeSectionTools()) {
-            return;
-        }
 
         Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
         Player player = commandBuffer.getComponent(ref, Player.getComponentType());
@@ -65,18 +62,16 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             return;
         }
 
-        int selectionCapacity = selectionCapacity(sectionId, player);
-        if (selectionCapacity <= 0) {
-            return;
-        }
-
         byte newSlot = event.getNewSlot();
-        if (newSlot < 0 || newSlot >= selectionCapacity) {
+        if (newSlot < 0) {
             return;
         }
 
         ItemContainer section = player.getInventory().getSectionById(sectionId);
         if (section == null) {
+            return;
+        }
+        if (newSlot >= section.getCapacity()) {
             return;
         }
 
@@ -90,12 +85,7 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             return;
         }
 
-        byte fallbackSlot = findFallbackAllowedSlot(commandBuffer, ref, event, section, selectionCapacity);
-        if (fallbackSlot >= 0) {
-            event.setNewSlot(fallbackSlot);
-        } else {
-            event.setCancelled(true);
-        }
+        event.setCancelled(true);
 
         PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
         if (playerRef == null) {
@@ -111,82 +101,6 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
                 blocked.currentLevel(),
                 selectedStack.getItem().getId(),
                 EquipmentLocation.MAINHAND);
-    }
-
-    private byte findFallbackAllowedSlot(
-            @Nonnull CommandBuffer<EntityStore> commandBuffer,
-            @Nonnull Ref<EntityStore> ref,
-            @Nonnull SwitchActiveSlotEvent event,
-            @Nonnull ItemContainer section,
-            int selectionCapacity) {
-        int capacity = Math.min(section.getCapacity(), selectionCapacity);
-        if (capacity <= 0) {
-            return -1;
-        }
-
-        int previousSlot = event.getPreviousSlot();
-        int direction = selectionDirection(previousSlot, event.getNewSlot(), capacity);
-        int start = wrapSlot(event.getNewSlot(), capacity);
-
-        for (int i = 1; i < capacity; i++) {
-            int candidateSlot = wrapSlot(start + (i * direction), capacity);
-            ItemStack candidateStack = section.getItemStack((short) candidateSlot);
-            if (candidateStack == null || ItemStack.isEmpty(candidateStack)) {
-                return (byte) candidateSlot;
-            }
-
-            if (findFirstUnmetRequirement(commandBuffer, ref, candidateStack) == null) {
-                return (byte) candidateSlot;
-            }
-        }
-
-        if (previousSlot >= 0 && previousSlot < capacity) {
-            return (byte) previousSlot;
-        }
-        return -1;
-    }
-
-    private int selectionDirection(int previousSlot, int newSlot, int capacity) {
-        if (capacity <= 1) {
-            return 1;
-        }
-
-        int prev = wrapSlot(previousSlot, capacity);
-        int next = wrapSlot(newSlot, capacity);
-        int forwardDistance = (next - prev + capacity) % capacity;
-        int backwardDistance = (prev - next + capacity) % capacity;
-        if (forwardDistance == 0) {
-            return 1;
-        }
-        return forwardDistance <= backwardDistance ? 1 : -1;
-    }
-
-    private int wrapSlot(int slot, int capacity) {
-        int wrapped = slot % capacity;
-        if (wrapped < 0) {
-            wrapped += capacity;
-        }
-        return wrapped;
-    }
-
-    private int selectionCapacity(int sectionId, @Nonnull Player player) {
-        int sectionCapacity = sectionCapacity(sectionId, player);
-        if (sectionCapacity <= 0) {
-            return 0;
-        }
-
-        int configured = sectionId == this.equipmentConfig.activeSectionHotbar()
-                ? this.equipmentConfig.activeSelectionSlotsHotbar()
-                : this.equipmentConfig.activeSelectionSlotsTools();
-        return Math.min(sectionCapacity, Math.max(1, configured));
-    }
-
-    private int sectionCapacity(int sectionId, @Nonnull Player player) {
-        ItemContainer section = player.getInventory().getSectionById(sectionId);
-        if (section == null) {
-            return 0;
-        }
-        return section.getCapacity();
     }
 
     @Nullable

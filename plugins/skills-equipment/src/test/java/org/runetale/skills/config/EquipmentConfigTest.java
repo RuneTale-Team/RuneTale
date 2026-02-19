@@ -19,7 +19,7 @@ class EquipmentConfigTest {
         assertThat(config.tagLevelRequirement()).isEqualTo("EquipLevelRequirement");
         assertThat(config.enforceArmor()).isTrue();
         assertThat(config.enforceActiveHand()).isTrue();
-        assertThat(config.enforceActiveHandReconcile()).isFalse();
+        assertThat(config.enforceActiveHandReconcile()).isTrue();
         assertThat(config.activeSectionHotbar()).isEqualTo(-1);
         assertThat(config.activeSectionTools()).isEqualTo(-8);
         assertThat(config.activeSelectionSlotsHotbar()).isEqualTo(9);
