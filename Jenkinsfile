@@ -50,7 +50,7 @@ pipeline {
         stage('Build, Test, Package') {
             steps {
                 sh 'chmod +x ./gradlew'
-                sh './gradlew --no-daemon --refresh-dependencies clean test contractTest build bundlePluginJars'
+                sh './gradlew --no-daemon --refresh-dependencies clean build bundlePluginJars'
             }
         }
 
