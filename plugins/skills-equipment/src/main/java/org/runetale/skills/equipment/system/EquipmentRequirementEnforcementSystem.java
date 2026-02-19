@@ -151,11 +151,7 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             return;
         }
 
-        MoveTransaction<ItemStackTransaction> transaction = section.moveItemStackFromSlot(
-                activeSlot,
-                equipped.getQuantity(),
-                inventory.getBackpack());
-        if (!transaction.succeeded()) {
+        if (!relocateBlockedActiveItem(section, activeSlot, equipped, inventory)) {
             this.notificationService.sendBlockedEquipNotice(
                     playerRef,
                     blocked.requirement(),
@@ -171,6 +167,29 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
                 blocked.currentLevel(),
                 equipped.getItem().getId(),
                 EquipmentLocation.MAINHAND);
+    }
+
+    private boolean relocateBlockedActiveItem(
+            @Nonnull ItemContainer section,
+            byte activeSlot,
+            @Nonnull ItemStack equipped,
+            @Nonnull Inventory inventory) {
+        ItemContainer backpack = inventory.getBackpack();
+        if (backpack.getCapacity() > 0) {
+            MoveTransaction<ItemStackTransaction> toBackpack = section.moveItemStackFromSlot(
+                    activeSlot,
+                    equipped.getQuantity(),
+                    backpack);
+            if (toBackpack.succeeded()) {
+                return true;
+            }
+        }
+
+        MoveTransaction<ItemStackTransaction> toStorage = section.moveItemStackFromSlot(
+                activeSlot,
+                equipped.getQuantity(),
+                inventory.getStorage());
+        return toStorage.succeeded();
     }
 
     private int selectionCapacity(int sectionId) {
