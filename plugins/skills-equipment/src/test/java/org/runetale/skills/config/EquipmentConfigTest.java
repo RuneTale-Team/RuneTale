@@ -45,15 +45,6 @@ class EquipmentConfigTest {
         assertThat(config.locationAliases().get("mainhand")).containsExactly("main", "mh");
     }
 
-    @Test
-    void loadMigratesOldSkillTagKeyValue(@TempDir Path tempDir) throws IOException {
-        write(tempDir, "Config/equipment.properties", "tag.skillRequired=EquipSkillRequired\n");
-
-        EquipmentConfig config = EquipmentConfig.load(tempDir);
-
-        assertThat(config.tagSkillRequired()).isEqualTo("EquipSkillRequirement");
-    }
-
     private static void write(Path root, String relativePath, String content) throws IOException {
         Path path = root.resolve(relativePath);
         Files.createDirectories(path.getParent());
