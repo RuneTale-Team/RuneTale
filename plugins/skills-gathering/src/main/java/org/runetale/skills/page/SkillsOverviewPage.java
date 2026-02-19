@@ -322,11 +322,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		if (raw == null || raw.isBlank()) {
 			return null;
 		}
-		try {
-			return SkillType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-		} catch (IllegalArgumentException ignored) {
-			return null;
-		}
+		return SkillType.tryParseStrict(raw);
 	}
 
 	@Nonnull
@@ -355,12 +351,20 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 
 	@Nonnull
 	private String skillIconTexturePath(@Nullable SkillType skill) {
-		String id = skill == null ? "unknown" : skill.name().toLowerCase(Locale.ROOT);
+		String id = skill == null ? "unknown" : skillIconId(skill);
 		return "SkillsPlugin/Assets/Icons/icon_" + id + ".png";
 	}
 
+	@Nonnull
+	private String skillIconId(@Nonnull SkillType skill) {
+		if (skill == SkillType.DEFENCE) {
+			return "defense";
+		}
+		return skill.name().toLowerCase(Locale.ROOT);
+	}
+
 	private boolean isCombatRoadmapSkill(@Nonnull SkillType skill) {
-		return skill == SkillType.ATTACK || skill == SkillType.RANGED || skill == SkillType.DEFENSE;
+		return skill == SkillType.ATTACK || skill == SkillType.RANGED || skill == SkillType.DEFENCE;
 	}
 
 	private void appendCombatRoadmap(
@@ -384,8 +388,8 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		}
 
 		String milestone = level < 40 ? "Defensive basics" : "Tank progression";
-		appendCard(commandBuilder, eventBuilder, cardIndex++, "Training Focus", milestone, "Blocking damage grants Defense XP", null, skill);
-		appendCard(commandBuilder, eventBuilder, cardIndex++, "Roadmap", "Armor scaling", "Higher defense levels support stronger gear sets", null, skill);
+		appendCard(commandBuilder, eventBuilder, cardIndex++, "Training Focus", milestone, "Blocking damage grants Defence XP", null, skill);
+		appendCard(commandBuilder, eventBuilder, cardIndex++, "Roadmap", "Armor scaling", "Higher defence levels support stronger gear sets", null, skill);
 		appendCard(commandBuilder, eventBuilder, cardIndex, "Roadmap", "Encounter roles", "Future PvE content will include dedicated tank checks", null, skill);
 	}
 

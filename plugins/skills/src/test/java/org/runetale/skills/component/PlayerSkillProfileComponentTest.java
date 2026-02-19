@@ -41,4 +41,15 @@ class PlayerSkillProfileComponentTest {
 		assertThat(clone.getExperience(SkillType.SMITHING)).isEqualTo(5L);
 		assertThat(clone.getLevel(SkillType.SMITHING)).isEqualTo(2);
 	}
+
+	@Test
+	void getOrCreateMigratesLegacyDefenseKeyToDefence() {
+		PlayerSkillProfileComponent profile = TestConstructors.instantiateNoArgs(PlayerSkillProfileComponent.class);
+		profile.getRawSkillProgressByName().put("DEFENSE", new org.runetale.skills.domain.SkillProgress(123L, 9));
+
+		assertThat(profile.getExperience(SkillType.DEFENCE)).isEqualTo(123L);
+		assertThat(profile.getLevel(SkillType.DEFENCE)).isEqualTo(9);
+		assertThat(profile.getRawSkillProgressByName()).containsKey("DEFENCE");
+		assertThat(profile.getRawSkillProgressByName()).doesNotContainKey("DEFENSE");
+	}
 }

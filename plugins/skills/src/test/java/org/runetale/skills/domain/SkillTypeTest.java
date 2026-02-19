@@ -14,6 +14,8 @@ class SkillTypeTest {
 		assertEquals(SkillType.WOODCUTTING, SkillType.tryParseStrict("woodcutting"));
 		assertEquals(SkillType.ATTACK, SkillType.tryParseStrict(" attack "));
 		assertEquals(SkillType.SMITHING, SkillType.tryParseStrict("smithing"));
+		assertEquals(SkillType.DEFENCE, SkillType.tryParseStrict("defense"));
+		assertEquals(SkillType.DEFENCE, SkillType.tryParseStrict("defence"));
 	}
 
 	@Test

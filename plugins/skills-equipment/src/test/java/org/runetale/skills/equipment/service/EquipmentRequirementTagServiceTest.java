@@ -40,7 +40,7 @@ class EquipmentRequirementTagServiceTest {
                         "EquipLevelRequirement", new String[]{"NaN", "50"}));
 
         assertThat(parsed).hasSize(1);
-        assertThat(parsed.get(0).skillType()).isEqualTo(SkillType.DEFENSE);
+        assertThat(parsed.get(0).skillType()).isEqualTo(SkillType.DEFENCE);
         assertThat(parsed.get(0).requiredLevel()).isEqualTo(1);
     }
 

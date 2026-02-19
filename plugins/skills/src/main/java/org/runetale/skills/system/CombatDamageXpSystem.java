@@ -65,19 +65,19 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 
 		Damage.Source source = event.getSource();
 		if (!(source instanceof Damage.EntitySource entitySource)) {
-			grantDefenseBlockXp(index, archetypeChunk, commandBuffer, blocked, preventedDamage);
+			grantDefenceBlockXp(index, archetypeChunk, commandBuffer, blocked, preventedDamage);
 			return;
 		}
 
 		Ref<EntityStore> attackerRef = entitySource.getRef();
 		if (!attackerRef.isValid()) {
-			grantDefenseBlockXp(index, archetypeChunk, commandBuffer, blocked, preventedDamage);
+			grantDefenceBlockXp(index, archetypeChunk, commandBuffer, blocked, preventedDamage);
 			return;
 		}
 
 		PlayerRef attackerPlayerRef = resolveAttackerPlayerRef(commandBuffer, source, attackerRef);
 		if (attackerPlayerRef == null) {
-			grantDefenseBlockXp(index, archetypeChunk, commandBuffer, blocked, preventedDamage);
+			grantDefenceBlockXp(index, archetypeChunk, commandBuffer, blocked, preventedDamage);
 			return;
 		}
 
@@ -90,7 +90,7 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 			grantAttackerDamageXp(commandBuffer, attackerXpRef, attackerPlayerRef.getUuid(), event, source, finalDamage);
 		}
 
-		grantDefenseBlockXp(index, archetypeChunk, commandBuffer, blocked, preventedDamage);
+		grantDefenceBlockXp(index, archetypeChunk, commandBuffer, blocked, preventedDamage);
 	}
 
 	@Nonnull
@@ -126,9 +126,9 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 		if (style.isControlledSplit()) {
 			long attackXp = totalXp / 3L;
 			long strengthXp = totalXp / 3L;
-			long defenseXp = totalXp / 3L;
+			long defenceXp = totalXp / 3L;
 
-			long remainder = totalXp - (attackXp + strengthXp + defenseXp);
+			long remainder = totalXp - (attackXp + strengthXp + defenceXp);
 			if (remainder >= 1L) {
 				attackXp++;
 			}
@@ -140,8 +140,8 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeControlledAttack());
 			grantXp(commandBuffer, attackerRef, SkillType.STRENGTH, strengthXp,
 					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeControlledStrength());
-			grantXp(commandBuffer, attackerRef, SkillType.DEFENSE, defenseXp,
-					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeControlledDefense());
+			grantXp(commandBuffer, attackerRef, SkillType.DEFENCE, defenceXp,
+					this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeControlledDefence());
 			return;
 		}
 
@@ -157,7 +157,7 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 			return;
 		}
 
-		grantXp(commandBuffer, attackerRef, SkillType.DEFENSE, totalXp,
+		grantXp(commandBuffer, attackerRef, SkillType.DEFENCE, totalXp,
 				this.combatConfig.sourceMeleePrefix() + this.combatConfig.sourceMeleeDefensive());
 	}
 
@@ -267,7 +267,7 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 		}
 	}
 
-	private void grantDefenseBlockXp(int index,
+	private void grantDefenceBlockXp(int index,
 			@Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
 			@Nonnull CommandBuffer<EntityStore> commandBuffer,
 			boolean blocked,
@@ -285,9 +285,9 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 		this.skillXpDispatchService.grantSkillXp(
 				commandBuffer,
 				defenderRef,
-				SkillType.DEFENSE,
+				SkillType.DEFENCE,
 				preventedDamage * this.combatConfig.xpPerDamage(),
-				this.combatConfig.sourceBlockDefense(),
+				this.combatConfig.sourceBlockDefence(),
 				true);
 	}
 }
