@@ -7,7 +7,6 @@ import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import org.runetale.skills.config.SkillsConfigService;
 import org.runetale.skills.config.SkillsExternalConfigBootstrap;
 import org.runetale.skills.config.SkillsPathLayout;
@@ -17,24 +16,16 @@ import org.runetale.skills.command.debug.RtDebugCommand;
 import org.runetale.skills.command.debug.SkillXpCommand;
 import org.runetale.skills.component.PlayerSkillProfileComponent;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.interaction.OpenSmeltingUIInteraction;
-import org.runetale.skills.interaction.OpenSmithingUIInteraction;
 import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
 import org.runetale.skills.service.CombatStyleService;
-import org.runetale.skills.service.CraftingPageTrackerService;
-import org.runetale.skills.service.CraftingRecipeTagService;
 import org.runetale.skills.service.DebugModeService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.system.CombatDamageXpSystem;
-import org.runetale.skills.system.CraftingRecipeUnlockSystem;
-import org.runetale.skills.system.CraftingPageProgressSystem;
-import org.runetale.skills.system.CraftingXpSystem;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
-import org.runetale.skills.system.PlayerJoinRecipeUnlockSystem;
 import org.runetale.skills.system.PlayerSessionCleanupSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
 
@@ -100,16 +91,6 @@ public class SkillsPlugin extends JavaPlugin {
     private DebugModeService debugModeService;
 
     /**
-     * Stateless utility for extracting skill tags from crafting recipes.
-     */
-    private CraftingRecipeTagService craftingRecipeTagService;
-
-    /**
-     * Tracks players currently viewing timed crafting pages.
-     */
-    private CraftingPageTrackerService craftingPageTrackerService;
-
-    /**
      * Runtime path layout for external config and plugin data.
      */
     private SkillsPathLayout pathLayout;
@@ -145,14 +126,6 @@ public class SkillsPlugin extends JavaPlugin {
 
     public SkillsConfigService getSkillsConfigService() {
         return this.skillsConfigService;
-    }
-
-    public CraftingRecipeTagService getCraftingRecipeTagService() {
-        return this.craftingRecipeTagService;
-    }
-
-    public CraftingPageTrackerService getCraftingPageTrackerService() {
-        return this.craftingPageTrackerService;
     }
 
     public DebugModeService getDebugModeService() {
@@ -230,8 +203,6 @@ public class SkillsPlugin extends JavaPlugin {
         this.skillXpToastHudService = new SkillXpToastHudService(this.skillsConfigService.getHudConfig());
         this.debugModeService = new DebugModeService(List.of("skills"));
         this.xpDispatchService = new SkillXpDispatchService(this.debugModeService);
-        this.craftingRecipeTagService = new CraftingRecipeTagService(this.skillsConfigService.getCraftingConfig());
-        this.craftingPageTrackerService = new CraftingPageTrackerService();
         LOGGER.atInfo().log("[Skills] Services registered.");
     }
 
@@ -246,10 +217,6 @@ public class SkillsPlugin extends JavaPlugin {
      */
     private void registerCodecs() {
         LOGGER.atInfo().log("[Skills] Registering codecs...");
-        this.getCodecRegistry(Interaction.CODEC)
-                .register(OpenSmeltingUIInteraction.TYPE_NAME, OpenSmeltingUIInteraction.class, OpenSmeltingUIInteraction.CODEC);
-        this.getCodecRegistry(Interaction.CODEC)
-                .register(OpenSmithingUIInteraction.TYPE_NAME, OpenSmithingUIInteraction.class, OpenSmithingUIInteraction.CODEC);
         LOGGER.atInfo().log("[Skills] Codecs registered.");
     }
 
@@ -292,36 +259,11 @@ public class SkillsPlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(
                 new SkillXpToastHudExpirySystem(this.skillXpToastHudService, this.skillsConfigService.getHudConfig()));
 
-        // Drive timed progress updates for custom smithing/smelting pages.
-        this.getEntityStoreRegistry().registerSystem(new CraftingPageProgressSystem(
-                this.skillsConfigService.getCraftingConfig(),
-                this.craftingPageTrackerService));
-
         // Clear session-scoped state maps when a player entity is removed.
         this.getEntityStoreRegistry().registerSystem(new PlayerSessionCleanupSystem(
                 this.combatStyleService,
                 this.sessionStatsService,
-                this.skillXpToastHudService,
-                this.craftingPageTrackerService));
-
-        // Grant XP from crafting recipes tagged with skill XP rewards.
-        this.getEntityStoreRegistry().registerSystem(
-                new CraftingXpSystem(
-                        this.playerSkillProfileComponentType,
-                        this.xpDispatchService,
-                        this.craftingRecipeTagService));
-
-        // Unlock recipes when a player levels up in a skill.
-        this.getEntityStoreRegistry().registerSystem(
-                new CraftingRecipeUnlockSystem(
-                        this.playerSkillProfileComponentType,
-                        this.craftingRecipeTagService));
-
-        // Sync recipe unlocks on player join for catch-up.
-        this.getEntityStoreRegistry().registerSystem(
-                new PlayerJoinRecipeUnlockSystem(
-                        this.playerSkillProfileComponentType,
-                        this.craftingRecipeTagService));
+                this.skillXpToastHudService));
 
         LOGGER.atInfo().log("[Skills] Systems registered.");
     }
@@ -345,8 +287,6 @@ public class SkillsPlugin extends JavaPlugin {
         this.progressionService = null;
         this.xpDispatchService = null;
         this.debugModeService = null;
-        this.craftingRecipeTagService = null;
-        this.craftingPageTrackerService = null;
         this.pathLayout = null;
 
         instance = null;
