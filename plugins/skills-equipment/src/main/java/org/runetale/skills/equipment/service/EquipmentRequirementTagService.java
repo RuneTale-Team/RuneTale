@@ -11,6 +11,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -75,6 +76,13 @@ public class EquipmentRequirementTagService {
     @Nullable
     private SkillType parseSkill(@Nonnull String itemId, int index, @Nullable String rawSkillEntry) {
         SkillType skillType = SkillType.tryParseStrict(rawSkillEntry);
+        if (skillType == null && rawSkillEntry != null) {
+            String normalizedSkill = rawSkillEntry.trim().toLowerCase(Locale.ROOT);
+            String aliased = this.equipmentConfig.skillAliases().get(normalizedSkill);
+            if (aliased != null) {
+                skillType = SkillType.tryParseStrict(aliased);
+            }
+        }
         if (skillType == null) {
             LOGGER.atWarning().log("Invalid %s entry '%s' at index %d on item %s; skipping",
                     this.equipmentConfig.tagSkillRequired(),

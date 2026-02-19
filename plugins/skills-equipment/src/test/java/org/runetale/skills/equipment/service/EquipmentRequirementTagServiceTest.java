@@ -36,7 +36,7 @@ class EquipmentRequirementTagServiceTest {
         List<SkillRequirement> parsed = service.parseRequirements(
                 "RuneTale_Helmet",
                 Map.of(
-                        "EquipSkillRequirement", new String[]{"defense", "not_a_skill"},
+                        "EquipSkillRequirement", new String[]{"defence", "not_a_skill"},
                         "EquipLevelRequirement", new String[]{"NaN", "50"}));
 
         assertThat(parsed).hasSize(1);
@@ -62,6 +62,7 @@ class EquipmentRequirementTagServiceTest {
                 ":",
                 false,
                 1,
+                Map.of("defence", "defense"),
                 true,
                 true,
                 false,

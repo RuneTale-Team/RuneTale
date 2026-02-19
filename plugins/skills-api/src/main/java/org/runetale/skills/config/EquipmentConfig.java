@@ -15,6 +15,7 @@ public record EquipmentConfig(
         @Nonnull String tagValueSeparator,
         boolean requireLocationMatchBetweenTags,
         int defaultRequiredLevel,
+        @Nonnull Map<String, String> skillAliases,
         boolean enforceArmor,
         boolean enforceActiveHand,
         boolean enforceActiveHandReconcile,
@@ -33,6 +34,7 @@ public record EquipmentConfig(
 
     private static final String RESOURCE_PATH = "Skills/Config/equipment.properties";
     private static final String LOCATION_ALIAS_PREFIX = "locationAlias.";
+    private static final String SKILL_ALIAS_PREFIX = "skillAlias.";
 
     @Nonnull
     public static EquipmentConfig load(@Nonnull Path externalConfigRoot) {
@@ -46,6 +48,7 @@ public record EquipmentConfig(
                 ConfigResourceLoader.stringValue(properties, "tag.valueSeparator", ":"),
                 booleanValue(properties, "requireLocationMatchBetweenTags", false),
                 defaultRequiredLevel,
+                parseSkillAliases(properties),
                 booleanValue(properties, "enforce.armor", true),
                 booleanValue(properties, "enforce.activeHand", false),
                 booleanValue(properties, "enforce.activeHandReconcile", false),
@@ -105,6 +108,26 @@ public record EquipmentConfig(
         }
 
         return Map.copyOf(aliasMap);
+    }
+
+    @Nonnull
+    private static Map<String, String> parseSkillAliases(@Nonnull Properties properties) {
+        Map<String, String> aliases = new HashMap<>();
+        for (String key : properties.stringPropertyNames()) {
+            if (!key.startsWith(SKILL_ALIAS_PREFIX)) {
+                continue;
+            }
+
+            String alias = normalizeToken(key.substring(SKILL_ALIAS_PREFIX.length()));
+            String target = normalizeToken(properties.getProperty(key, ""));
+            if (alias.isEmpty() || target.isEmpty()) {
+                continue;
+            }
+            aliases.put(alias, target);
+        }
+
+        aliases.putIfAbsent("defence", "defense");
+        return Map.copyOf(aliases);
     }
 
     @Nonnull
