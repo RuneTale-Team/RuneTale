@@ -10,7 +10,6 @@ import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.equipment.config.EquipmentExternalConfigBootstrap;
 import org.runetale.skills.equipment.service.EquipmentGateNotificationService;
 import org.runetale.skills.equipment.service.EquipmentRequirementTagService;
-import org.runetale.skills.equipment.system.ArmorEquipRollbackListener;
 import org.runetale.skills.equipment.system.EquipmentRequirementEnforcementSystem;
 import org.runetale.skills.equipment.system.ToolUseBreakBlockGateSystem;
 import org.runetale.skills.equipment.system.ToolUseDamageBlockGateSystem;
@@ -80,14 +79,6 @@ public class EquipmentSkillsPlugin extends JavaPlugin {
         }
 
         if (this.equipmentConfig.enforceArmor()) {
-            ArmorEquipRollbackListener rollbackListener = new ArmorEquipRollbackListener(
-                    runtimeApi,
-                    this.requirementTagService,
-                    this.notificationService);
-            this.getEventRegistry().registerGlobal(
-                    com.hypixel.hytale.server.core.event.events.entity.LivingEntityInventoryChangeEvent.class,
-                    rollbackListener::handle);
-
             this.getEntityStoreRegistry().registerSystem(new EquipmentRequirementEnforcementSystem(
                     runtimeApi,
                     this.equipmentConfig,

@@ -5,10 +5,12 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.DelayedSystem;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.ItemArmorSlot;
+import com.hypixel.hytale.server.core.asset.type.item.config.ItemArmor;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.Inventory;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
+import com.hypixel.hytale.server.core.inventory.container.filter.FilterActionType;
 import com.hypixel.hytale.server.core.inventory.transaction.ItemStackTransaction;
 import com.hypixel.hytale.server.core.inventory.transaction.MoveTransaction;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -60,6 +62,9 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             if (player == null) {
                 continue;
             }
+
+            installArmorFilters(store, ref, playerRef, player);
+
             if (isCreativeExempt(player)) {
                 continue;
             }
@@ -67,6 +72,53 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             if (this.equipmentConfig.enforceArmor()) {
                 enforceArmor(store, ref, playerRef, player);
             }
+        }
+    }
+
+    private void installArmorFilters(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull Ref<EntityStore> ref,
+            @Nonnull PlayerRef playerRef,
+            @Nonnull Player player) {
+        ItemContainer armor = player.getInventory().getArmor();
+        for (short slot = 0; slot < armor.getCapacity(); slot++) {
+            final short armorSlot = slot;
+            armor.setSlotFilter(FilterActionType.ADD, slot, (actionType, container, targetSlot, itemStack) -> {
+                if (itemStack == null || ItemStack.isEmpty(itemStack)) {
+                    return true;
+                }
+
+                ItemArmor armorConfig = itemStack.getItem().getArmor();
+                if (armorConfig == null) {
+                    return false;
+                }
+
+                if (armorSlot >= ItemArmorSlot.VALUES.length) {
+                    return false;
+                }
+
+                ItemArmorSlot expectedSlot = ItemArmorSlot.fromValue(armorSlot);
+                if (armorConfig.getArmorSlot() != expectedSlot) {
+                    return false;
+                }
+
+                if (player.getGameMode() == GameMode.Creative) {
+                    return true;
+                }
+
+                BlockedRequirement blocked = findFirstUnmetRequirement(store, ref, itemStack);
+                if (blocked == null) {
+                    return true;
+                }
+
+                this.notificationService.sendBlockedEquipNotice(
+                        playerRef,
+                        blocked.requirement(),
+                        blocked.currentLevel(),
+                        itemStack.getItem().getId(),
+                        EquipmentLocation.fromArmorSlot(expectedSlot));
+                return false;
+            });
         }
     }
 

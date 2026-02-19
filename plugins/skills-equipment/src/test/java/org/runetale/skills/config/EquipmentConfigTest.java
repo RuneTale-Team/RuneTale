@@ -27,7 +27,6 @@ class EquipmentConfigTest {
         assertThat(config.activeSectionTools()).isEqualTo(-8);
         assertThat(config.activeSelectionSlotsHotbar()).isEqualTo(9);
         assertThat(config.activeSelectionSlotsTools()).isEqualTo(9);
-        assertThat(config.skillAliases()).containsEntry("defence", "defense");
         assertThat(config.locationAliases()).containsKeys("mainhand", "head", "chest", "hands", "legs");
     }
 
@@ -38,7 +37,6 @@ class EquipmentConfigTest {
                 enforce.activeHand=true
                 enforce.activeHandReconcile=true
                 enforce.toolUse.entityDamage=false
-                skillAlias.guardian=defense
                 activeSection.hotbar=-5
                 activeSelectionSlots.tools=7
                 armorScanTickSeconds=0.75
@@ -54,7 +52,6 @@ class EquipmentConfigTest {
         assertThat(config.enforceToolUseEntityDamage()).isFalse();
         assertThat(config.activeSectionHotbar()).isEqualTo(-5);
         assertThat(config.activeSelectionSlotsTools()).isEqualTo(7);
-        assertThat(config.skillAliases()).containsEntry("guardian", "defense");
         assertThat(config.armorScanTickSeconds()).isEqualTo(0.75F);
         assertThat(config.tagSkillRequired()).isEqualTo("EquipSkillRequirement");
         assertThat(config.locationAliases().get("mainhand")).containsExactly("main", "mh");

@@ -48,10 +48,6 @@ public enum SkillType {
 		}
 
 		String normalized = raw.trim().toUpperCase(Locale.ROOT);
-		if ("DEFENSE".equals(normalized)) {
-			return DEFENCE;
-		}
-
 		try {
 			return SkillType.valueOf(normalized);
 		} catch (IllegalArgumentException ignored) {

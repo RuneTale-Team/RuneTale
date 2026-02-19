@@ -62,7 +62,6 @@ class EquipmentRequirementTagServiceTest {
                 ":",
                 false,
                 1,
-                Map.of("defence", "defense"),
                 true,
                 true,
                 false,
