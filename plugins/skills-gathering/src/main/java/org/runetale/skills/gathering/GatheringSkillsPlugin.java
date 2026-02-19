@@ -5,10 +5,12 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.api.SkillsRuntimeRegistry;
+import org.runetale.skills.command.SkillsBypassCommand;
 import org.runetale.skills.command.SkillsPageCommand;
 import org.runetale.skills.config.HeuristicsConfig;
 import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.gathering.config.GatheringExternalConfigBootstrap;
+import org.runetale.skills.service.GatheringBypassService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 
@@ -20,6 +22,7 @@ public class GatheringSkillsPlugin extends JavaPlugin {
 
     private SkillNodeLookupService nodeLookupService;
     private HeuristicsConfig heuristicsConfig;
+    private GatheringBypassService bypassService;
 
     public SkillNodeLookupService getNodeLookupService() {
         return this.nodeLookupService;
@@ -44,6 +47,7 @@ public class GatheringSkillsPlugin extends JavaPlugin {
         this.heuristicsConfig = HeuristicsConfig.load(pathLayout.pluginConfigRoot());
         this.nodeLookupService = new SkillNodeLookupService(pathLayout.pluginConfigRoot());
         this.nodeLookupService.initializeDefaults();
+        this.bypassService = new GatheringBypassService();
     }
 
     private void registerCommands() {
@@ -57,6 +61,7 @@ public class GatheringSkillsPlugin extends JavaPlugin {
                 new SkillsPageCommand(
                         runtimeApi,
                         this.nodeLookupService));
+        this.getCommandRegistry().registerCommand(new SkillsBypassCommand(this.bypassService));
     }
 
     private void registerSystems() {
@@ -71,6 +76,7 @@ public class GatheringSkillsPlugin extends JavaPlugin {
                         runtimeApi,
                         this.nodeLookupService,
                         this.heuristicsConfig,
+                        this.bypassService,
                         "skills"));
     }
 
@@ -84,5 +90,6 @@ public class GatheringSkillsPlugin extends JavaPlugin {
         LOGGER.atInfo().log("Shutting down skills gathering plugin...");
         this.nodeLookupService = null;
         this.heuristicsConfig = null;
+        this.bypassService = null;
     }
 }

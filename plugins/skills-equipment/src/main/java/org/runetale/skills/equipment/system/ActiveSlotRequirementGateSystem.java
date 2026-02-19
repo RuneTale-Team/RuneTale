@@ -47,7 +47,7 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
     public void handle(int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
             @Nonnull Store<EntityStore> store,
             @Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull SwitchActiveSlotEvent event) {
-        if (event.isCancelled() || event.isServerRequest() || !this.equipmentConfig.enforceActiveHand()) {
+        if (event.isCancelled() || !this.equipmentConfig.enforceActiveHand()) {
             return;
         }
 
