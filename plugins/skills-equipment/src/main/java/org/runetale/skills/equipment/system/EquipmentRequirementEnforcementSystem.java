@@ -13,7 +13,6 @@ import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.container.filter.FilterActionType;
 import com.hypixel.hytale.server.core.inventory.transaction.ItemStackTransaction;
 import com.hypixel.hytale.server.core.inventory.transaction.MoveTransaction;
-import com.hypixel.hytale.server.core.inventory.transaction.SlotTransaction;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -149,19 +148,7 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
                     equipped.getQuantity(),
                     inventory.getCombinedBackpackStorageHotbar());
 
-            boolean removed = transaction.succeeded();
-            if (!removed) {
-                removed = trySwapBackWithCompatibleArmor(
-                        store,
-                        ref,
-                        inventory,
-                        armor,
-                        (short) slotIndex,
-                        equipped,
-                        armorSlot);
-            }
-
-            if (removed) {
+            if (transaction.succeeded()) {
                 this.notificationService.sendBlockedEquipNotice(
                         playerRef,
                         blocked.requirement(),
@@ -170,52 +157,6 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
                         location);
             }
         }
-    }
-
-    private boolean trySwapBackWithCompatibleArmor(
-            @Nonnull Store<EntityStore> store,
-            @Nonnull Ref<EntityStore> ref,
-            @Nonnull Inventory inventory,
-            @Nonnull ItemContainer armor,
-            short armorSlotIndex,
-            @Nonnull ItemStack blockedArmor,
-            @Nonnull ItemArmorSlot requiredArmorSlot) {
-        ItemContainer[] candidates = new ItemContainer[]{
-                inventory.getHotbar(),
-                inventory.getStorage(),
-                inventory.getBackpack(),
-                inventory.getUtility(),
-                inventory.getTools()
-        };
-
-        for (ItemContainer candidateContainer : candidates) {
-            for (short candidateSlot = 0; candidateSlot < candidateContainer.getCapacity(); candidateSlot++) {
-                ItemStack candidate = candidateContainer.getItemStack(candidateSlot);
-                if (candidate == null || ItemStack.isEmpty(candidate)) {
-                    continue;
-                }
-
-                ItemArmor candidateArmor = candidate.getItem().getArmor();
-                if (candidateArmor == null || candidateArmor.getArmorSlot() != requiredArmorSlot) {
-                    continue;
-                }
-
-                if (findFirstUnmetRequirement(store, ref, candidate) != null) {
-                    continue;
-                }
-
-                MoveTransaction<SlotTransaction> swap = armor.moveItemStackFromSlotToSlot(
-                        armorSlotIndex,
-                        blockedArmor.getQuantity(),
-                        candidateContainer,
-                        candidateSlot);
-                if (swap.succeeded()) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     @Nullable
