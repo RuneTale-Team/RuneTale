@@ -44,7 +44,7 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
 
     @Override
     public void delayedTick(float deltaTime, int systemIndex, @Nonnull Store<EntityStore> store) {
-        if (!this.equipmentConfig.enforceArmor() && !this.equipmentConfig.enforceActiveHand()) {
+        if (!this.equipmentConfig.enforceArmor() && !this.equipmentConfig.enforceActiveHandReconcile()) {
             return;
         }
 
@@ -63,7 +63,7 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
             if (this.equipmentConfig.enforceArmor()) {
                 enforceArmor(store, ref, playerRef, player);
             }
-            if (this.equipmentConfig.enforceActiveHand()) {
+            if (this.equipmentConfig.enforceActiveHandReconcile()) {
                 enforceActiveHand(store, ref, playerRef, player);
             }
         }

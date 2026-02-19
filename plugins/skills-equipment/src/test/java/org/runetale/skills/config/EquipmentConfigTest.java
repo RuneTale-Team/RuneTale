@@ -19,6 +19,7 @@ class EquipmentConfigTest {
         assertThat(config.tagLevelRequirement()).isEqualTo("EquipLevelRequirement");
         assertThat(config.enforceArmor()).isTrue();
         assertThat(config.enforceActiveHand()).isTrue();
+        assertThat(config.enforceActiveHandReconcile()).isFalse();
         assertThat(config.activeSectionHotbar()).isEqualTo(-1);
         assertThat(config.activeSectionTools()).isEqualTo(-8);
         assertThat(config.activeSelectionSlotsHotbar()).isEqualTo(9);
@@ -31,6 +32,7 @@ class EquipmentConfigTest {
         write(tempDir, "Config/equipment.properties", """
                 enforce.armor=false
                 enforce.activeHand=true
+                enforce.activeHandReconcile=true
                 activeSection.hotbar=-5
                 activeSelectionSlots.tools=7
                 armorScanTickSeconds=0.75
@@ -42,6 +44,7 @@ class EquipmentConfigTest {
 
         assertThat(config.enforceArmor()).isFalse();
         assertThat(config.enforceActiveHand()).isTrue();
+        assertThat(config.enforceActiveHandReconcile()).isTrue();
         assertThat(config.activeSectionHotbar()).isEqualTo(-5);
         assertThat(config.activeSelectionSlotsTools()).isEqualTo(7);
         assertThat(config.armorScanTickSeconds()).isEqualTo(0.75F);

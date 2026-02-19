@@ -64,6 +64,7 @@ class EquipmentRequirementTagServiceTest {
                 1,
                 true,
                 true,
+                false,
                 -1,
                 -8,
                 9,

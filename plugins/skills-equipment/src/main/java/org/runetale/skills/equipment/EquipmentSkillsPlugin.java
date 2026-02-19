@@ -63,7 +63,7 @@ public class EquipmentSkillsPlugin extends JavaPlugin {
                     this.notificationService));
         }
 
-        if (this.equipmentConfig.enforceArmor() || this.equipmentConfig.enforceActiveHand()) {
+        if (this.equipmentConfig.enforceArmor() || this.equipmentConfig.enforceActiveHandReconcile()) {
             this.getEntityStoreRegistry().registerSystem(new EquipmentRequirementEnforcementSystem(
                     runtimeApi,
                     this.equipmentConfig,
