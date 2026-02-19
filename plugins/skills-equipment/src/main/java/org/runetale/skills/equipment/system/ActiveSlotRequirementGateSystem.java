@@ -6,6 +6,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
+import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.SwitchActiveSlotEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
@@ -59,6 +60,9 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
             player = store.getComponent(ref, Player.getComponentType());
         }
         if (player == null) {
+            return;
+        }
+        if (isCreativeExempt(player)) {
             return;
         }
 
@@ -121,6 +125,10 @@ public class ActiveSlotRequirementGateSystem extends EntityEventSystem<EntitySto
     @Override
     public Query<EntityStore> getQuery() {
         return this.query;
+    }
+
+    private boolean isCreativeExempt(@Nonnull Player player) {
+        return player.getGameMode() == GameMode.Creative;
     }
 
     private record BlockedRequirement(@Nonnull SkillRequirement requirement, int currentLevel) {

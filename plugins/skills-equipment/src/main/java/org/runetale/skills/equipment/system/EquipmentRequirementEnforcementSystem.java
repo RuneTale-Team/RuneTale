@@ -3,6 +3,7 @@ package org.runetale.skills.equipment.system;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.DelayedSystem;
+import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.ItemArmorSlot;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.Inventory;
@@ -57,6 +58,9 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
 
             Player player = store.getComponent(ref, Player.getComponentType());
             if (player == null) {
+                continue;
+            }
+            if (isCreativeExempt(player)) {
                 continue;
             }
 
@@ -217,5 +221,9 @@ public class EquipmentRequirementEnforcementSystem extends DelayedSystem<EntityS
     }
 
     private record BlockedRequirement(@Nonnull SkillRequirement requirement, int currentLevel) {
+    }
+
+    private boolean isCreativeExempt(@Nonnull Player player) {
+        return player.getGameMode() == GameMode.Creative;
     }
 }
