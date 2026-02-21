@@ -151,23 +151,21 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 			int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
 			boolean unlocked = smithingLevel >= requiredLevel;
 			boolean hasMaterials = CraftingPageSupport.hasRequiredMaterials(player, recipe);
+			boolean requirementsMet = unlocked && hasMaterials;
 
 			if (!unlocked) {
 				commandBuilder.set(cardSelector + " #CardStatus.Text", "Requires Lv " + requiredLevel + " Smithing");
 				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#d7a6a6");
-				commandBuilder.set(cardSelector + " #LockOverlay.Visible", true);
-				commandBuilder.set(cardSelector + " #MissingMaterialsOutline.Visible", false);
 			} else if (!hasMaterials) {
-				commandBuilder.set(cardSelector + " #CardStatus.Text", "Unlocked");
-				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#99afc6");
-				commandBuilder.set(cardSelector + " #LockOverlay.Visible", false);
-				commandBuilder.set(cardSelector + " #MissingMaterialsOutline.Visible", true);
+				commandBuilder.set(cardSelector + " #CardStatus.Text", "Materials Required");
+				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#d7a6a6");
 			} else {
 				commandBuilder.set(cardSelector + " #CardStatus.Text", "Unlocked");
 				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#99afc6");
-				commandBuilder.set(cardSelector + " #LockOverlay.Visible", false);
-				commandBuilder.set(cardSelector + " #MissingMaterialsOutline.Visible", false);
 			}
+			commandBuilder.set(cardSelector + " #LockOverlay.Visible", !unlocked);
+			commandBuilder.set(cardSelector + " #RequirementDimOverlay.Visible", !requirementsMet);
+			commandBuilder.set(cardSelector + " #MissingMaterialsOutline.Visible", !requirementsMet);
 		}
 
 		if (recipes.isEmpty()) {
