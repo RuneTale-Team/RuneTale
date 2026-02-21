@@ -32,7 +32,10 @@ public class PlayerSkillProfileComponent implements Component<EntityStore> {
 			PlayerSkillProfileComponent::new)
 			.append(
 					new KeyedCodec<>("SkillProgress", new MapCodec<>(SkillProgress.CODEC, HashMap::new, false)),
-					(component, map) -> component.skillProgressByName = map == null ? new HashMap<>() : map,
+					(component, map) -> {
+						component.skillProgressByName = map == null ? new HashMap<>() : map;
+						component.migrateLegacySkillKeys();
+					},
 					PlayerSkillProfileComponent::getRawSkillProgressByName)
 			.add()
 			.build();
@@ -56,6 +59,7 @@ public class PlayerSkillProfileComponent implements Component<EntityStore> {
 	 */
 	@Nonnull
 	public SkillProgress getOrCreate(@Nonnull SkillType skillType) {
+		migrateLegacySkillKeys();
 		return skillProgressByName.computeIfAbsent(skillType.name(), ignored -> new SkillProgress(0L, 1));
 	}
 
@@ -85,7 +89,15 @@ public class PlayerSkillProfileComponent implements Component<EntityStore> {
 	 */
 	@Nonnull
 	public Map<String, SkillProgress> getRawSkillProgressByName() {
+		migrateLegacySkillKeys();
 		return skillProgressByName;
+	}
+
+	private void migrateLegacySkillKeys() {
+		SkillProgress legacy = this.skillProgressByName.remove("DEFENSE");
+		if (legacy != null && !this.skillProgressByName.containsKey("DEFENCE")) {
+			this.skillProgressByName.put("DEFENCE", legacy);
+		}
 	}
 
 	/**

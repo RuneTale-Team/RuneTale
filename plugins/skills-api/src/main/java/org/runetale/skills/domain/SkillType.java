@@ -13,7 +13,7 @@ import java.util.Locale;
 public enum SkillType {
 	ATTACK,
 	STRENGTH,
-	DEFENSE,
+	DEFENCE,
 	RANGED,
 	WOODCUTTING,
 	MINING,
@@ -47,8 +47,9 @@ public enum SkillType {
 			return null;
 		}
 
+		String normalized = raw.trim().toUpperCase(Locale.ROOT);
 		try {
-			return SkillType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+			return SkillType.valueOf(normalized);
 		} catch (IllegalArgumentException ignored) {
 			return null;
 		}

@@ -53,7 +53,7 @@ class CombatDamageXpSystemContractTest {
 	}
 
 	@Test
-	void controlledMeleeDamageSplitsXpAcrossAttackStrengthAndDefense() {
+	void controlledMeleeDamageSplitsXpAcrossAttackStrengthAndDefence() {
 		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
 		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
@@ -86,9 +86,9 @@ class CombatDamageXpSystemContractTest {
 		verify(dispatchService).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
-				eq(SkillType.DEFENSE),
+				eq(SkillType.DEFENCE),
 				eq(2.0D),
-				eq("combat:melee:controlled:defense"),
+				eq("combat:melee:controlled:defence"),
 				eq(true));
 		verifyNoMoreInteractions(dispatchService);
 	}
@@ -121,7 +121,7 @@ class CombatDamageXpSystemContractTest {
 	}
 
 	@Test
-	void defensiveMeleeDamageRoutesAllXpToDefense() {
+	void defensiveMeleeDamageRoutesAllXpToDefence() {
 		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
 		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
@@ -140,7 +140,7 @@ class CombatDamageXpSystemContractTest {
 		verify(dispatchService).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
-				eq(SkillType.DEFENSE),
+				eq(SkillType.DEFENCE),
 				eq(12.0D),
 				eq("combat:melee:defensive"),
 				eq(true));
@@ -181,9 +181,9 @@ class CombatDamageXpSystemContractTest {
 		verify(dispatchService).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
-				eq(SkillType.DEFENSE),
+				eq(SkillType.DEFENCE),
 				eq(2.0D),
-				eq("combat:melee:controlled:defense"),
+				eq("combat:melee:controlled:defence"),
 				eq(true));
 		verifyNoMoreInteractions(dispatchService);
 	}
@@ -201,8 +201,8 @@ class CombatDamageXpSystemContractTest {
 				"Defensive",
 				"Controlled:Attack",
 				"Controlled:Strength",
-				"Controlled:Defense",
-				"Combat:Block:Defense",
+				"Controlled:Defence",
+				"Combat:Block:Defence",
 				List.of("projectile"));
 		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, config);
 
@@ -255,8 +255,8 @@ class CombatDamageXpSystemContractTest {
 				"defensive",
 				"controlled:attack",
 				"controlled:strength",
-				"controlled:defense",
-				"combat:block:defense",
+				"controlled:defence",
+				"combat:block:defence",
 				List.of("projectile"));
 	}
 

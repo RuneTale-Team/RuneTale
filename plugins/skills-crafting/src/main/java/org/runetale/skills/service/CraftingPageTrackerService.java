@@ -1,12 +1,9 @@
 package org.runetale.skills.service;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,18 +12,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CraftingPageTrackerService {
 
-	private final Map<UUID, Ref<EntityStore>> craftingRefByPlayer = new ConcurrentHashMap<>();
+	private final Set<UUID> trackedPlayerIds = ConcurrentHashMap.newKeySet();
 
-	public void trackOpenPage(@Nonnull UUID playerId, @Nonnull Ref<EntityStore> playerRef) {
-		this.craftingRefByPlayer.put(playerId, playerRef);
+	public void trackOpenPage(@Nonnull UUID playerId) {
+		this.trackedPlayerIds.add(playerId);
 	}
 
 	public void untrackOpenPage(@Nonnull UUID playerId) {
-		this.craftingRefByPlayer.remove(playerId);
+		this.trackedPlayerIds.remove(playerId);
 	}
 
 	@Nonnull
-	public Collection<Ref<EntityStore>> snapshotTrackedRefs() {
-		return new ArrayList<>(this.craftingRefByPlayer.values());
+	public Collection<UUID> snapshotTrackedPlayerIds() {
+		return new ArrayList<>(this.trackedPlayerIds);
 	}
 }

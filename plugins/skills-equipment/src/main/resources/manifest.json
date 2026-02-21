@@ -1,0 +1,18 @@
+{
+  "Group": "RuneTale",
+  "Name": "SkillsEquipmentPlugin",
+  "Version": "0.1.0",
+  "Main": "org.runetale.skills.equipment.EquipmentSkillsPlugin",
+  "Dependencies": {
+    "RuneTale:SkillsApiPlugin": ">=0.1.0",
+    "RuneTale:SkillsPlugin": ">=0.1.0"
+  },
+  "Authors": [
+    {
+      "Name": "Nico Piel",
+      "Email": "nicopiel@mailbox.org"
+    }
+  ],
+  "ServerVersion": "${hytaleServerVersion}",
+  "IncludesAssetPack": false
+}

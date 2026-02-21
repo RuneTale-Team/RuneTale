@@ -7,9 +7,11 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -18,6 +20,7 @@ import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.config.HeuristicsConfig;
 import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.service.GatheringBypassService;
 import org.runetale.skills.service.SkillNodeLookupService;
 
 import javax.annotation.Nonnull;
@@ -35,6 +38,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	private final SkillsRuntimeApi runtimeApi;
 	private final SkillNodeLookupService nodeLookupService;
 	private final HeuristicsConfig heuristicsConfig;
+	private final GatheringBypassService bypassService;
 	private final String debugPluginKey;
 	private final Query<EntityStore> query;
 
@@ -42,11 +46,13 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull SkillNodeLookupService nodeLookupService,
 			@Nonnull HeuristicsConfig heuristicsConfig,
+			@Nonnull GatheringBypassService bypassService,
 			@Nonnull String debugPluginKey) {
 		super(BreakBlockEvent.class);
 		this.runtimeApi = runtimeApi;
 		this.nodeLookupService = nodeLookupService;
 		this.heuristicsConfig = heuristicsConfig;
+		this.bypassService = bypassService;
 		this.debugPluginKey = debugPluginKey;
 		this.query = Query.and(PlayerRef.getComponentType());
 	}
@@ -55,15 +61,25 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 	public void handle(int index, @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
 			@Nonnull Store<EntityStore> store,
 			@Nonnull CommandBuffer<EntityStore> commandBuffer, @Nonnull BreakBlockEvent event) {
+		if (event.isCancelled()) {
+			return;
+		}
 
 		Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
 		PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
+		Player player = commandBuffer.getComponent(ref, Player.getComponentType());
+		if (player == null) {
+			player = store.getComponent(ref, Player.getComponentType());
+		}
+		boolean bypassActive = isBreakGateBypassed(player);
+		String bypassMode = bypassMode(player);
 		BlockType brokenBlockType = event.getBlockType();
 		if (isSkillsDebugEnabled()) {
-			LOGGER.atInfo().log("[Skills][Diag] Break event received blockId=%s cancelled=%s player=%s",
+			LOGGER.atInfo().log("[Skills][Diag] Break event received blockId=%s cancelled=%s player=%s bypass=%s",
 					brokenBlockType.getId(),
 					event.isCancelled(),
-					playerRef == null ? "<missing>" : playerRef.getUuid());
+					playerRef == null ? "<missing>" : playerRef.getUuid(),
+					bypassMode);
 		}
 
 		SkillNodeDefinition node = this.nodeLookupService.findByBlockId(brokenBlockType.getId());
@@ -74,6 +90,15 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 						looksLikeSkillNodeCandidate(brokenBlockType.getId()));
 			}
 			if (looksLikeSkillNodeCandidate(brokenBlockType.getId())) {
+				if (bypassActive) {
+					if (isSkillsDebugEnabled()) {
+						LOGGER.atInfo().log("[Skills][Diag] Bypass allowed unconfigured node-like block mode=%s block=%s player=%s",
+								bypassMode,
+								brokenBlockType.getId(),
+								playerRef == null ? "<missing>" : playerRef.getUuid());
+					}
+					return;
+				}
 				LOGGER.atWarning().log(
 						"[Skills] Unconfigured node-like block encountered id=%s. Add matching blockId/blockIds in Skills/Nodes.",
 						brokenBlockType.getId());
@@ -100,7 +125,7 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 		SkillType skill = node.getSkillType();
 		int levelBefore = this.runtimeApi.getSkillLevel(commandBuffer, ref, skill);
 
-		if (levelBefore < node.getRequiredSkillLevel()) {
+		if (levelBefore < node.getRequiredSkillLevel() && !bypassActive) {
 			if (isSkillsDebugEnabled()) {
 				LOGGER.atInfo().log("[Skills][Diag] Level gate blocked break node=%s skill=%s level=%d required=%d block=%s",
 						node.getId(),
@@ -115,6 +140,15 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 							levelBefore, node.getRequiredSkillLevel()),
 					NotificationStyle.Warning);
 			return;
+		}
+		if (levelBefore < node.getRequiredSkillLevel() && isSkillsDebugEnabled()) {
+			LOGGER.atInfo().log("[Skills][Diag] Bypass ignored level gate mode=%s node=%s skill=%s level=%d required=%d block=%s",
+					bypassMode,
+					node.getId(),
+					skill,
+					levelBefore,
+					node.getRequiredSkillLevel(),
+					brokenBlockType.getId());
 		}
 
 		boolean queued = this.runtimeApi.grantSkillXp(
@@ -174,6 +208,31 @@ public class SkillNodeBreakBlockSystem extends EntityEventSystem<EntityStore, Br
 
 	private boolean isSkillsDebugEnabled() {
 		return this.runtimeApi.isDebugEnabled(this.debugPluginKey);
+	}
+
+	private boolean isBreakGateBypassed(@Nullable Player player) {
+		return isCreativeExempt(player) || isOpExempt(player);
+	}
+
+	@Nonnull
+	private String bypassMode(@Nullable Player player) {
+		if (isCreativeExempt(player)) {
+			return "creative";
+		}
+		if (isOpExempt(player)) {
+			return "op";
+		}
+		return "none";
+	}
+
+	private boolean isCreativeExempt(@Nullable Player player) {
+		return player != null && player.getGameMode() == GameMode.Creative;
+	}
+
+	private boolean isOpExempt(@Nullable Player player) {
+		return player != null
+				&& this.bypassService.isOpExemptionEnabled()
+				&& player.hasPermission(GatheringBypassService.OP_EXEMPT_PERMISSION);
 	}
 
 }

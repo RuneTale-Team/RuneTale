@@ -135,7 +135,7 @@ Group {
     }
 
     Label #ModeDefensiveDesc {
-      Text: "Melee XP -> Defense";
+      Text: "Melee XP -> Defence";
       Anchor: (Height: 22, Bottom: 8);
       Style: @ModeDescStyle;
     }
@@ -147,7 +147,7 @@ Group {
     }
 
     Label #ModeControlledDesc {
-      Text: "Melee XP -> Attack/Strength/Defense split";
+      Text: "Melee XP -> Attack/Strength/Defence split";
       Anchor: (Height: 22);
       Style: @ModeDescStyle;
     }

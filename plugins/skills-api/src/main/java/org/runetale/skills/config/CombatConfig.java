@@ -16,8 +16,8 @@ public record CombatConfig(
         @Nonnull String sourceMeleeDefensive,
         @Nonnull String sourceMeleeControlledAttack,
         @Nonnull String sourceMeleeControlledStrength,
-        @Nonnull String sourceMeleeControlledDefense,
-        @Nonnull String sourceBlockDefense,
+        @Nonnull String sourceMeleeControlledDefence,
+        @Nonnull String sourceBlockDefence,
         @Nonnull List<String> projectileCauseTokens) {
 
     private static final String RESOURCE_PATH = "Skills/Config/combat.properties";
@@ -39,8 +39,8 @@ public record CombatConfig(
                 ConfigResourceLoader.stringValue(properties, "source.melee.defensive", "defensive"),
                 ConfigResourceLoader.stringValue(properties, "source.melee.controlled.attack", "controlled:attack"),
                 ConfigResourceLoader.stringValue(properties, "source.melee.controlled.strength", "controlled:strength"),
-                ConfigResourceLoader.stringValue(properties, "source.melee.controlled.defense", "controlled:defense"),
-                ConfigResourceLoader.stringValue(properties, "source.block.defense", "combat:block:defense"),
+                ConfigResourceLoader.stringValue(properties, "source.melee.controlled.defence", "controlled:defence"),
+                ConfigResourceLoader.stringValue(properties, "source.block.defence", "combat:block:defence"),
                 parseCsvLowercase(properties, "projectileCauseTokens", List.of("projectile")));
     }
 

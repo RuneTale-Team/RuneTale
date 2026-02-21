@@ -10,6 +10,7 @@ class CombatStyleTypeTest {
 	void tryParseSupportsAliasesAndExactModeNames() {
 		assertThat(CombatStyleType.tryParse("attack")).isEqualTo(CombatStyleType.ACCURATE);
 		assertThat(CombatStyleType.tryParse("strength")).isEqualTo(CombatStyleType.AGGRESSIVE);
+		assertThat(CombatStyleType.tryParse("defense")).isEqualTo(CombatStyleType.DEFENSIVE);
 		assertThat(CombatStyleType.tryParse("defence")).isEqualTo(CombatStyleType.DEFENSIVE);
 		assertThat(CombatStyleType.tryParse("controlled")).isEqualTo(CombatStyleType.CONTROLLED);
 	}

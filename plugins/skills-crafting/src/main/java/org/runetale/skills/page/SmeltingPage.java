@@ -151,23 +151,21 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 			int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
 			boolean unlocked = smithingLevel >= requiredLevel;
 			boolean hasMaterials = CraftingPageSupport.hasRequiredMaterials(player, recipe);
+			boolean requirementsMet = unlocked && hasMaterials;
 
 			if (!unlocked) {
 				commandBuilder.set(selector + " #RecipeStatus.Text", "Req. Lv " + requiredLevel);
 				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#d7a6a6");
-				commandBuilder.set(selector + " #LockOverlay.Visible", true);
-				commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", false);
 			} else if (!hasMaterials) {
-				commandBuilder.set(selector + " #RecipeStatus.Text", "Unlocked");
-				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#99afc6");
-				commandBuilder.set(selector + " #LockOverlay.Visible", false);
-				commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", true);
+				commandBuilder.set(selector + " #RecipeStatus.Text", "Materials Required");
+				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#d7a6a6");
 			} else {
 				commandBuilder.set(selector + " #RecipeStatus.Text", "Unlocked");
 				commandBuilder.set(selector + " #RecipeStatus.Style.TextColor", "#99afc6");
-				commandBuilder.set(selector + " #LockOverlay.Visible", false);
-				commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", false);
 			}
+			commandBuilder.set(selector + " #LockOverlay.Visible", !unlocked);
+			commandBuilder.set(selector + " #RequirementDimOverlay.Visible", !requirementsMet);
+			commandBuilder.set(selector + " #MissingMaterialsOutline.Visible", !requirementsMet);
 		}
 
 		if (!recipes.isEmpty()) {

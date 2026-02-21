@@ -3,6 +3,7 @@ import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.language.jvm.tasks.ProcessResources
 
 plugins {
     // Shadow makes “fat jars” (bundle your dependencies)
@@ -79,6 +80,8 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     apply(plugin = "java")
     apply(plugin = "com.gradleup.shadow")
 
+    val hytaleServerVersion = providers.gradleProperty("hytaleServerVersion").get()
+
     dependencies {
         "compileOnly"("com.hypixel.hytale:Server:+")
         "testCompileOnly"("com.hypixel.hytale:Server:+")
@@ -98,6 +101,13 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
 
     tasks.withType<Test>().configureEach {
         systemProperty("java.util.logging.manager", "com.hypixel.hytale.logger.backend.HytaleLogManager")
+    }
+
+    tasks.named<ProcessResources>("processResources") {
+        inputs.property("hytaleServerVersion", hytaleServerVersion)
+        filesMatching("manifest.json") {
+            expand(mapOf("hytaleServerVersion" to hytaleServerVersion))
+        }
     }
 
     // Produce a single distributable jar per plugin (no “-all” classifier)
@@ -184,7 +194,8 @@ tasks.register<Delete>("cleanDeployedPluginBundles") {
 val skillsConfigResourceDirs = listOf(
     layout.projectDirectory.dir("plugins/skills/src/main/resources/Skills"),
     layout.projectDirectory.dir("plugins/skills-gathering/src/main/resources/Skills"),
-    layout.projectDirectory.dir("plugins/skills-crafting/src/main/resources/Skills")
+    layout.projectDirectory.dir("plugins/skills-crafting/src/main/resources/Skills"),
+    layout.projectDirectory.dir("plugins/skills-equipment/src/main/resources/Skills")
 )
 val skillsConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/skills")
 

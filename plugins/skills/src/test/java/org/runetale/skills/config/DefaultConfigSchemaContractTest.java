@@ -27,8 +27,8 @@ class DefaultConfigSchemaContractTest {
 					"Skills/Config/combat.properties",
 					Set.of("xpPerDamage", "source.ranged", "source.melee.prefix", "source.melee.accurate",
 							"source.melee.aggressive", "source.melee.defensive", "source.melee.controlled.attack",
-							"source.melee.controlled.strength", "source.melee.controlled.defense",
-							"source.block.defense", "projectileCauseTokens")),
+							"source.melee.controlled.strength", "source.melee.controlled.defence",
+							"source.block.defence", "projectileCauseTokens")),
 			ConfigSchema.exact(
 					"Skills/Config/hud.properties",
 					Set.of("toast.durationMillis", "toast.fadeDurationMillis", "toast.fade.rootBackground",

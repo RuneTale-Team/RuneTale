@@ -146,14 +146,24 @@ Group {
 
   Group #LockOverlay {
     Anchor: (Full: 1);
-    Background: #05101a(0.42);
+    Background: #2d0f12(0.58);
+    Visible: false;
+  }
+
+  Group #RequirementDimOverlay {
+    Anchor: (Full: 1);
+    Background: #000000(0.16);
     Visible: false;
   }
 
   Group #MissingMaterialsOutline {
     Anchor: (Full: 1);
-    Background: (TexturePath: "Assets/UI/RecipeCatalogueItemActivePatch.png", Border: 22, Color: #d24d4d(0.80));
     Visible: false;
+
+    Group { Anchor: (Height: 4, Left: -2, Right: -2, Top: -2); Background: #d24d4d(0.92); }
+    Group { Anchor: (Height: 4, Left: -2, Right: -2, Bottom: -2); Background: #d24d4d(0.92); }
+    Group { Anchor: (Width: 4, Left: -2, Top: -2, Bottom: -2); Background: #d24d4d(0.92); }
+    Group { Anchor: (Width: 4, Right: -2, Top: -2, Bottom: -2); Background: #d24d4d(0.92); }
   }
 
   TextButton #SelectBtn {

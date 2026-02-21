@@ -77,7 +77,7 @@ public class CombatStyleCommand extends AbstractPlayerCommand {
 		if (parsedStyle == null) {
 			context.sendMessage(Message.raw("[Skills] Unknown combat mode: " + rawStyle + "."));
 			context.sendMessage(Message.raw("[Skills] Valid modes: " + CombatStyleType.validModeHint() + "."));
-			context.sendMessage(Message.raw("[Skills] Legacy aliases still work: attack, strength, defense."));
+			context.sendMessage(Message.raw("[Skills] Legacy aliases still work: attack, strength, defence."));
 			context.sendMessage(Message.raw("[Skills] Type /combatstyle help for usage examples."));
 			return;
 		}

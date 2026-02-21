@@ -9,6 +9,6 @@
       "Email": "nicopiel@mailbox.org"
     }
   ],
-  "ServerVersion": "2026.02.18-f3b8fff95",
+  "ServerVersion": "${hytaleServerVersion}",
   "IncludesAssetPack": false
 }

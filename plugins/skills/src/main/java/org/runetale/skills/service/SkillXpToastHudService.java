@@ -135,8 +135,16 @@ public class SkillXpToastHudService {
 
 	@Nonnull
 	private String skillIconTexturePath(@Nonnull SkillType skillType) {
-		String id = skillType.name().toLowerCase(Locale.ROOT);
+		String id = skillIconId(skillType);
 		return "SkillsPlugin/Assets/Icons/icon_" + id + ".png";
+	}
+
+	@Nonnull
+	private String skillIconId(@Nonnull SkillType skillType) {
+		if (skillType == SkillType.DEFENCE) {
+			return "defense";
+		}
+		return skillType.name().toLowerCase(Locale.ROOT);
 	}
 
 	@Nonnull

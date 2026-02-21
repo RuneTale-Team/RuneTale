@@ -29,8 +29,8 @@ public enum CombatStyleType {
 		return switch (this) {
 			case ACCURATE -> "Melee XP -> Attack";
 			case AGGRESSIVE -> "Melee XP -> Strength";
-			case DEFENSIVE -> "Melee XP -> Defense";
-			case CONTROLLED -> "Melee XP -> Attack/Strength/Defense split";
+			case DEFENSIVE -> "Melee XP -> Defence";
+			case CONTROLLED -> "Melee XP -> Attack/Strength/Defence split";
 		};
 	}
 
