@@ -81,7 +81,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder,
 			@Nonnull Store<EntityStore> store) {
-		this.craftingPageTrackerService.trackOpenPage(this.playerRef.getUuid(), ref);
+		this.craftingPageTrackerService.trackOpenPage(this.playerRef.getUuid());
 		CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, getLogger(), this.benchContextName);
 		commandBuilder.append(this.uiPath);
 		CraftingPageSupport.bindTierTabs(eventBuilder, availableTiers());
