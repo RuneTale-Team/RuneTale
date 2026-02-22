@@ -20,10 +20,12 @@ public class BlockRegenDefinitionService {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     private final Map<String, BlockRegenDefinition> byExactBlockId = new ConcurrentHashMap<>();
+    private final Map<String, BlockRegenDefinition> byInteractedBlockId = new ConcurrentHashMap<>();
     private final List<WildcardDefinitionMapping> wildcardMappings = new CopyOnWriteArrayList<>();
 
     public void load(@Nonnull BlockRegenConfig config) {
         this.byExactBlockId.clear();
+        this.byInteractedBlockId.clear();
         this.wildcardMappings.clear();
 
         for (BlockRegenDefinition definition : config.definitions()) {
@@ -48,6 +50,8 @@ public class BlockRegenDefinitionService {
                     previous.id(),
                     definition.id());
         }
+
+        registerInteracted(definition);
     }
 
     private void registerWildcard(@Nonnull BlockRegenDefinition definition, @Nonnull String normalizedPattern) {
@@ -56,6 +60,18 @@ public class BlockRegenDefinitionService {
                 normalizedPattern,
                 createWildcardPattern(normalizedPattern),
                 definition));
+        registerInteracted(definition);
+    }
+
+    private void registerInteracted(@Nonnull BlockRegenDefinition definition) {
+        String normalizedInteracted = normalize(definition.interactedBlockId());
+        BlockRegenDefinition previous = this.byInteractedBlockId.put(normalizedInteracted, definition);
+        if (previous != null && previous != definition) {
+            LOGGER.atWarning().log("[BlockRegen] Replaced interacted mapping block=%s oldId=%s newId=%s",
+                    definition.interactedBlockId(),
+                    previous.id(),
+                    definition.id());
+        }
     }
 
     @Nullable
@@ -82,6 +98,25 @@ public class BlockRegenDefinitionService {
             if (matches(mapping.pattern(), normalized, simplified)) {
                 return mapping.definition();
             }
+        }
+        return null;
+    }
+
+    @Nullable
+    public BlockRegenDefinition findByInteractedBlockId(@Nullable String blockId) {
+        if (blockId == null || blockId.isBlank()) {
+            return null;
+        }
+
+        String normalized = normalize(blockId);
+        BlockRegenDefinition definition = this.byInteractedBlockId.get(normalized);
+        if (definition != null) {
+            return definition;
+        }
+
+        String simplified = simplifyBlockId(normalized);
+        if (!simplified.equals(normalized)) {
+            return this.byInteractedBlockId.get(simplified);
         }
         return null;
     }

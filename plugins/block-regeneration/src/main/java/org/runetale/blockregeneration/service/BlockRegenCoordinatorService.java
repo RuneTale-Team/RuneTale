@@ -110,6 +110,14 @@ public class BlockRegenCoordinatorService {
         return this.definitionService.findByBlockId(blockId);
     }
 
+    @Nullable
+    public BlockRegenDefinition findInteractedDefinition(@Nullable String blockId) {
+        if (!this.currentConfig.enabled() || blockId == null || blockId.isBlank()) {
+            return null;
+        }
+        return this.definitionService.findByInteractedBlockId(blockId);
+    }
+
     @Nonnull
     public BlockRegenRuntimeService.MetricsSnapshot metricsSnapshot() {
         return this.runtimeService.metricsSnapshot();

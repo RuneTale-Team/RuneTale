@@ -36,6 +36,17 @@ class BlockRegenDefinitionServiceTest {
         assertThat(service.findByBlockId("mymod:mining/Ore_Iron_A")).isEqualTo(wildcard);
     }
 
+    @Test
+    void interactedBlockLookupMatchesExactId() {
+        BlockRegenDefinition wildcard = definition("wildcard", "Ore_Iron_*");
+        BlockRegenConfig config = new BlockRegenConfig(1, true, 500L, 1500L, List.of(wildcard));
+        BlockRegenDefinitionService service = new BlockRegenDefinitionService();
+
+        service.load(config);
+
+        assertThat(service.findByInteractedBlockId("Empty_Ore_Vein")).isEqualTo(wildcard);
+    }
+
     private static BlockRegenDefinition definition(String id, String pattern) {
         return new BlockRegenDefinition(
                 id,
