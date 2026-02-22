@@ -7,7 +7,9 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.DamageBlockEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -44,6 +46,13 @@ public class BlockRegenDamageGateSystem extends EntityEventSystem<EntityStore, D
         PlayerRef playerRef = commandBuffer.getComponent(ref, PlayerRef.getComponentType());
         if (playerRef == null) {
             playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+        }
+        Player player = commandBuffer.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            player = store.getComponent(ref, Player.getComponentType());
+        }
+        if (player != null && player.getGameMode() == GameMode.Creative) {
+            return;
         }
 
         Vector3i target = event.getTargetBlock();

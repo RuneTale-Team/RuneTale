@@ -127,6 +127,10 @@ public class BlockRegenCoordinatorService {
         this.runtimeService.clearAll();
     }
 
+    public void clearRuntimeStateAt(@Nonnull String worldName, int x, int y, int z) {
+        this.runtimeService.clearAt(worldName, x, y, z);
+    }
+
     public record ReloadResult(boolean enabled, int definitionsLoaded) {
     }
 

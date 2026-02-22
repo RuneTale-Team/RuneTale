@@ -74,6 +74,23 @@ class BlockRegenRuntimeServiceTest {
         assertThat(service.metricsSnapshot().activeStates()).isEqualTo(0);
     }
 
+    @Test
+    void clearAtRemovesSingleRuntimeStateAndPreventsRespawn() {
+        BlockRegenRuntimeService service = new BlockRegenRuntimeService(new Random(2L));
+        BlockRegenDefinition definition = definition(
+                "oak",
+                new GatheringTrigger(GatheringTrigger.Type.SPECIFIC, 1, 1, 1),
+                new RespawnDelay(RespawnDelay.Type.SET, 5000L, 5000L, 5000L));
+
+        service.recordSuccessfulGather("world", 4, 5, 6, "Tree_Oak", definition, 100L);
+        assertThat(service.inspect("world", 4, 5, 6)).isNotNull();
+
+        service.clearAt("world", 4, 5, 6);
+
+        assertThat(service.inspect("world", 4, 5, 6)).isNull();
+        assertThat(service.pollDueRespawns(10000L)).isEmpty();
+    }
+
     private static BlockRegenDefinition definition(
             String id,
             GatheringTrigger gathering,

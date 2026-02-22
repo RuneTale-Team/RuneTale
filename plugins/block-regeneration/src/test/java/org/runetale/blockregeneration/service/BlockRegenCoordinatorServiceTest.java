@@ -78,6 +78,32 @@ class BlockRegenCoordinatorServiceTest {
         assertThat(coordinator.inspectState("world", 1, 2, 3)).isNull();
     }
 
+    @Test
+    void clearRuntimeStateAtRemovesSpecificPosition(@TempDir Path tempDir) throws IOException {
+        BlockRegenCoordinatorService coordinator = createCoordinator(tempDir, """
+                {
+                  "enabled": true,
+                  "definitions": [
+                    {
+                      "id": "oak",
+                      "blockId": "Tree_Oak",
+                      "interactedBlockId": "Tree_Oak_Stump",
+                      "gathering": { "type": "Specific", "amount": 1 },
+                      "respawn": { "type": "Set", "millis": 1000 }
+                    }
+                  ]
+                }
+                """);
+
+        coordinator.initialize();
+        coordinator.handleSuccessfulInteraction("break", "world", 7, 8, 9, "Tree_Oak", 10L);
+        assertThat(coordinator.inspectState("world", 7, 8, 9)).isNotNull();
+
+        coordinator.clearRuntimeStateAt("world", 7, 8, 9);
+
+        assertThat(coordinator.inspectState("world", 7, 8, 9)).isNull();
+    }
+
     private static BlockRegenCoordinatorService createCoordinator(Path tempDir, String json) throws IOException {
         BlockRegenPathLayout layout = BlockRegenPathLayout.fromDataDirectory(tempDir.resolve("mods").resolve("block-regeneration-data"));
         Path blocksPath = layout.resolveConfigResourcePath("BlockRegen/config/blocks.json");

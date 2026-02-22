@@ -103,6 +103,11 @@ public class BlockRegenRuntimeService {
         this.statesByPosition.clear();
     }
 
+    public void clearAt(@Nonnull String worldName, int x, int y, int z) {
+        BlockPositionKey key = new BlockPositionKey(worldName, x, y, z);
+        this.statesByPosition.remove(key);
+    }
+
     @Nullable
     public RuntimeSnapshot inspect(@Nonnull String worldName, int x, int y, int z) {
         BlockPositionKey key = new BlockPositionKey(worldName, x, y, z);

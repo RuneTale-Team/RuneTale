@@ -7,6 +7,8 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.protocol.GameMode;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.BreakBlockEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -45,9 +47,17 @@ public class BlockRegenBreakSystem extends EntityEventSystem<EntityStore, BreakB
         if (playerRef == null) {
             playerRef = store.getComponent(ref, PlayerRef.getComponentType());
         }
+        Player player = commandBuffer.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            player = store.getComponent(ref, Player.getComponentType());
+        }
 
         Vector3i target = event.getTargetBlock();
         World world = store.getExternalData().getWorld();
+        if (player != null && player.getGameMode() == GameMode.Creative) {
+            this.coordinatorService.clearRuntimeStateAt(world.getName(), target.x, target.y, target.z);
+            return;
+        }
 
         BlockRegenCoordinatorService.HandleOutcome outcome = this.coordinatorService.handleSuccessfulInteraction(
                 "break",
