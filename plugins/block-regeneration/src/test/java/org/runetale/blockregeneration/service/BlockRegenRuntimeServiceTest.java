@@ -20,8 +20,8 @@ class BlockRegenRuntimeServiceTest {
                 new GatheringTrigger(GatheringTrigger.Type.SPECIFIC, 2, 2, 2),
                 new RespawnDelay(RespawnDelay.Type.SET, 5000L, 5000L, 5000L));
 
-        BlockRegenRuntimeService.GatherResult first = service.recordSuccessfulGather("world", 10, 20, 30, definition, 1000L);
-        BlockRegenRuntimeService.GatherResult second = service.recordSuccessfulGather("world", 10, 20, 30, definition, 2000L);
+        BlockRegenRuntimeService.GatherResult first = service.recordSuccessfulGather("world", 10, 20, 30, "Tree_Oak", definition, 1000L);
+        BlockRegenRuntimeService.GatherResult second = service.recordSuccessfulGather("world", 10, 20, 30, "Tree_Oak", definition, 2000L);
 
         assertThat(first.action()).isEqualTo(BlockRegenRuntimeService.Action.RESTORE_SOURCE);
         assertThat(second.action()).isEqualTo(BlockRegenRuntimeService.Action.DEPLETED_TO_WAITING);
@@ -44,14 +44,14 @@ class BlockRegenRuntimeServiceTest {
                 new GatheringTrigger(GatheringTrigger.Type.RANDOM, 0, 2, 3),
                 new RespawnDelay(RespawnDelay.Type.SET, 1000L, 1000L, 1000L));
 
-        BlockRegenRuntimeService.GatherResult first = service.recordSuccessfulGather("world", 1, 1, 1, definition, 0L);
+        BlockRegenRuntimeService.GatherResult first = service.recordSuccessfulGather("world", 1, 1, 1, "Tree_Oak", definition, 0L);
         assertThat(first.action()).isEqualTo(BlockRegenRuntimeService.Action.RESTORE_SOURCE);
         assertThat(first.gatherThreshold()).isBetween(2, 3);
 
         int needed = first.gatherThreshold() - first.gatherCount();
         BlockRegenRuntimeService.GatherResult result = first;
         for (int i = 0; i < needed; i++) {
-            result = service.recordSuccessfulGather("world", 1, 1, 1, definition, 0L);
+            result = service.recordSuccessfulGather("world", 1, 1, 1, "Tree_Oak", definition, 0L);
         }
 
         assertThat(result.action()).isEqualTo(BlockRegenRuntimeService.Action.DEPLETED_TO_WAITING);
@@ -65,7 +65,7 @@ class BlockRegenRuntimeServiceTest {
                 new GatheringTrigger(GatheringTrigger.Type.SPECIFIC, 1, 1, 1),
                 new RespawnDelay(RespawnDelay.Type.SET, 5000L, 5000L, 5000L));
 
-        service.recordSuccessfulGather("world", 1, 2, 3, definition, 10L);
+        service.recordSuccessfulGather("world", 1, 2, 3, "Tree_Oak", definition, 10L);
         assertThat(service.inspect("world", 1, 2, 3)).isNotNull();
 
         service.clearAll();

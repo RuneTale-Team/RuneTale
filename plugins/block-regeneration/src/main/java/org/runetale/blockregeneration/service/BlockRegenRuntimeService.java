@@ -35,12 +35,13 @@ public class BlockRegenRuntimeService {
             int x,
             int y,
             int z,
+            @Nonnull String sourceBlockId,
             @Nonnull BlockRegenDefinition definition,
             long nowMillis) {
         this.matchedInteractions.incrementAndGet();
 
         BlockPositionKey key = new BlockPositionKey(worldName, x, y, z);
-        NodeState state = this.statesByPosition.computeIfAbsent(key, unused -> createActiveState(definition));
+        NodeState state = this.statesByPosition.computeIfAbsent(key, unused -> createActiveState(definition, sourceBlockId));
 
         if (state.phase == Phase.WAITING_RESPAWN) {
             this.blockedInteractions.incrementAndGet();
@@ -48,7 +49,7 @@ public class BlockRegenRuntimeService {
         }
 
         if (!state.definitionId.equals(definition.id())) {
-            state = createActiveState(definition);
+            state = createActiveState(definition, sourceBlockId);
             this.statesByPosition.put(key, state);
         }
 
@@ -62,7 +63,7 @@ public class BlockRegenRuntimeService {
             return GatherResult.depletedToWaiting(definition.interactedBlockId(), state.respawnDueMillis);
         }
 
-        return GatherResult.restoredSource(definition.blockIdPattern(), state.currentGatherCount, state.currentThreshold);
+        return GatherResult.restoredSource(state.originalBlockId, state.currentGatherCount, state.currentThreshold);
     }
 
     public boolean shouldBlockInteractionWhileWaiting(@Nonnull String worldName, int x, int y, int z) {
@@ -130,11 +131,11 @@ public class BlockRegenRuntimeService {
     }
 
     @Nonnull
-    private NodeState createActiveState(@Nonnull BlockRegenDefinition definition) {
+    private NodeState createActiveState(@Nonnull BlockRegenDefinition definition, @Nonnull String sourceBlockId) {
         int threshold = definition.gatheringTrigger().sampleThreshold(this.random);
         return new NodeState(
                 definition.id(),
-                definition.blockIdPattern(),
+                sourceBlockId,
                 definition.interactedBlockId(),
                 Phase.ACTIVE,
                 0,
