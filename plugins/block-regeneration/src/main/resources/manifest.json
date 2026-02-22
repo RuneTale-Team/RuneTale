@@ -1,0 +1,14 @@
+{
+  "Group": "RuneTale",
+  "Name": "BlockRegenerationPlugin",
+  "Version": "0.1.0",
+  "Main": "org.runetale.blockregeneration.BlockRegenerationPlugin",
+  "Authors": [
+    {
+      "Name": "Nico Piel",
+      "Email": "nicopiel@mailbox.org"
+    }
+  ],
+  "ServerVersion": "${hytaleServerVersion}",
+  "IncludesAssetPack": false
+}

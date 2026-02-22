@@ -198,6 +198,10 @@ val skillsConfigResourceDirs = listOf(
     layout.projectDirectory.dir("plugins/skills-equipment/src/main/resources/Skills")
 )
 val skillsConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/skills")
+val blockRegenConfigResourceDirs = listOf(
+    layout.projectDirectory.dir("plugins/block-regeneration/src/main/resources/BlockRegen")
+)
+val blockRegenConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/block-regeneration")
 
 tasks.register<Sync>("deploySkillsConfigToRun") {
     from(skillsConfigResourceDirs)
@@ -205,6 +209,15 @@ tasks.register<Sync>("deploySkillsConfigToRun") {
 
     doLast {
         println("Synced skills config to ${skillsConfigRunDir.asFile}")
+    }
+}
+
+tasks.register<Sync>("deployBlockRegenConfigToRun") {
+    from(blockRegenConfigResourceDirs)
+    into(blockRegenConfigRunDir)
+
+    doLast {
+        println("Synced block regeneration config to ${blockRegenConfigRunDir.asFile}")
     }
 }
 
@@ -238,6 +251,10 @@ tasks.register<Zip>("bundleModsRelease") {
     from(skillsConfigResourceDirs) {
         into("runetale/config/skills")
     }
+
+    from(blockRegenConfigResourceDirs) {
+        into("runetale/config/block-regeneration")
+    }
 }
 
 tasks.register("deployPluginsToRun") {
@@ -245,6 +262,7 @@ tasks.register("deployPluginsToRun") {
     dependsOn("cleanDeployedPluginBundles")
     dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
     dependsOn("deploySkillsConfigToRun")
+    dependsOn("deployBlockRegenConfigToRun")
 
     doLast {
         copy {

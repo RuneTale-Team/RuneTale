@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "enabled": true,
+  "respawnTickMillis": 2000,
+  "notifyCooldownMillis": 1500,
+  "definitions": [
+    {
+      "id": "copper_ore",
+      "enabled": true,
+      "blockId": "Ore_Copper_*",
+      "placeholderBlockId": "Ore_Depleted_Surface_Stone2_Pickaxe",
+      "respawn": {
+        "type": "Random",
+        "millisMin": 3000,
+        "millisMax": 5000
+      },
+      "gathering": {
+        "type": "Specific",
+        "amount": 1
+      }
+    }
+  ]
+}
