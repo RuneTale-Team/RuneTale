@@ -22,7 +22,7 @@ class BlockRegenCoordinatorServiceTest {
                     {
                       "id": "oak",
                       "blockId": "Tree_Oak",
-                      "interactedBlockId": "Tree_Oak_Stump",
+                      "placeholderBlockId": "Tree_Oak_Stump",
                       "gathering": { "type": "Specific", "amount": 1 },
                       "respawn": { "type": "Set", "millis": 1000 }
                     }
@@ -56,7 +56,7 @@ class BlockRegenCoordinatorServiceTest {
                     {
                       "id": "oak",
                       "blockId": "Tree_Oak",
-                      "interactedBlockId": "Tree_Oak_Stump",
+                      "placeholderBlockId": "Tree_Oak_Stump",
                       "gathering": { "type": "Specific", "amount": 1 },
                       "respawn": { "type": "Set", "millis": 1000 }
                     }
@@ -67,7 +67,8 @@ class BlockRegenCoordinatorServiceTest {
         BlockRegenCoordinatorService coordinator = new BlockRegenCoordinatorService(
                 new BlockRegenConfigService(layout.pluginConfigRoot()),
                 new BlockRegenDefinitionService(),
-                new BlockRegenRuntimeService(new Random(1L)));
+                new BlockRegenRuntimeService(new Random(1L)),
+                new BlockRegenPlacementQueueService());
         coordinator.initialize();
         coordinator.handleSuccessfulInteraction("break", "world", 1, 2, 3, "Tree_Oak", 10L);
 
@@ -87,7 +88,7 @@ class BlockRegenCoordinatorServiceTest {
                     {
                       "id": "oak",
                       "blockId": "Tree_Oak",
-                      "interactedBlockId": "Tree_Oak_Stump",
+                      "placeholderBlockId": "Tree_Oak_Stump",
                       "gathering": { "type": "Specific", "amount": 1 },
                       "respawn": { "type": "Set", "millis": 1000 }
                     }
@@ -112,6 +113,7 @@ class BlockRegenCoordinatorServiceTest {
         return new BlockRegenCoordinatorService(
                 new BlockRegenConfigService(layout.pluginConfigRoot()),
                 new BlockRegenDefinitionService(),
-                new BlockRegenRuntimeService(new Random(1L)));
+                new BlockRegenRuntimeService(new Random(1L)),
+                new BlockRegenPlacementQueueService());
     }
 }

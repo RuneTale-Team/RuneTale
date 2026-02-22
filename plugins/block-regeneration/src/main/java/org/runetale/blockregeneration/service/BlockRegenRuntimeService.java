@@ -45,7 +45,7 @@ public class BlockRegenRuntimeService {
 
         if (state.phase == Phase.WAITING_RESPAWN) {
             this.blockedInteractions.incrementAndGet();
-            return GatherResult.blockedWaiting(definition.interactedBlockId(), state.respawnDueMillis);
+            return GatherResult.blockedWaiting(definition.placeholderBlockId(), state.respawnDueMillis);
         }
 
         if (!state.definitionId.equals(definition.id())) {
@@ -60,7 +60,7 @@ public class BlockRegenRuntimeService {
             state.currentGatherCount = 0;
             state.currentThreshold = definition.gatheringTrigger().sampleThreshold(this.random);
             this.depletions.incrementAndGet();
-            return GatherResult.depletedToWaiting(definition.interactedBlockId(), state.respawnDueMillis);
+            return GatherResult.depletedToWaiting(definition.placeholderBlockId(), state.respawnDueMillis);
         }
 
         return GatherResult.restoredSource(state.originalBlockId, state.currentGatherCount, state.currentThreshold);
@@ -91,7 +91,7 @@ public class BlockRegenRuntimeService {
                     key.y(),
                     key.z(),
                     state.originalBlockId,
-                    state.interactedBlockId,
+                    state.placeholderBlockId,
                     state.definitionId));
             this.statesByPosition.remove(key, state);
             this.respawns.incrementAndGet();
@@ -122,7 +122,7 @@ public class BlockRegenRuntimeService {
                 state.currentThreshold,
                 state.respawnDueMillis,
                 state.originalBlockId,
-                state.interactedBlockId);
+                state.placeholderBlockId);
     }
 
     @Nonnull
@@ -141,7 +141,7 @@ public class BlockRegenRuntimeService {
         return new NodeState(
                 definition.id(),
                 sourceBlockId,
-                definition.interactedBlockId(),
+                definition.placeholderBlockId(),
                 Phase.ACTIVE,
                 0,
                 threshold,
@@ -189,7 +189,7 @@ public class BlockRegenRuntimeService {
             int gatherThreshold,
             long respawnDueMillis,
             @Nonnull String originalBlockId,
-            @Nonnull String interactedBlockId) {
+            @Nonnull String placeholderBlockId) {
     }
 
     public record MetricsSnapshot(
@@ -206,7 +206,7 @@ public class BlockRegenRuntimeService {
             int y,
             int z,
             @Nonnull String sourceBlockId,
-            @Nonnull String interactedBlockId,
+            @Nonnull String placeholderBlockId,
             @Nonnull String definitionId) {
     }
 
@@ -223,7 +223,7 @@ public class BlockRegenRuntimeService {
         @Nonnull
         private final String originalBlockId;
         @Nonnull
-        private final String interactedBlockId;
+        private final String placeholderBlockId;
         @Nonnull
         private Phase phase;
         private int currentGatherCount;
@@ -233,14 +233,14 @@ public class BlockRegenRuntimeService {
         private NodeState(
                 @Nonnull String definitionId,
                 @Nonnull String originalBlockId,
-                @Nonnull String interactedBlockId,
+                @Nonnull String placeholderBlockId,
                 @Nonnull Phase phase,
                 int currentGatherCount,
                 int currentThreshold,
                 long respawnDueMillis) {
             this.definitionId = definitionId;
             this.originalBlockId = originalBlockId;
-            this.interactedBlockId = interactedBlockId;
+            this.placeholderBlockId = placeholderBlockId;
             this.phase = phase;
             this.currentGatherCount = currentGatherCount;
             this.currentThreshold = currentThreshold;

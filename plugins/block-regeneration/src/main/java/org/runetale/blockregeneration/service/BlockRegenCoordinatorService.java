@@ -15,6 +15,7 @@ public class BlockRegenCoordinatorService {
     private final BlockRegenConfigService configService;
     private final BlockRegenDefinitionService definitionService;
     private final BlockRegenRuntimeService runtimeService;
+    private final BlockRegenPlacementQueueService placementQueueService;
 
     @Nonnull
     private volatile BlockRegenConfig currentConfig;
@@ -22,10 +23,12 @@ public class BlockRegenCoordinatorService {
     public BlockRegenCoordinatorService(
             @Nonnull BlockRegenConfigService configService,
             @Nonnull BlockRegenDefinitionService definitionService,
-            @Nonnull BlockRegenRuntimeService runtimeService) {
+            @Nonnull BlockRegenRuntimeService runtimeService,
+            @Nonnull BlockRegenPlacementQueueService placementQueueService) {
         this.configService = configService;
         this.definitionService = definitionService;
         this.runtimeService = runtimeService;
+        this.placementQueueService = placementQueueService;
         this.currentConfig = BlockRegenConfig.defaults();
     }
 
@@ -40,6 +43,7 @@ public class BlockRegenCoordinatorService {
         this.currentConfig = loaded;
         this.definitionService.load(loaded);
         this.runtimeService.clearAll();
+        this.placementQueueService.clearAll();
         LOGGER.atInfo().log("[BlockRegen] Reloaded config enabled=%s definitions=%d", loaded.enabled(), loaded.definitions().size());
         return new ReloadResult(loaded.enabled(), loaded.definitions().size());
     }
@@ -111,11 +115,11 @@ public class BlockRegenCoordinatorService {
     }
 
     @Nullable
-    public BlockRegenDefinition findInteractedDefinition(@Nullable String blockId) {
+    public BlockRegenDefinition findPlaceholderDefinition(@Nullable String blockId) {
         if (!this.currentConfig.enabled() || blockId == null || blockId.isBlank()) {
             return null;
         }
-        return this.definitionService.findByInteractedBlockId(blockId);
+        return this.definitionService.findByPlaceholderBlockId(blockId);
     }
 
     @Nonnull
@@ -125,10 +129,21 @@ public class BlockRegenCoordinatorService {
 
     public void clearRuntimeState() {
         this.runtimeService.clearAll();
+        this.placementQueueService.clearAll();
     }
 
     public void clearRuntimeStateAt(@Nonnull String worldName, int x, int y, int z) {
         this.runtimeService.clearAt(worldName, x, y, z);
+        this.placementQueueService.clearAt(worldName, x, y, z);
+    }
+
+    public void queueImmediatePlacement(@Nonnull String worldName, int x, int y, int z, @Nonnull String blockId, long nowMillis) {
+        this.placementQueueService.queue(worldName, x, y, z, blockId, nowMillis + 1L);
+    }
+
+    @Nonnull
+    public List<BlockRegenPlacementQueueService.PendingPlacement> pollDuePlacements(long nowMillis) {
+        return this.placementQueueService.pollDue(nowMillis);
     }
 
     public record ReloadResult(boolean enabled, int definitionsLoaded) {

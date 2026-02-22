@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import org.runetale.blockregeneration.config.BlockRegenPathLayout;
 import org.runetale.blockregeneration.domain.BlockRegenConfig;
 import org.runetale.blockregeneration.domain.BlockRegenDefinition;
@@ -127,11 +128,16 @@ public class BlockRegenConfigService {
         String id = stringValue(object, List.of("id", "ID"), fallbackId);
         boolean enabled = booleanValue(object, List.of("enabled", "Enabled"), true);
         String blockId = stringValue(object, List.of("blockId", "Block_ID", "BlockId"), "");
-        String interactedBlockId = stringValue(object,
-                List.of("interactedBlockId", "Interacted block", "interacted_block", "interactedBlock"),
+        String placeholderBlockId = stringValue(object,
+                List.of("placeholderBlockId"),
                 "");
-        if (blockId.isBlank() || interactedBlockId.isBlank()) {
-            LOGGER.atWarning().log("[BlockRegen] Skipping definition id=%s due to missing block id or interacted block", id);
+        if (blockId.isBlank() || placeholderBlockId.isBlank()) {
+            LOGGER.atWarning().log("[BlockRegen] Skipping definition id=%s due to missing block id or placeholder block id", id);
+            return null;
+        }
+        if (!isKnownBlockId(placeholderBlockId)) {
+            LOGGER.atWarning().log("[BlockRegen] Skipping definition id=%s due to unknown placeholderBlockId=%s", id,
+                    placeholderBlockId);
             return null;
         }
 
@@ -145,9 +151,18 @@ public class BlockRegenConfigService {
                 id,
                 enabled,
                 blockId,
-                interactedBlockId,
+                placeholderBlockId,
                 gatheringTrigger,
                 respawnDelay);
+    }
+
+    private boolean isKnownBlockId(@Nonnull String blockId) {
+        try {
+            int index = BlockType.getAssetMap().getIndex(blockId);
+            return index != Integer.MIN_VALUE;
+        } catch (Exception ignored) {
+            return true;
+        }
     }
 
     @Nonnull

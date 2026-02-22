@@ -10,9 +10,11 @@ import org.runetale.blockregeneration.service.BlockRegenConfigService;
 import org.runetale.blockregeneration.service.BlockRegenCoordinatorService;
 import org.runetale.blockregeneration.service.BlockRegenDefinitionService;
 import org.runetale.blockregeneration.service.BlockRegenNotificationService;
+import org.runetale.blockregeneration.service.BlockRegenPlacementQueueService;
 import org.runetale.blockregeneration.service.BlockRegenRuntimeService;
 import org.runetale.blockregeneration.system.BlockRegenBreakSystem;
 import org.runetale.blockregeneration.system.BlockRegenDamageGateSystem;
+import org.runetale.blockregeneration.system.BlockRegenPendingPlacementSystem;
 import org.runetale.blockregeneration.system.BlockRegenRespawnSystem;
 
 import javax.annotation.Nonnull;
@@ -37,12 +39,15 @@ public class BlockRegenerationPlugin extends JavaPlugin {
         BlockRegenConfigService configService = new BlockRegenConfigService(pathLayout.pluginConfigRoot());
         BlockRegenDefinitionService definitionService = new BlockRegenDefinitionService();
         BlockRegenRuntimeService runtimeService = new BlockRegenRuntimeService();
-        this.coordinatorService = new BlockRegenCoordinatorService(configService, definitionService, runtimeService);
+        BlockRegenPlacementQueueService placementQueueService = new BlockRegenPlacementQueueService();
+        this.coordinatorService = new BlockRegenCoordinatorService(configService, definitionService, runtimeService,
+                placementQueueService);
         this.notificationService = new BlockRegenNotificationService(() -> this.coordinatorService.notifyCooldownMillis());
 
         this.coordinatorService.initialize();
         this.getEntityStoreRegistry().registerSystem(new BlockRegenBreakSystem(this.coordinatorService, this.notificationService));
         this.getEntityStoreRegistry().registerSystem(new BlockRegenDamageGateSystem(this.coordinatorService, this.notificationService));
+        this.getEntityStoreRegistry().registerSystem(new BlockRegenPendingPlacementSystem(this.coordinatorService));
         this.getEntityStoreRegistry().registerSystem(new BlockRegenRespawnSystem(this.coordinatorService));
         this.getCommandRegistry().registerCommand(new BlockRegenCommand(this.coordinatorService));
 

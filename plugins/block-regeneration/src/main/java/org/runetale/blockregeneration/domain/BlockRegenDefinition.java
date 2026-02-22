@@ -6,7 +6,7 @@ public record BlockRegenDefinition(
         @Nonnull String id,
         boolean enabled,
         @Nonnull String blockIdPattern,
-        @Nonnull String interactedBlockId,
+        @Nonnull String placeholderBlockId,
         @Nonnull GatheringTrigger gatheringTrigger,
         @Nonnull RespawnDelay respawnDelay) {
 }

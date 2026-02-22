@@ -79,7 +79,13 @@ public class BlockRegenBreakSystem extends EntityEventSystem<EntityStore, BreakB
             return;
         }
 
-        world.setBlock(target.x, target.y, target.z, result.blockToSet());
+        this.coordinatorService.queueImmediatePlacement(
+                world.getName(),
+                target.x,
+                target.y,
+                target.z,
+                result.blockToSet(),
+                System.currentTimeMillis());
     }
 
     @Nonnull

@@ -59,7 +59,7 @@ public class BlockRegenDamageGateSystem extends EntityEventSystem<EntityStore, D
         World world = store.getExternalData().getWorld();
         if (!this.coordinatorService.shouldBlockWaiting(world.getName(), target.x, target.y, target.z)) {
             BlockType hitBlockType = event.getBlockType();
-            if (hitBlockType == null || this.coordinatorService.findInteractedDefinition(hitBlockType.getId()) == null) {
+            if (hitBlockType == null || this.coordinatorService.findPlaceholderDefinition(hitBlockType.getId()) == null) {
                 return;
             }
         }

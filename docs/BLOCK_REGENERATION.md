@@ -25,7 +25,7 @@ Each definition supports:
 - `id`
 - `enabled`
 - `blockId` (supports `*` wildcard)
-- `interactedBlockId` (exact only)
+- `placeholderBlockId` (exact only)
 - `gathering`:
   - `Specific` with `amount`
   - `Random` with `amountMin` and `amountMax`
@@ -37,7 +37,7 @@ Each definition supports:
 
 - Successful gather interactions increment per-position counters.
 - If depletion threshold is not hit, source block is restored immediately.
-- If threshold is hit, block changes to `interactedBlockId` and waits for respawn.
+- If threshold is hit, block changes to `placeholderBlockId` and waits for respawn.
 - While waiting, damage/break attempts are blocked and players get a cooldowned notice.
 - Respawn always force-restores source block when due.
 - Runtime state resets on restart and is cleared on `/blockregen reload`.

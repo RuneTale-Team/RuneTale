@@ -20,12 +20,12 @@ public class BlockRegenDefinitionService {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     private final Map<String, BlockRegenDefinition> byExactBlockId = new ConcurrentHashMap<>();
-    private final Map<String, BlockRegenDefinition> byInteractedBlockId = new ConcurrentHashMap<>();
+    private final Map<String, BlockRegenDefinition> byPlaceholderBlockId = new ConcurrentHashMap<>();
     private final List<WildcardDefinitionMapping> wildcardMappings = new CopyOnWriteArrayList<>();
 
     public void load(@Nonnull BlockRegenConfig config) {
         this.byExactBlockId.clear();
-        this.byInteractedBlockId.clear();
+        this.byPlaceholderBlockId.clear();
         this.wildcardMappings.clear();
 
         for (BlockRegenDefinition definition : config.definitions()) {
@@ -51,7 +51,7 @@ public class BlockRegenDefinitionService {
                     definition.id());
         }
 
-        registerInteracted(definition);
+        registerPlaceholder(definition);
     }
 
     private void registerWildcard(@Nonnull BlockRegenDefinition definition, @Nonnull String normalizedPattern) {
@@ -60,15 +60,15 @@ public class BlockRegenDefinitionService {
                 normalizedPattern,
                 createWildcardPattern(normalizedPattern),
                 definition));
-        registerInteracted(definition);
+        registerPlaceholder(definition);
     }
 
-    private void registerInteracted(@Nonnull BlockRegenDefinition definition) {
-        String normalizedInteracted = normalize(definition.interactedBlockId());
-        BlockRegenDefinition previous = this.byInteractedBlockId.put(normalizedInteracted, definition);
+    private void registerPlaceholder(@Nonnull BlockRegenDefinition definition) {
+        String normalizedPlaceholder = normalize(definition.placeholderBlockId());
+        BlockRegenDefinition previous = this.byPlaceholderBlockId.put(normalizedPlaceholder, definition);
         if (previous != null && previous != definition) {
-            LOGGER.atWarning().log("[BlockRegen] Replaced interacted mapping block=%s oldId=%s newId=%s",
-                    definition.interactedBlockId(),
+            LOGGER.atWarning().log("[BlockRegen] Replaced placeholder mapping block=%s oldId=%s newId=%s",
+                    definition.placeholderBlockId(),
                     previous.id(),
                     definition.id());
         }
@@ -103,20 +103,20 @@ public class BlockRegenDefinitionService {
     }
 
     @Nullable
-    public BlockRegenDefinition findByInteractedBlockId(@Nullable String blockId) {
+    public BlockRegenDefinition findByPlaceholderBlockId(@Nullable String blockId) {
         if (blockId == null || blockId.isBlank()) {
             return null;
         }
 
         String normalized = normalize(blockId);
-        BlockRegenDefinition definition = this.byInteractedBlockId.get(normalized);
+        BlockRegenDefinition definition = this.byPlaceholderBlockId.get(normalized);
         if (definition != null) {
             return definition;
         }
 
         String simplified = simplifyBlockId(normalized);
         if (!simplified.equals(normalized)) {
-            return this.byInteractedBlockId.get(simplified);
+            return this.byPlaceholderBlockId.get(simplified);
         }
         return null;
     }

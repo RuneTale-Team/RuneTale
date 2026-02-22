@@ -37,14 +37,14 @@ class BlockRegenDefinitionServiceTest {
     }
 
     @Test
-    void interactedBlockLookupMatchesExactId() {
+    void placeholderBlockLookupMatchesExactId() {
         BlockRegenDefinition wildcard = definition("wildcard", "Ore_Iron_*");
         BlockRegenConfig config = new BlockRegenConfig(1, true, 500L, 1500L, List.of(wildcard));
         BlockRegenDefinitionService service = new BlockRegenDefinitionService();
 
         service.load(config);
 
-        assertThat(service.findByInteractedBlockId("Empty_Ore_Vein")).isEqualTo(wildcard);
+        assertThat(service.findByPlaceholderBlockId("Empty_Ore_Vein")).isEqualTo(wildcard);
     }
 
     private static BlockRegenDefinition definition(String id, String pattern) {

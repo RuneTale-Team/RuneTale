@@ -8,7 +8,7 @@
       "id": "copper_ore",
       "enabled": true,
       "blockId": "Ore_Copper_*",
-      "interactedBlockId": "Ore_Depleted_Surface_Stone2_Pickaxe",
+      "placeholderBlockId": "Ore_Depleted_Surface_Stone2_Pickaxe",
       "respawn": {
         "type": "Random",
         "millisMin": 10000,
