@@ -14,7 +14,6 @@ import org.runetale.skills.page.SmithingPage;
 import org.runetale.skills.service.CraftingPageTrackerService;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -34,18 +33,25 @@ public class CraftingPageProgressSystem extends DelayedSystem<EntityStore> {
 
 	@Override
 	public void delayedTick(float deltaTime, int systemIndex, @Nonnull Store<EntityStore> store) {
-		Collection<UUID> trackedPlayerIds = this.craftingPageTrackerService.snapshotTrackedPlayerIds();
-		if (trackedPlayerIds.isEmpty()) {
+		Map<UUID, UUID> trackedPages = this.craftingPageTrackerService.snapshotTrackedPages();
+		if (trackedPages.isEmpty()) {
 			return;
 		}
 
 		World world = store.getExternalData().getWorld();
+		UUID worldId = world.getWorldConfig().getUuid();
 		Map<UUID, PlayerRef> onlinePlayersById = new HashMap<>();
 		for (PlayerRef playerRef : world.getPlayerRefs()) {
 			onlinePlayersById.put(playerRef.getUuid(), playerRef);
 		}
 
-		for (UUID playerId : trackedPlayerIds) {
+		for (Map.Entry<UUID, UUID> trackedPage : trackedPages.entrySet()) {
+			UUID playerId = trackedPage.getKey();
+			UUID trackedWorldId = trackedPage.getValue();
+			if (!worldId.equals(trackedWorldId)) {
+				continue;
+			}
+
 			PlayerRef playerRef = onlinePlayersById.get(playerId);
 			if (playerRef == null) {
 				this.craftingPageTrackerService.untrackOpenPage(playerId);
