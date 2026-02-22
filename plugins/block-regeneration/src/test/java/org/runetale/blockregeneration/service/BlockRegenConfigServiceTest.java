@@ -49,7 +49,7 @@ class BlockRegenConfigServiceTest {
     }
 
     @Test
-    void loadRequiresPlaceholderBlockIdKey(@TempDir Path tempDir) throws IOException {
+    void loadSkipsDefinitionsUsingLegacyAliasKeys(@TempDir Path tempDir) throws IOException {
         BlockRegenPathLayout layout = BlockRegenPathLayout.fromDataDirectory(tempDir.resolve("mods").resolve("block-regeneration-data"));
         Path blocksPath = layout.resolveConfigResourcePath("BlockRegen/config/blocks.json");
         Files.createDirectories(blocksPath.getParent());
@@ -73,11 +73,7 @@ class BlockRegenConfigServiceTest {
 
         BlockRegenConfig config = new BlockRegenConfigService(layout.pluginConfigRoot()).load();
 
-        assertThat(config.definitions()).hasSize(1);
-        assertThat(config.definitions().get(0).blockIdPattern()).isEqualTo("Ore_Iron_*");
-        assertThat(config.definitions().get(0).placeholderBlockId()).isEqualTo("Empty_Ore_Vein");
-        assertThat(config.definitions().get(0).respawnDelay().millisMin()).isEqualTo(3000L);
-        assertThat(config.definitions().get(0).respawnDelay().millisMax()).isEqualTo(7000L);
+        assertThat(config.definitions()).isEmpty();
     }
 
     @Test

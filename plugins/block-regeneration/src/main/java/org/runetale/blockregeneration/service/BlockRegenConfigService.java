@@ -84,10 +84,10 @@ public class BlockRegenConfigService {
 
     @Nonnull
     private BlockRegenConfig parseConfig(@Nonnull JsonObject root) {
-        int version = intValue(root, List.of("version"), BlockRegenConfig.DEFAULT_VERSION);
-        boolean enabled = booleanValue(root, List.of("enabled"), true);
-        long tickMillis = longValue(root, List.of("respawnTickMillis"), BlockRegenConfig.DEFAULT_RESPAWN_TICK_MILLIS);
-        long notifyCooldown = longValue(root, List.of("notifyCooldownMillis"), BlockRegenConfig.DEFAULT_NOTIFY_COOLDOWN_MILLIS);
+        int version = intValue(root, "version", BlockRegenConfig.DEFAULT_VERSION);
+        boolean enabled = booleanValue(root, "enabled", true);
+        long tickMillis = longValue(root, "respawnTickMillis", BlockRegenConfig.DEFAULT_RESPAWN_TICK_MILLIS);
+        long notifyCooldown = longValue(root, "notifyCooldownMillis", BlockRegenConfig.DEFAULT_NOTIFY_COOLDOWN_MILLIS);
 
         List<BlockRegenDefinition> definitions = parseDefinitions(root);
         return new BlockRegenConfig(
@@ -100,7 +100,7 @@ public class BlockRegenConfigService {
 
     @Nonnull
     private List<BlockRegenDefinition> parseDefinitions(@Nonnull JsonObject root) {
-        JsonArray definitionsArray = arrayValue(root, List.of("definitions"));
+        JsonArray definitionsArray = arrayValue(root, "definitions");
         if (definitionsArray == null) {
             return List.of();
         }
@@ -124,20 +124,18 @@ public class BlockRegenConfigService {
     @Nullable
     private BlockRegenDefinition parseDefinition(@Nonnull JsonObject object, int index) {
         String fallbackId = "definition_" + index;
-        String id = stringValue(object, List.of("id", "ID"), fallbackId);
-        boolean enabled = booleanValue(object, List.of("enabled", "Enabled"), true);
-        String blockId = stringValue(object, List.of("blockId", "Block_ID", "BlockId"), "");
-        String placeholderBlockId = stringValue(object,
-                List.of("placeholderBlockId"),
-                "");
+        String id = stringValue(object, "id", fallbackId);
+        boolean enabled = booleanValue(object, "enabled", true);
+        String blockId = stringValue(object, "blockId", "");
+        String placeholderBlockId = stringValue(object, "placeholderBlockId", "");
         if (blockId.isBlank() || placeholderBlockId.isBlank()) {
             LOGGER.atWarning().log("[BlockRegen] Skipping definition id=%s due to missing block id or placeholder block id", id);
             return null;
         }
-        JsonObject gatheringObject = objectValue(object, List.of("gathering", "Gathering"));
+        JsonObject gatheringObject = objectValue(object, "gathering");
         GatheringTrigger gatheringTrigger = parseGathering(gatheringObject);
 
-        JsonObject respawnObject = objectValue(object, List.of("respawn", "Respawn"));
+        JsonObject respawnObject = objectValue(object, "respawn");
         RespawnDelay respawnDelay = parseRespawn(respawnObject);
 
         return new BlockRegenDefinition(
@@ -156,12 +154,12 @@ public class BlockRegenConfigService {
         }
 
         GatheringTrigger.Type type = GatheringTrigger.Type.parse(
-                stringValue(object, List.of("type", "Type"), "Specific"),
+                stringValue(object, "type", "Specific"),
                 GatheringTrigger.Type.SPECIFIC);
-        int amount = Math.max(1, intValue(object, List.of("amount", "Amount"), 1));
-        int amountMin = Math.max(1, intValue(object, List.of("amountMin", "Amount_min", "AmountMin"), amount));
+        int amount = Math.max(1, intValue(object, "amount", 1));
+        int amountMin = Math.max(1, intValue(object, "amountMin", amount));
         int amountMax = Math.max(amountMin,
-                intValue(object, List.of("amountMax", "Amount_max", "AmountMax"), Math.max(amount, amountMin)));
+                intValue(object, "amountMax", Math.max(amount, amountMin)));
         return new GatheringTrigger(type, amount, amountMin, amountMax);
     }
 
@@ -172,118 +170,83 @@ public class BlockRegenConfigService {
         }
 
         RespawnDelay.Type type = RespawnDelay.Type.parse(
-                stringValue(object, List.of("type", "Type"), "Set"),
+                stringValue(object, "type", "Set"),
                 RespawnDelay.Type.SET);
-        long millis = Math.max(1L,
-                longValue(object, List.of("millis", "Millis"),
-                        secondsToMillis(longValue(object, List.of("seconds", "Seconds"), 5L))));
-        long millisMin = Math.max(1L,
-                longValue(object, List.of("millisMin", "Millis_Min", "MillisMin"),
-                        secondsToMillis(longValue(object, List.of("secondsMin", "Seconds_Min"), millis / 1000L))));
+        long millis = Math.max(1L, longValue(object, "millis", 5000L));
+        long millisMin = Math.max(1L, longValue(object, "millisMin", millis));
         long millisMax = Math.max(millisMin,
-                longValue(object, List.of("millisMax", "Millis_Max", "MillisMax"),
-                        secondsToMillis(longValue(object, List.of("secondsMax", "Seconds_Max"), Math.max(millisMin / 1000L, millis / 1000L)))));
+                longValue(object, "millisMax", Math.max(millisMin, millis)));
         return new RespawnDelay(type, millis, millisMin, millisMax);
     }
 
-    private static long secondsToMillis(long seconds) {
-        return Math.max(1L, seconds) * 1000L;
-    }
-
     @Nullable
-    private static JsonArray arrayValue(@Nonnull JsonObject object, @Nonnull List<String> keys) {
-        for (String key : keys) {
-            JsonElement element = object.get(key);
-            if (element != null && element.isJsonArray()) {
-                return element.getAsJsonArray();
-            }
+    private static JsonArray arrayValue(@Nonnull JsonObject object, @Nonnull String key) {
+        JsonElement element = object.get(key);
+        if (element != null && element.isJsonArray()) {
+            return element.getAsJsonArray();
         }
         return null;
     }
 
     @Nullable
-    private static JsonObject objectValue(@Nonnull JsonObject object, @Nonnull List<String> keys) {
-        for (String key : keys) {
-            JsonElement element = object.get(key);
-            if (element == null || element.isJsonNull()) {
-                continue;
-            }
-            if (element.isJsonObject()) {
-                return element.getAsJsonObject();
-            }
-            if (element.isJsonArray() && element.getAsJsonArray().size() > 0) {
-                JsonElement first = element.getAsJsonArray().get(0);
-                if (first != null && first.isJsonObject()) {
-                    return first.getAsJsonObject();
-                }
-            }
+    private static JsonObject objectValue(@Nonnull JsonObject object, @Nonnull String key) {
+        JsonElement element = object.get(key);
+        if (element != null && element.isJsonObject()) {
+            return element.getAsJsonObject();
         }
         return null;
     }
 
     @Nonnull
-    private static String stringValue(@Nonnull JsonObject object, @Nonnull List<String> keys, @Nonnull String fallback) {
-        for (String key : keys) {
-            JsonElement element = object.get(key);
-            if (element == null || element.isJsonNull()) {
-                continue;
-            }
-            if (element.isJsonPrimitive()) {
-                String value = element.getAsString();
-                if (value != null && !value.isBlank()) {
-                    return value.trim();
-                }
-            }
+    private static String stringValue(@Nonnull JsonObject object, @Nonnull String key, @Nonnull String fallback) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
+            return fallback;
+        }
+        String value = element.getAsString();
+        if (value != null && !value.isBlank()) {
+            return value.trim();
         }
         return fallback;
     }
 
-    private static int intValue(@Nonnull JsonObject object, @Nonnull List<String> keys, int fallback) {
-        for (String key : keys) {
-            JsonElement element = object.get(key);
-            if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
-                continue;
-            }
-            try {
-                return element.getAsInt();
-            } catch (Exception ignored) {
-                return fallback;
-            }
+    private static int intValue(@Nonnull JsonObject object, @Nonnull String key, int fallback) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
+            return fallback;
         }
-        return fallback;
+        try {
+            return element.getAsInt();
+        } catch (Exception ignored) {
+            return fallback;
+        }
     }
 
-    private static long longValue(@Nonnull JsonObject object, @Nonnull List<String> keys, long fallback) {
-        for (String key : keys) {
-            JsonElement element = object.get(key);
-            if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
-                continue;
-            }
-            try {
-                return element.getAsLong();
-            } catch (Exception ignored) {
-                return fallback;
-            }
+    private static long longValue(@Nonnull JsonObject object, @Nonnull String key, long fallback) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
+            return fallback;
         }
-        return fallback;
+        try {
+            return element.getAsLong();
+        } catch (Exception ignored) {
+            return fallback;
+        }
     }
 
-    private static boolean booleanValue(@Nonnull JsonObject object, @Nonnull List<String> keys, boolean fallback) {
-        for (String key : keys) {
-            JsonElement element = object.get(key);
-            if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
-                continue;
-            }
-            try {
-                return element.getAsBoolean();
-            } catch (Exception ignored) {
-                String raw = element.getAsString().toLowerCase(Locale.ROOT);
-                if (raw.equals("true") || raw.equals("false")) {
-                    return Boolean.parseBoolean(raw);
-                }
-                return fallback;
-            }
+    private static boolean booleanValue(@Nonnull JsonObject object, @Nonnull String key, boolean fallback) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull() || !element.isJsonPrimitive()) {
+            return fallback;
         }
-        return fallback;
+        try {
+            return element.getAsBoolean();
+        } catch (Exception ignored) {
+            String raw = element.getAsString().toLowerCase(Locale.ROOT);
+            if (raw.equals("true") || raw.equals("false")) {
+                return Boolean.parseBoolean(raw);
+            }
+            return fallback;
+        }
     }
 }

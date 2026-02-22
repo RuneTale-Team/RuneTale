@@ -33,6 +33,8 @@ Each definition supports:
   - `Set` with `millis`
   - `Random` with `millisMin` and `millisMax`
 
+Only these canonical keys are supported. Legacy aliases (for example `Block_ID`, `Gathering`, `Respawn`, `seconds`, or `interactedBlockId`) are ignored.
+
 ## Behavior
 
 - Successful gather interactions increment per-position counters.
