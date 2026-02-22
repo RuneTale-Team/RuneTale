@@ -25,6 +25,7 @@ import org.runetale.skills.service.CraftingRecipeTagService;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.UUID;
 
 abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventData>
 		extends InteractiveCustomUIPage<TEventData> {
@@ -81,7 +82,8 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder,
 			@Nonnull Store<EntityStore> store) {
-		this.craftingPageTrackerService.trackOpenPage(this.playerRef.getUuid());
+		UUID worldId = store.getExternalData().getWorld().getWorldConfig().getUuid();
+		this.craftingPageTrackerService.trackOpenPage(this.playerRef.getUuid(), worldId);
 		CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, getLogger(), this.benchContextName);
 		commandBuilder.append(this.uiPath);
 		CraftingPageSupport.bindTierTabs(eventBuilder, availableTiers());
