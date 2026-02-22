@@ -5,7 +5,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import org.runetale.blockregeneration.config.BlockRegenPathLayout;
 import org.runetale.blockregeneration.domain.BlockRegenConfig;
 import org.runetale.blockregeneration.domain.BlockRegenDefinition;
@@ -135,12 +134,6 @@ public class BlockRegenConfigService {
             LOGGER.atWarning().log("[BlockRegen] Skipping definition id=%s due to missing block id or placeholder block id", id);
             return null;
         }
-        if (!isKnownBlockId(placeholderBlockId)) {
-            LOGGER.atWarning().log("[BlockRegen] Skipping definition id=%s due to unknown placeholderBlockId=%s", id,
-                    placeholderBlockId);
-            return null;
-        }
-
         JsonObject gatheringObject = objectValue(object, List.of("gathering", "Gathering"));
         GatheringTrigger gatheringTrigger = parseGathering(gatheringObject);
 
@@ -154,15 +147,6 @@ public class BlockRegenConfigService {
                 placeholderBlockId,
                 gatheringTrigger,
                 respawnDelay);
-    }
-
-    private boolean isKnownBlockId(@Nonnull String blockId) {
-        try {
-            int index = BlockType.getAssetMap().getIndex(blockId);
-            return index != Integer.MIN_VALUE;
-        } catch (Exception ignored) {
-            return true;
-        }
     }
 
     @Nonnull
