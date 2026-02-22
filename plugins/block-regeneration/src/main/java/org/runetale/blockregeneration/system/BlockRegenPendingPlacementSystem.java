@@ -35,11 +35,11 @@ public class BlockRegenPendingPlacementSystem extends DelayedSystem<EntityStore>
         }
         for (BlockRegenPlacementQueueService.PendingPlacement placement : due) {
             try {
-                world.execute(() -> world.setBlock(
+                world.setBlock(
                         placement.position().x(),
                         placement.position().y(),
                         placement.position().z(),
-                        placement.blockId()));
+                        placement.blockId());
             } catch (Exception e) {
                 LOGGER.atWarning().withCause(e).log(
                         "[BlockRegen] Failed pending placement world=%s pos=%d,%d,%d block=%s",

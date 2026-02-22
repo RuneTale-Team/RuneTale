@@ -2,6 +2,7 @@ package org.runetale.blockregeneration.system;
 
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.DelayedSystem;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.blockregeneration.service.BlockRegenCoordinatorService;
@@ -12,6 +13,7 @@ import java.util.List;
 
 public class BlockRegenRespawnSystem extends DelayedSystem<EntityStore> {
 
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
     private static final float BASE_POLL_INTERVAL_SECONDS = 0.1F;
 
     private final BlockRegenCoordinatorService coordinatorService;
@@ -38,7 +40,18 @@ public class BlockRegenRespawnSystem extends DelayedSystem<EntityStore> {
         World world = store.getExternalData().getWorld();
         List<BlockRegenRuntimeService.RespawnAction> actions = this.coordinatorService.pollDueRespawns(world.getName(), now);
         for (BlockRegenRuntimeService.RespawnAction action : actions) {
-            world.execute(() -> world.setBlock(action.x(), action.y(), action.z(), action.sourceBlockId()));
+            try {
+                world.setBlock(action.x(), action.y(), action.z(), action.sourceBlockId());
+            } catch (Exception e) {
+                LOGGER.atWarning().withCause(e).log(
+                        "[BlockRegen] Failed respawn apply world=%s pos=%d,%d,%d block=%s definition=%s",
+                        action.worldName(),
+                        action.x(),
+                        action.y(),
+                        action.z(),
+                        action.sourceBlockId(),
+                        action.definitionId());
+            }
         }
     }
 }
