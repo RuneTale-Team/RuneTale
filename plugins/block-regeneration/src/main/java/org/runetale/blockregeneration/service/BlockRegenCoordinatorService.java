@@ -94,11 +94,11 @@ public class BlockRegenCoordinatorService {
     }
 
     @Nonnull
-    public List<BlockRegenRuntimeService.RespawnAction> pollDueRespawns(long nowMillis) {
+    public List<BlockRegenRuntimeService.RespawnAction> pollDueRespawns(@Nonnull String worldName, long nowMillis) {
         if (!this.currentConfig.enabled()) {
             return List.of();
         }
-        return this.runtimeService.pollDueRespawns(nowMillis);
+        return this.runtimeService.pollDueRespawns(worldName, nowMillis);
     }
 
     @Nullable
@@ -142,8 +142,8 @@ public class BlockRegenCoordinatorService {
     }
 
     @Nonnull
-    public List<BlockRegenPlacementQueueService.PendingPlacement> pollDuePlacements(long nowMillis) {
-        return this.placementQueueService.pollDue(nowMillis);
+    public List<BlockRegenPlacementQueueService.PendingPlacement> pollDuePlacements(@Nonnull String worldName, long nowMillis) {
+        return this.placementQueueService.pollDueForWorld(worldName, nowMillis);
     }
 
     public record ReloadResult(boolean enabled, int definitionsLoaded) {

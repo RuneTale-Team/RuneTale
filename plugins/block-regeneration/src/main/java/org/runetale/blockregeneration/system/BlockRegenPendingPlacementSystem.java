@@ -26,16 +26,14 @@ public class BlockRegenPendingPlacementSystem extends DelayedSystem<EntityStore>
     @Override
     public void delayedTick(float deltaTime, int systemIndex, @Nonnull Store<EntityStore> store) {
         long nowMillis = System.currentTimeMillis();
-        List<BlockRegenPlacementQueueService.PendingPlacement> due = this.coordinatorService.pollDuePlacements(nowMillis);
+        World world = store.getExternalData().getWorld();
+        List<BlockRegenPlacementQueueService.PendingPlacement> due = this.coordinatorService.pollDuePlacements(
+                world.getName(),
+                nowMillis);
         if (due.isEmpty()) {
             return;
         }
-
-        World world = store.getExternalData().getWorld();
         for (BlockRegenPlacementQueueService.PendingPlacement placement : due) {
-            if (!world.getName().equals(placement.position().worldName())) {
-                continue;
-            }
             try {
                 world.execute(() -> world.setBlock(
                         placement.position().x(),

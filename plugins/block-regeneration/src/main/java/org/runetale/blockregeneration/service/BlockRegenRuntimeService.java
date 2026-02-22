@@ -77,14 +77,17 @@ public class BlockRegenRuntimeService {
     }
 
     @Nonnull
-    public List<RespawnAction> pollDueRespawns(long nowMillis) {
+    public List<RespawnAction> pollDueRespawns(@Nonnull String worldName, long nowMillis) {
         List<RespawnAction> due = new ArrayList<>();
         for (Map.Entry<BlockPositionKey, NodeState> entry : this.statesByPosition.entrySet()) {
+            BlockPositionKey key = entry.getKey();
+            if (!key.worldName().equals(worldName)) {
+                continue;
+            }
             NodeState state = entry.getValue();
             if (state.phase != Phase.WAITING_RESPAWN || state.respawnDueMillis > nowMillis) {
                 continue;
             }
-            BlockPositionKey key = entry.getKey();
             due.add(new RespawnAction(
                     key.worldName(),
                     key.x(),

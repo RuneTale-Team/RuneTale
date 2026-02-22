@@ -28,8 +28,8 @@ class BlockRegenRuntimeServiceTest {
         assertThat(second.respawnDueMillis()).isEqualTo(7000L);
         assertThat(service.shouldBlockInteractionWhileWaiting("world", 10, 20, 30)).isTrue();
 
-        List<BlockRegenRuntimeService.RespawnAction> noDue = service.pollDueRespawns(6999L);
-        List<BlockRegenRuntimeService.RespawnAction> due = service.pollDueRespawns(7000L);
+        List<BlockRegenRuntimeService.RespawnAction> noDue = service.pollDueRespawns("world", 6999L);
+        List<BlockRegenRuntimeService.RespawnAction> due = service.pollDueRespawns("world", 7000L);
 
         assertThat(noDue).isEmpty();
         assertThat(due).hasSize(1);
@@ -88,7 +88,23 @@ class BlockRegenRuntimeServiceTest {
         service.clearAt("world", 4, 5, 6);
 
         assertThat(service.inspect("world", 4, 5, 6)).isNull();
-        assertThat(service.pollDueRespawns(10000L)).isEmpty();
+        assertThat(service.pollDueRespawns("world", 10000L)).isEmpty();
+    }
+
+    @Test
+    void pollDueRespawnsIsScopedByWorld() {
+        BlockRegenRuntimeService service = new BlockRegenRuntimeService(new Random(2L));
+        BlockRegenDefinition definition = definition(
+                "oak",
+                new GatheringTrigger(GatheringTrigger.Type.SPECIFIC, 1, 1, 1),
+                new RespawnDelay(RespawnDelay.Type.SET, 1000L, 1000L, 1000L));
+
+        service.recordSuccessfulGather("world-a", 1, 2, 3, "Tree_Oak", definition, 100L);
+        service.recordSuccessfulGather("world-b", 1, 2, 3, "Tree_Oak", definition, 100L);
+
+        assertThat(service.pollDueRespawns("world-a", 1100L)).hasSize(1);
+        assertThat(service.pollDueRespawns("world-a", 1100L)).isEmpty();
+        assertThat(service.pollDueRespawns("world-b", 1100L)).hasSize(1);
     }
 
     private static BlockRegenDefinition definition(

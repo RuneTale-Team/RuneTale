@@ -36,7 +36,7 @@ public class BlockRegenRespawnSystem extends DelayedSystem<EntityStore> {
         this.nextPollAtMillis = now + this.coordinatorService.respawnTickMillis();
 
         World world = store.getExternalData().getWorld();
-        List<BlockRegenRuntimeService.RespawnAction> actions = this.coordinatorService.pollDueRespawns(now);
+        List<BlockRegenRuntimeService.RespawnAction> actions = this.coordinatorService.pollDueRespawns(world.getName(), now);
         for (BlockRegenRuntimeService.RespawnAction action : actions) {
             world.execute(() -> world.setBlock(action.x(), action.y(), action.z(), action.sourceBlockId()));
         }

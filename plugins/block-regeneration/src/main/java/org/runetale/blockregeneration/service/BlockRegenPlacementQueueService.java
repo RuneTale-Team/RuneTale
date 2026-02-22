@@ -16,11 +16,11 @@ public class BlockRegenPlacementQueueService {
     }
 
     @Nonnull
-    public List<PendingPlacement> pollDue(long nowMillis) {
+    public List<PendingPlacement> pollDueForWorld(@Nonnull String worldName, long nowMillis) {
         List<PendingPlacement> due = new ArrayList<>();
         for (Map.Entry<BlockRegenRuntimeService.BlockPositionKey, PendingPlacement> entry : this.placementsByPosition.entrySet()) {
             PendingPlacement placement = entry.getValue();
-            if (placement.applyAtMillis() > nowMillis) {
+            if (placement.applyAtMillis() > nowMillis || !placement.position().worldName().equals(worldName)) {
                 continue;
             }
             due.add(placement);
