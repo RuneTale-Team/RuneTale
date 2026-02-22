@@ -1,51 +1,22 @@
 {
   "version": 1,
   "enabled": true,
-  "respawnTickMillis": 500,
+  "respawnTickMillis": 5000,
   "notifyCooldownMillis": 1500,
   "definitions": [
     {
-      "id": "iron_vein",
+      "id": "copper_ore",
       "enabled": true,
-      "blockId": "Ore_Iron_*",
-      "interactedBlockId": "Empty_Ore_Vein",
+      "blockId": "Ore_Copper_*",
+      "interactedBlockId": "Ore_Depleted_Surface_Stone2_Pickaxe",
       "respawn": {
         "type": "Random",
-        "millisMin": 3000,
-        "millisMax": 7000
+        "millisMin": 10000,
+        "millisMax": 15000
       },
       "gathering": {
         "type": "Specific",
         "amount": 1
-      }
-    },
-    {
-      "id": "tree_willow",
-      "enabled": true,
-      "blockId": "Tree_Willow",
-      "interactedBlockId": "Tree_Willow_Stump",
-      "respawn": {
-        "type": "Set",
-        "millis": 5000
-      },
-      "gathering": {
-        "type": "Specific",
-        "amount": 1
-      }
-    },
-    {
-      "id": "tree_oak",
-      "enabled": true,
-      "blockId": "Tree_Oak",
-      "interactedBlockId": "Tree_Oak_Stump",
-      "respawn": {
-        "type": "Set",
-        "millis": 5000
-      },
-      "gathering": {
-        "type": "Random",
-        "amountMin": 2,
-        "amountMax": 4
       }
     }
   ]
