@@ -29,17 +29,6 @@ class DefaultConfigSchemaContractTest {
 			"xp.growthDivisor",
 			"xp.pointsDivisor",
 			"xp.roundingMode",
-			"combat.xpPerDamage",
-			"combat.source.ranged",
-			"combat.source.melee.prefix",
-			"combat.source.melee.accurate",
-			"combat.source.melee.aggressive",
-			"combat.source.melee.defensive",
-			"combat.source.melee.controlled.attack",
-			"combat.source.melee.controlled.strength",
-			"combat.source.melee.controlled.defence",
-			"combat.source.block.defence",
-			"combat.projectileCauseTokens",
 			"hud.toast.durationMillis",
 			"hud.toast.fadeDurationMillis",
 			"hud.toast.fade.rootBackground",
@@ -66,7 +55,7 @@ class DefaultConfigSchemaContractTest {
 		}
 
 		Set<String> unknownTopLevelKeys = root.keySet().stream()
-				.filter(key -> !Set.of("xp", "combat", "hud").contains(key))
+				.filter(key -> !Set.of("xp", "hud").contains(key))
 				.collect(LinkedHashSet::new, Set::add, Set::addAll);
 
 		if (!unknownTopLevelKeys.isEmpty()) {

@@ -5,19 +5,21 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 ## Plugin topology
 
 - `:plugins:skills-api` (`SkillsApiPlugin`): shared cross-plugin contracts (`SkillsRuntimeApi`, config/domain models).
-- `:plugins:skills` (`SkillsPlugin`): progression core (profile component, XP dispatch/grant pipeline, combat XP, runtime API provider).
+- `:plugins:skills` (`SkillsPlugin`): progression core (profile component, XP dispatch/grant pipeline, runtime API provider).
+- `:plugins:skills-combat` (`SkillsCombatPlugin`): combat XP routing (melee styles, ranged, block defence) and `/combatstyle` UI/command.
 - `:plugins:skills-gathering` (`SkillsGatheringPlugin`): node lookup, gather block-break enforcement, `/skills` overview page command.
 - `:plugins:skills-crafting` (`SkillsCraftingPlugin`): smithing/smelting pages, crafting XP dispatch, recipe unlock synchronization.
 
 ## Config ownership
 
 - Core-owned defaults: `skills.json`.
+- Combat-owned defaults: `combat.json`.
 - Gathering-owned defaults: `gathering.json` and `Skills/Nodes/nodes.json`.
 - Crafting-owned defaults: `crafting.json`.
 
 ## Runtime flow
 
-1. Plugin setup is split by responsibility: core wires progression services/systems and publishes `SkillsRuntimeApi`; gathering wires node assets and gather systems; crafting wires crafting systems and UI interactions.
+1. Plugin setup is split by responsibility: core wires progression services/systems and publishes `SkillsRuntimeApi`; combat wires combat systems/commands; gathering wires node assets and gather systems; crafting wires crafting systems and UI interactions.
 2. A profile bootstrap system ensures every player has a persistent skill profile component.
 3. `/skill` is a player-only self-inspection command that prints every declared skill with current level and XP.
 4. Any runtime source can queue XP grants through `SkillXpDispatchService` (strict skill id parsing, no silent fallback).
@@ -64,6 +66,14 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
   - If the profile component type is unavailable, the command returns a single unavailable message.
   - If the player profile component is unexpectedly missing, the command returns defaults for all skills.
 
+## `/combatstyle` command semantics
+
+- Scope: self-only (`AbstractPlayerCommand`).
+- Help: `/combatstyle help` (also supports `-h`, `--help`, `?`).
+- Modes: `accurate`, `aggressive`, `defensive`, `controlled` (plus legacy aliases `attack`, `strength`, `defence`).
+- UI: `/combatstyle ui` opens a custom page selector.
+- Query: `/combatstyle current` prints active mode and XP routing.
+
 ## `/skillxp` debug command semantics
 
 - Scope: self-only (`AbstractPlayerCommand`), intended for debug/admin usage.
@@ -105,14 +115,14 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 - Node definitions are loaded external-first from `server/mods/runetale/config/skills/Nodes/nodes.json`, then classpath `src/main/resources/Skills/Nodes/nodes.json` as fallback; in-memory defaults remain fail-safe only.
 - Unknown blocks remain a no-op path (fail-safe behavior).
-- Runtime tuning now loads external-first from `server/mods/runetale/config/skills/Config/*.json` through `SkillsConfigService` (classpath resources remain defaults/fallbacks).
+- Runtime tuning now loads external-first from `server/mods/runetale/config/skills/Config/*.json`; core owns `skills.json`, combat owns `combat.json` (with legacy `skills.json -> combat` fallback/migration support), classpath resources remain defaults/fallbacks.
 
 ## Testing Guide
 
 ### 1) Local compile/run verification
 
 ```bash
-./gradlew :plugins:skills-api:build :plugins:skills:clean :plugins:skills:build :plugins:skills-gathering:build :plugins:skills-crafting:build
+./gradlew :plugins:skills-api:build :plugins:skills:clean :plugins:skills:build :plugins:skills-combat:build :plugins:skills-gathering:build :plugins:skills-crafting:build
 ```
 
 - Confirms the plugin compiles and resource files under `src/main/resources/Skills/**` are packaged as fallback defaults.
@@ -120,7 +130,7 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ### 2) Manual in-game flow (quick checklist)
 
-1. Start the game/server with `SkillsPlugin`, `SkillsGatheringPlugin`, and `SkillsCraftingPlugin` enabled.
+1. Start the game/server with `SkillsPlugin`, `SkillsCombatPlugin`, `SkillsGatheringPlugin`, and `SkillsCraftingPlugin` enabled.
 2. Try breaking a configured node block (from `Skills/Nodes/nodes.json`) with low skill level.
    Expected: break is cancelled and a warning is shown.
 3. Use any held item and break again after meeting the level requirement.

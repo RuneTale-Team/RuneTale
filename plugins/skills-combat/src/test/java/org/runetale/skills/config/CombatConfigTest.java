@@ -23,18 +23,16 @@ class CombatConfigTest {
 
 	@Test
 	void loadClampsNegativeXpAndNormalizesProjectileTokens(@TempDir Path tempDir) throws IOException {
-		write(tempDir, "Config/skills.json", """
+		write(tempDir, "Config/combat.json", """
 				{
-				  "combat": {
-				    "xpPerDamage": -4.5,
-				    "source": {
-				      "ranged": "Combat:RANGED",
-				      "melee": {
-				        "prefix": "Combat:Melee:"
-				      }
-				    },
-				    "projectileCauseTokens": ["Projectile", "ARROW_HIT", "  "]
-				  }
+				  "xpPerDamage": -4.5,
+				  "source": {
+				    "ranged": "Combat:RANGED",
+				    "melee": {
+				      "prefix": "Combat:Melee:"
+				    }
+				  },
+				  "projectileCauseTokens": ["Projectile", "ARROW_HIT", "  "]
 				}
 				""");
 
@@ -44,6 +42,25 @@ class CombatConfigTest {
 		assertThat(config.sourceRanged()).isEqualTo("Combat:RANGED");
 		assertThat(config.sourceMeleePrefix()).isEqualTo("Combat:Melee:");
 		assertThat(config.projectileCauseTokens()).containsExactly("projectile", "arrow_hit");
+	}
+
+	@Test
+	void loadFallsBackToLegacySkillsJsonWhenCombatJsonMissing(@TempDir Path tempDir) throws IOException {
+		write(tempDir, "Config/skills.json", """
+				{
+				  "combat": {
+				    "xpPerDamage": 9.0,
+				    "source": {
+				      "ranged": "legacy:ranged"
+				    }
+				  }
+				}
+				""");
+
+		CombatConfig config = CombatConfig.load(tempDir);
+
+		assertThat(config.xpPerDamage()).isEqualTo(9.0D);
+		assertThat(config.sourceRanged()).isEqualTo("legacy:ranged");
 	}
 
 	private static void write(Path root, String relativePath, String content) throws IOException {

@@ -4,21 +4,21 @@ import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.SystemGroup;
+import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.server.core.entity.entities.ProjectileComponent;
 import com.hypixel.hytale.server.core.modules.entity.AllLegacyLivingEntityTypesQuery;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageCause;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageEventSystem;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageModule;
-import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.config.CombatConfig;
 import org.runetale.skills.domain.CombatStyleType;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.CombatStyleService;
 
 import javax.annotation.Nonnull;
@@ -34,16 +34,16 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 
 	private static final Field PROJECTILE_CREATOR_UUID_FIELD = resolveProjectileCreatorUuidField();
 
-	private final SkillXpDispatchService skillXpDispatchService;
+	private final SkillsRuntimeApi runtimeApi;
 	private final CombatStyleService combatStyleService;
 	private final CombatConfig combatConfig;
 	private final Query<EntityStore> query;
 
 	public CombatDamageXpSystem(
-			@Nonnull SkillXpDispatchService skillXpDispatchService,
+			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CombatStyleService combatStyleService,
 			@Nonnull CombatConfig combatConfig) {
-		this.skillXpDispatchService = skillXpDispatchService;
+		this.runtimeApi = runtimeApi;
 		this.combatStyleService = combatStyleService;
 		this.combatConfig = combatConfig;
 		this.query = AllLegacyLivingEntityTypesQuery.INSTANCE;
@@ -171,7 +171,7 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 			return;
 		}
 
-		this.skillXpDispatchService.grantSkillXp(
+		this.runtimeApi.grantSkillXp(
 				commandBuffer,
 				playerRef,
 				skillType,
@@ -282,7 +282,7 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 			return;
 		}
 
-		this.skillXpDispatchService.grantSkillXp(
+		this.runtimeApi.grantSkillXp(
 				commandBuffer,
 				defenderRef,
 				SkillType.DEFENCE,

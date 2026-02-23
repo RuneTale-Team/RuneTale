@@ -5,10 +5,10 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.junit.jupiter.api.Test;
+import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.config.CombatConfig;
 import org.runetale.skills.domain.CombatStyleType;
 import org.runetale.skills.domain.SkillType;
-import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.service.CombatStyleService;
 import org.runetale.testing.junit.ContractTest;
 
@@ -27,9 +27,9 @@ class CombatDamageXpSystemContractTest {
 
 	@Test
 	void accurateMeleeDamageRoutesAllXpToAttack() {
-		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		SkillsRuntimeApi runtimeApi = mock(SkillsRuntimeApi.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
-		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+		CombatDamageXpSystem system = new CombatDamageXpSystem(runtimeApi, styleService, createConfig());
 
 		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
 		Ref<EntityStore> attackerRef = mock(Ref.class);
@@ -42,21 +42,21 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 2.5D);
 
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.ATTACK),
 				eq(10.0D),
 				eq("combat:melee:accurate"),
 				eq(true));
-		verifyNoMoreInteractions(dispatchService);
+		verifyNoMoreInteractions(runtimeApi);
 	}
 
 	@Test
 	void controlledMeleeDamageSplitsXpAcrossAttackStrengthAndDefence() {
-		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		SkillsRuntimeApi runtimeApi = mock(SkillsRuntimeApi.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
-		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+		CombatDamageXpSystem system = new CombatDamageXpSystem(runtimeApi, styleService, createConfig());
 
 		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
 		Ref<EntityStore> attackerRef = mock(Ref.class);
@@ -69,35 +69,35 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 2.0D);
 
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.ATTACK),
 				eq(3.0D),
 				eq("combat:melee:controlled:attack"),
 				eq(true));
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.STRENGTH),
 				eq(3.0D),
 				eq("combat:melee:controlled:strength"),
 				eq(true));
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.DEFENCE),
 				eq(2.0D),
 				eq("combat:melee:controlled:defence"),
 				eq(true));
-		verifyNoMoreInteractions(dispatchService);
+		verifyNoMoreInteractions(runtimeApi);
 	}
 
 	@Test
 	void aggressiveMeleeDamageRoutesAllXpToStrength() {
-		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		SkillsRuntimeApi runtimeApi = mock(SkillsRuntimeApi.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
-		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+		CombatDamageXpSystem system = new CombatDamageXpSystem(runtimeApi, styleService, createConfig());
 
 		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
 		Ref<EntityStore> attackerRef = mock(Ref.class);
@@ -110,21 +110,21 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 3.0D);
 
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.STRENGTH),
 				eq(12.0D),
 				eq("combat:melee:aggressive"),
 				eq(true));
-		verifyNoMoreInteractions(dispatchService);
+		verifyNoMoreInteractions(runtimeApi);
 	}
 
 	@Test
 	void defensiveMeleeDamageRoutesAllXpToDefence() {
-		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		SkillsRuntimeApi runtimeApi = mock(SkillsRuntimeApi.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
-		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+		CombatDamageXpSystem system = new CombatDamageXpSystem(runtimeApi, styleService, createConfig());
 
 		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
 		Ref<EntityStore> attackerRef = mock(Ref.class);
@@ -137,21 +137,21 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 3.0D);
 
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.DEFENCE),
 				eq(12.0D),
 				eq("combat:melee:defensive"),
 				eq(true));
-		verifyNoMoreInteractions(dispatchService);
+		verifyNoMoreInteractions(runtimeApi);
 	}
 
 	@Test
 	void controlledMeleeDamageDistributesSingleRemainderToAttackFirst() {
-		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		SkillsRuntimeApi runtimeApi = mock(SkillsRuntimeApi.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
-		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+		CombatDamageXpSystem system = new CombatDamageXpSystem(runtimeApi, styleService, createConfig());
 
 		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
 		Ref<EntityStore> attackerRef = mock(Ref.class);
@@ -164,33 +164,33 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 1.75D);
 
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.ATTACK),
 				eq(3.0D),
 				eq("combat:melee:controlled:attack"),
 				eq(true));
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.STRENGTH),
 				eq(2.0D),
 				eq("combat:melee:controlled:strength"),
 				eq(true));
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.DEFENCE),
 				eq(2.0D),
 				eq("combat:melee:controlled:defence"),
 				eq(true));
-		verifyNoMoreInteractions(dispatchService);
+		verifyNoMoreInteractions(runtimeApi);
 	}
 
 	@Test
 	void projectileDamageRoutesAllXpToRanged() {
-		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		SkillsRuntimeApi runtimeApi = mock(SkillsRuntimeApi.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
 		CombatConfig config = new CombatConfig(
 				4.0D,
@@ -204,7 +204,7 @@ class CombatDamageXpSystemContractTest {
 				"Controlled:Defence",
 				"Combat:Block:Defence",
 				List.of("projectile"));
-		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, config);
+		CombatDamageXpSystem system = new CombatDamageXpSystem(runtimeApi, styleService, config);
 
 		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
 		Ref<EntityStore> attackerRef = mock(Ref.class);
@@ -215,21 +215,21 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 2.0D);
 
-		verify(dispatchService).grantSkillXp(
+		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
 				eq(SkillType.RANGED),
 				eq(8.0D),
 				eq("combat:ranged"),
 				eq(true));
-		verifyNoMoreInteractions(dispatchService);
+		verifyNoMoreInteractions(runtimeApi);
 	}
 
 	@Test
 	void zeroOrNegativeEffectiveDamageDoesNotDispatchXp() {
-		SkillXpDispatchService dispatchService = mock(SkillXpDispatchService.class);
+		SkillsRuntimeApi runtimeApi = mock(SkillsRuntimeApi.class);
 		CombatStyleService styleService = mock(CombatStyleService.class);
-		CombatDamageXpSystem system = new CombatDamageXpSystem(dispatchService, styleService, createConfig());
+		CombatDamageXpSystem system = new CombatDamageXpSystem(runtimeApi, styleService, createConfig());
 
 		CommandBuffer<EntityStore> commandBuffer = mock(CommandBuffer.class);
 		Ref<EntityStore> attackerRef = mock(Ref.class);
@@ -242,7 +242,7 @@ class CombatDamageXpSystemContractTest {
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 0.0D);
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, -4.0D);
 
-		verifyNoMoreInteractions(dispatchService);
+		verifyNoMoreInteractions(runtimeApi);
 	}
 
 	private static CombatConfig createConfig() {

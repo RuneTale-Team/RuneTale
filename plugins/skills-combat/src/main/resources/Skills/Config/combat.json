@@ -1,0 +1,23 @@
+{
+  "xpPerDamage": 4.0,
+  "source": {
+    "ranged": "combat:ranged",
+    "melee": {
+      "prefix": "combat:melee:",
+      "accurate": "accurate",
+      "aggressive": "aggressive",
+      "defensive": "defensive",
+      "controlled": {
+        "attack": "controlled:attack",
+        "strength": "controlled:strength",
+        "defence": "controlled:defence"
+      }
+    },
+    "block": {
+      "defence": "combat:block:defence"
+    }
+  },
+  "projectileCauseTokens": [
+    "projectile"
+  ]
+}

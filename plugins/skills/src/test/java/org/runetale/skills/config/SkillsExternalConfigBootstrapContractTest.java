@@ -20,6 +20,7 @@ class SkillsExternalConfigBootstrapContractTest {
 		SkillsExternalConfigBootstrap.seedMissingDefaults(layout);
 
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/skills.json")).exists();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/combat.json")).doesNotExist();
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.json")).doesNotExist();
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/gathering.json")).doesNotExist();
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/equipment.json")).doesNotExist();
@@ -47,5 +48,6 @@ class SkillsExternalConfigBootstrapContractTest {
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.json")).doesNotExist();
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/gathering.json")).doesNotExist();
 		assertThat(layout.resolveConfigResourcePath("Skills/Config/equipment.json")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/combat.json")).doesNotExist();
 	}
 }
