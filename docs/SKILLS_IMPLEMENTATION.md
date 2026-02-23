@@ -5,19 +5,21 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 ## Plugin topology
 
 - `:plugins:skills-api` (`SkillsApiPlugin`): shared cross-plugin contracts (`SkillsRuntimeApi`, config/domain models).
-- `:plugins:skills` (`SkillsPlugin`): progression core (profile component, XP dispatch/grant pipeline, combat XP, runtime API provider).
+- `:plugins:skills` (`SkillsPlugin`): progression core (profile component, XP dispatch/grant pipeline, runtime API provider).
+- `:plugins:skills-combat` (`SkillsCombatPlugin`): combat XP routing (melee styles, ranged, block defence) and `/combatstyle` UI/command.
 - `:plugins:skills-gathering` (`SkillsGatheringPlugin`): node lookup, gather block-break enforcement, `/skills` overview page command.
 - `:plugins:skills-crafting` (`SkillsCraftingPlugin`): smithing/smelting pages, crafting XP dispatch, recipe unlock synchronization.
 
 ## Config ownership
 
-- Core-owned defaults: `xp.properties`, `combat.properties`, `hud.properties`.
-- Gathering-owned defaults: `heuristics.properties`, `tooling.properties`, `tool-tier-defaults.properties`, `xp-profile-defaults.properties`, and `Skills/Nodes/**`.
-- Crafting-owned defaults: `crafting.properties`.
+- Core-owned defaults: `skills.json`.
+- Combat-owned defaults: `combat.json`.
+- Gathering-owned defaults: `gathering.json` and `Skills/Nodes/nodes.json`.
+- Crafting-owned defaults: `crafting.json`.
 
 ## Runtime flow
 
-1. Plugin setup is split by responsibility: core wires progression services/systems and publishes `SkillsRuntimeApi`; gathering wires node assets and gather systems; crafting wires crafting systems and UI interactions.
+1. Plugin setup is split by responsibility: core wires progression services/systems and publishes `SkillsRuntimeApi`; combat wires combat systems/commands; gathering wires node assets and gather systems; crafting wires crafting systems and UI interactions.
 2. A profile bootstrap system ensures every player has a persistent skill profile component.
 3. `/skill` is a player-only self-inspection command that prints every declared skill with current level and XP.
 4. Any runtime source can queue XP grants through `SkillXpDispatchService` (strict skill id parsing, no silent fallback).
@@ -64,6 +66,14 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
   - If the profile component type is unavailable, the command returns a single unavailable message.
   - If the player profile component is unexpectedly missing, the command returns defaults for all skills.
 
+## `/combatstyle` command semantics
+
+- Scope: self-only (`AbstractPlayerCommand`).
+- Help: `/combatstyle help` (also supports `-h`, `--help`, `?`).
+- Modes: `accurate`, `aggressive`, `defensive`, `controlled` (plus legacy aliases `attack`, `strength`, `defence`).
+- UI: `/combatstyle ui` opens a custom page selector.
+- Query: `/combatstyle current` prints active mode and XP routing.
+
 ## `/skillxp` debug command semantics
 
 - Scope: self-only (`AbstractPlayerCommand`), intended for debug/admin usage.
@@ -103,16 +113,16 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ## Notes / assumptions
 
-- Node definitions are loaded external-first from `server/mods/runetale/config/skills/Nodes/**/*.properties` via `index.list`, then classpath resources under `src/main/resources/Skills/Nodes/**/*.properties` as fallback; in-memory defaults remain fail-safe only.
+- Node definitions are loaded external-first from `server/mods/runetale/config/skills/Nodes/nodes.json`, then classpath `src/main/resources/Skills/Nodes/nodes.json` as fallback; in-memory defaults remain fail-safe only.
 - Unknown blocks remain a no-op path (fail-safe behavior).
-- Runtime tuning now loads external-first from `server/mods/runetale/config/skills/Config/*.properties` through `SkillsConfigService` (classpath resources remain defaults/fallbacks).
+- Runtime tuning now loads external-first from `server/mods/runetale/config/skills/Config/*.json`; core owns `skills.json`, combat owns `combat.json` (with legacy `skills.json -> combat` fallback/migration support), classpath resources remain defaults/fallbacks.
 
 ## Testing Guide
 
 ### 1) Local compile/run verification
 
 ```bash
-./gradlew :plugins:skills-api:build :plugins:skills:clean :plugins:skills:build :plugins:skills-gathering:build :plugins:skills-crafting:build
+./gradlew :plugins:skills-api:build :plugins:skills:clean :plugins:skills:build :plugins:skills-combat:build :plugins:skills-gathering:build :plugins:skills-crafting:build
 ```
 
 - Confirms the plugin compiles and resource files under `src/main/resources/Skills/**` are packaged as fallback defaults.
@@ -120,12 +130,12 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ### 2) Manual in-game flow (quick checklist)
 
-1. Start the game/server with `SkillsPlugin`, `SkillsGatheringPlugin`, and `SkillsCraftingPlugin` enabled.
-2. Try breaking a configured node block (from `Skills/Nodes/**/*.properties`) with low skill level.
+1. Start the game/server with `SkillsPlugin`, `SkillsCombatPlugin`, `SkillsGatheringPlugin`, and `SkillsCraftingPlugin` enabled.
+2. Try breaking a configured node block (from `Skills/Nodes/nodes.json`) with low skill level.
    Expected: break is cancelled and a warning is shown.
 3. Use any held item and break again after meeting the level requirement.
     Expected: gather succeeds, XP is awarded, level recalculates from cumulative XP.
-4. Try breaking an unconfigured but node-like block id (for example ids containing tokens in `Skills/Config/heuristics.properties`).
+4. Try breaking an unconfigured but node-like block id (for example ids containing tokens in `Skills/Config/gathering.json` -> `heuristics.nodeCandidateTokens`).
    Expected: break is cancelled and a "not configured yet" warning is shown.
 5. Repeat successful gathers until a level-up boundary is crossed.
     Expected: log shows level `before -> after` change.
@@ -149,10 +159,9 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ### Add a new node (resource-driven)
 
-1. Create `src/main/resources/Skills/Nodes/<skill>/<your_node>.properties` using existing files as a template.
-2. Add that filename as a new line in `src/main/resources/Skills/Nodes/index.list`.
-3. Keep keys aligned with current loader schema:
-   - `id`, `skill`, `blockIds` (preferred, comma-separated) or `blockId` (backward-compatible fallback),
+1. Create/update `src/main/resources/Skills/Nodes/nodes.json` and add your node under the appropriate skill-group array.
+2. Keep keys aligned with current loader schema:
+   - `id`, optional `skill` (falls back to group name), `blockIds` (preferred array) or `blockId` (backward-compatible fallback),
    - `requiredSkillLevel`, `requiredToolKeyword`, `requiredToolTier`,
    - `experienceReward`.
    - `blockIds` entries support `*` wildcard matching (for example `Ore_Copper_Surface_*`).
@@ -163,14 +172,14 @@ Server logs remain focused on setup/runtime diagnostics and unexpected safety pa
 
 ### Add more nodes for an existing skill
 
-- Repeat the same pattern with additional `*.properties` files.
+- Repeat the same pattern with additional entries in `nodes.json`.
 - Use distinct mapped block ids/patterns per node for deterministic lookup (via `blockIds` or `blockId`).
 - Keep progression coherent by increasing `requiredSkillLevel` / `experienceReward` gradually.
 
 ### Add a new skill end-to-end
 
 1. Add the identity to `SkillType`.
-2. Author one or more node resources with `skill=<NEW_SKILL>` and include them in `index.list`.
+2. Author one or more grouped node entries in `Skills/Nodes/nodes.json` (use `skill=<NEW_SKILL>` when you need explicit override).
 3. Ensure your content (blocks/skills) can satisfy the same runtime checks already used by break handling.
 4. Rebuild and test requirement + XP paths exactly as in the Testing Guide.
 
@@ -275,7 +284,7 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
 
 - Node definitions still support `requiredToolKeyword` and `requiredToolTier` fields for schema compatibility.
 - Current gather break enforcement does not gate on held-tool keyword/tier.
-- Tool family/tier logic remains available via `ToolRequirementEvaluator` and `Skills/Config/tooling.properties` for other call sites.
+- Tool family/tier logic remains available via `ToolRequirementEvaluator` and `Skills/Config/gathering.json` (`tooling` section) for other call sites.
 
 ### Caveats / staged behavior TODOs
 
@@ -298,5 +307,5 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
   - Verify XP/level mutations are persisted back to the player profile component.
 
 - [ ] **Extensibility for a second skill**
-  - Add a second-skill node resource set (e.g., Mining) using the same `Skills/Nodes/index.list` + properties schema.
+  - Add a second-skill node resource set (e.g., Mining) using the grouped `Skills/Nodes/nodes.json` schema.
   - Confirm loader accepts the second skill identity and systems process it without architectural changes.

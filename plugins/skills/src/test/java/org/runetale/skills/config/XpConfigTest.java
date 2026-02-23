@@ -26,14 +26,18 @@ class XpConfigTest {
 
 	@Test
 	void loadClampsAndNormalizesInvalidExternalValues(@TempDir Path tempDir) throws IOException {
-		write(tempDir, "Config/xp.properties", """
-				maxLevel=1
-				levelTermMultiplier=-5.0
-				growthScale=-1.0
-				growthBase=0.5
-				growthDivisor=0.0
-				pointsDivisor=0
-				roundingMode=not-a-mode
+		write(tempDir, "Config/skills.json", """
+				{
+				  "xp": {
+				    "maxLevel": 1,
+				    "levelTermMultiplier": -5.0,
+				    "growthScale": -1.0,
+				    "growthBase": 0.5,
+				    "growthDivisor": 0.0,
+				    "pointsDivisor": 0,
+				    "roundingMode": "not-a-mode"
+				  }
+				}
 				""");
 
 		XpConfig config = XpConfig.load(tempDir);

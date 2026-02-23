@@ -23,19 +23,19 @@ class SkillsPathLayoutTest {
 
 	@Test
 	void externalRelativeResourcePathStripsSkillsPrefixOnly() {
-		assertThat(SkillsPathLayout.externalRelativeResourcePath("Skills/Config/xp.properties"))
-				.isEqualTo("Config/xp.properties");
-		assertThat(SkillsPathLayout.externalRelativeResourcePath("Config/xp.properties"))
-				.isEqualTo("Config/xp.properties");
+		assertThat(SkillsPathLayout.externalRelativeResourcePath("Skills/Config/skills.json"))
+				.isEqualTo("Config/skills.json");
+		assertThat(SkillsPathLayout.externalRelativeResourcePath("Config/skills.json"))
+				.isEqualTo("Config/skills.json");
 	}
 
 	@Test
 	void resolveConfigResourcePathMapsIntoPluginConfigRoot(@TempDir Path tempDir) {
 		SkillsPathLayout layout = SkillsPathLayout.fromDataDirectory(tempDir.resolve("mods").resolve("skills-data"));
 
-		Path resolved = layout.resolveConfigResourcePath("Skills/Nodes/mining/copper.properties");
+		Path resolved = layout.resolveConfigResourcePath("Skills/Nodes/nodes.json");
 
 		assertThat(resolved)
-				.isEqualTo(layout.pluginConfigRoot().resolve("Nodes/mining/copper.properties"));
+				.isEqualTo(layout.pluginConfigRoot().resolve("Nodes/nodes.json"));
 	}
 }

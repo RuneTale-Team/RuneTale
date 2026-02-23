@@ -1,0 +1,226 @@
+{
+  "woodcutting": [
+    {
+      "id": "woodcutting_oak_tree",
+      "label": "Oak Tree",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 0,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 7.0,
+      "blockIds": [
+        "Wood_Oak_Trunk",
+        "Wood_Oak_Trunk_Full",
+        "Tree_Oak"
+      ]
+    },
+    {
+      "id": "woodcutting_beech_tree",
+      "label": "Beech Tree",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 10,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 12.0,
+      "blockIds": [
+        "Wood_Beech_Trunk",
+        "Wood_Beech_Trunk_Full"
+      ]
+    },
+    {
+      "id": "woodcutting_birch_tree",
+      "label": "Birch Tree",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 15,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 17.0,
+      "blockIds": [
+        "Wood_Birch_Trunk",
+        "Wood_Birch_Trunk_Full"
+      ]
+    },
+    {
+      "id": "woodcutting_tree",
+      "label": "Tree",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 0,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 25.0,
+      "blockIds": [
+        "RuneTale_Decoration_Tree"
+      ]
+    },
+    {
+      "id": "woodcutting_tree_oak",
+      "label": "Tree Oak",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 15,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 37.5,
+      "blockIds": [
+        "RuneTale_Decoration_Tree_Oak"
+      ]
+    },
+    {
+      "id": "woodcutting_tree_willow",
+      "label": "Tree Willow",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 30,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 67.5,
+      "blockIds": [
+        "RuneTale_Decoration_Tree_Willow"
+      ]
+    },
+    {
+      "id": "woodcutting_tree_maple",
+      "label": "Tree Maple",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 45,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 100.0,
+      "blockIds": [
+        "RuneTale_Decoration_Tree_Maple"
+      ]
+    },
+    {
+      "id": "woodcutting_tree_yew",
+      "label": "Tree Yew",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 60,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 175.0,
+      "blockIds": [
+        "RuneTale_Decoration_Tree_Yew"
+      ]
+    },
+    {
+      "id": "woodcutting_tree_magic",
+      "label": "Tree Magic",
+      "skill": "WOODCUTTING",
+      "requiredSkillLevel": 75,
+      "requiredToolKeyword": "Tool_Hatchet",
+      "requiredToolTier": "NONE",
+      "experienceReward": 250.0,
+      "blockIds": [
+        "RuneTale_Decoration_Tree_Magic"
+      ]
+    }
+  ],
+  "mining": [
+    {
+      "id": "mining_tin",
+      "label": "Tin Ore",
+      "skill": "MINING",
+      "requiredSkillLevel": 0,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 7.0,
+      "blockIds": [
+        "Ore_Tin_*"
+      ]
+    },
+    {
+      "id": "mining_copper",
+      "label": "Copper Ore",
+      "skill": "MINING",
+      "requiredSkillLevel": 0,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 17.5,
+      "blockIds": [
+        "Ore_Copper_*"
+      ]
+    },
+    {
+      "id": "mining_iron",
+      "label": "Iron Ore",
+      "skill": "MINING",
+      "requiredSkillLevel": 15,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 35.0,
+      "blockIds": [
+        "Ore_Iron_*"
+      ]
+    },
+    {
+      "id": "mining_silver",
+      "label": "Silver Ore",
+      "skill": "MINING",
+      "requiredSkillLevel": 20,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 40.0,
+      "blockIds": [
+        "Ore_Silver_*"
+      ]
+    },
+    {
+      "id": "mining_coal",
+      "label": "Coal",
+      "skill": "MINING",
+      "requiredSkillLevel": 30,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 50.0,
+      "blockIds": [
+        "Ore_Coal_*"
+      ]
+    },
+    {
+      "id": "mining_gold",
+      "label": "Gold Ore",
+      "skill": "MINING",
+      "requiredSkillLevel": 40,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 65.0,
+      "blockIds": [
+        "Ore_Gold_*"
+      ]
+    },
+    {
+      "id": "mining_mithril",
+      "label": "Mithril Ore",
+      "skill": "MINING",
+      "requiredSkillLevel": 55,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 80.0,
+      "blockIds": [
+        "Ore_Mithril_*"
+      ]
+    },
+    {
+      "id": "mining_adamantite",
+      "label": "Adamantite Ore",
+      "skill": "MINING",
+      "requiredSkillLevel": 70,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 95.0,
+      "blockIds": [
+        "Ore_Adamantite_*"
+      ]
+    },
+    {
+      "id": "mining_runite",
+      "label": "Runite Ore",
+      "skill": "MINING",
+      "requiredSkillLevel": 85,
+      "requiredToolKeyword": "Tool_Pickaxe",
+      "requiredToolTier": "NONE",
+      "experienceReward": 125.0,
+      "blockIds": [
+        "Ore_Runite_*"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 package org.runetale.skills.config;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.runetale.skills.domain.ToolTier;
 
 import javax.annotation.Nonnull;
@@ -10,14 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 
 public final class ToolingConfig {
 
-    private static final String RESOURCE_PATH = "Skills/Config/tooling.properties";
-    private static final String LEGACY_DEFAULTS_RESOURCE_PATH = "Skills/tool-tier-defaults.properties";
-    private static final String FAMILY_PREFIX = "family.";
-    private static final String TIER_PREFIX = "tier.";
+    private static final String RESOURCE_PATH = "Skills/Config/gathering.json";
 
     private final String defaultKeyword;
     private final Map<String, List<String>> familyFragmentsByKeyword;
@@ -34,26 +32,17 @@ public final class ToolingConfig {
 
     @Nonnull
     public static ToolingConfig load(@Nonnull Path externalConfigRoot) {
-        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH, externalConfigRoot);
-        Properties legacyDefaults = ConfigResourceLoader.loadProperties(LEGACY_DEFAULTS_RESOURCE_PATH, externalConfigRoot);
+        JsonObject root = ConfigResourceLoader.loadJsonObject(RESOURCE_PATH, externalConfigRoot);
+        JsonObject tooling = ConfigResourceLoader.objectValue(root, "tooling");
 
-        String defaultKeyword = ConfigResourceLoader.stringValue(
-                properties,
-                "keyword.default",
-                ConfigResourceLoader.stringValue(legacyDefaults, "keyword.default", "Tool_Hatchet_"));
+        String defaultKeyword = ConfigResourceLoader.stringValue(tooling, "keywordDefault", "Tool_Hatchet_");
 
-        Map<String, List<String>> families = parseFamilies(properties);
-        if (families.isEmpty()) {
-            families = parseLegacyFamilies(legacyDefaults);
-        }
+        Map<String, List<String>> families = parseFamilies(ConfigResourceLoader.objectValue(tooling, "families"));
         if (families.isEmpty()) {
             families = Map.of("tool_hatchet", List.of("tool_hatchet"));
         }
 
-        EnumMap<ToolTier, List<String>> tierTokensByTier = parseTierTokens(properties);
-        if (tierTokensByTier.isEmpty()) {
-            tierTokensByTier = parseLegacyTierTokens(legacyDefaults);
-        }
+        EnumMap<ToolTier, List<String>> tierTokensByTier = parseTierTokens(ConfigResourceLoader.objectValue(tooling, "tiers"));
         if (tierTokensByTier.isEmpty()) {
             tierTokensByTier = defaultTierTokens();
         }
@@ -114,15 +103,11 @@ public final class ToolingConfig {
     }
 
     @Nonnull
-    private static Map<String, List<String>> parseFamilies(@Nonnull Properties properties) {
+    private static Map<String, List<String>> parseFamilies(@Nonnull JsonObject familiesObject) {
         Map<String, List<String>> families = new HashMap<>();
-        for (String key : properties.stringPropertyNames()) {
-            if (!key.startsWith(FAMILY_PREFIX)) {
-                continue;
-            }
-
-            String normalizedKeyword = normalizeToken(key.substring(FAMILY_PREFIX.length()));
-            List<String> fragments = parseCsvTokens(properties.getProperty(key));
+        for (Map.Entry<String, JsonElement> entry : familiesObject.entrySet()) {
+            String normalizedKeyword = normalizeToken(entry.getKey());
+            List<String> fragments = parseTokens(entry.getValue());
             if (!normalizedKeyword.isEmpty() && !fragments.isEmpty()) {
                 families.put(normalizedKeyword, fragments);
             }
@@ -131,51 +116,18 @@ public final class ToolingConfig {
     }
 
     @Nonnull
-    private static Map<String, List<String>> parseLegacyFamilies(@Nonnull Properties legacyDefaults) {
-        Map<String, List<String>> families = new HashMap<>();
-        for (String key : legacyDefaults.stringPropertyNames()) {
-            if (!key.startsWith("keyword.") || !key.endsWith(".tiers")) {
-                continue;
-            }
-
-            String normalizedKeyword = normalizeToken(key.substring("keyword.".length(), key.length() - ".tiers".length()));
-            List<String> fragments = parseCsvTokens(legacyDefaults.getProperty(key));
-            if (!normalizedKeyword.isEmpty() && !fragments.isEmpty()) {
-                families.put(normalizedKeyword, fragments);
-            }
-        }
-        return families;
-    }
-
-    @Nonnull
-    private static EnumMap<ToolTier, List<String>> parseTierTokens(@Nonnull Properties properties) {
+    private static EnumMap<ToolTier, List<String>> parseTierTokens(@Nonnull JsonObject tiersObject) {
         EnumMap<ToolTier, List<String>> tokensByTier = new EnumMap<>(ToolTier.class);
-        for (String key : properties.stringPropertyNames()) {
-            if (!key.startsWith(TIER_PREFIX)) {
-                continue;
-            }
-
-            String rawTier = key.substring(TIER_PREFIX.length()).trim();
+        for (Map.Entry<String, JsonElement> entry : tiersObject.entrySet()) {
+            String rawTier = entry.getKey().trim();
             ToolTier tier = ToolTier.fromString(rawTier);
             if (tier == ToolTier.NONE && !"NONE".equalsIgnoreCase(rawTier)) {
                 continue;
             }
 
-            List<String> tokens = parseCsvTokens(properties.getProperty(key));
+            List<String> tokens = parseTokens(entry.getValue());
             if (!tokens.isEmpty()) {
                 tokensByTier.put(tier, tokens);
-            }
-        }
-        return tokensByTier;
-    }
-
-    @Nonnull
-    private static EnumMap<ToolTier, List<String>> parseLegacyTierTokens(@Nonnull Properties legacyDefaults) {
-        EnumMap<ToolTier, List<String>> tokensByTier = new EnumMap<>(ToolTier.class);
-        for (ToolTier tier : ToolTier.values()) {
-            String alias = legacyDefaults.getProperty("alias." + tier.name().toLowerCase(Locale.ROOT));
-            if (alias != null && !alias.isBlank()) {
-                tokensByTier.put(tier, List.of(normalizeToken(alias)));
             }
         }
         return tokensByTier;
@@ -197,16 +149,24 @@ public final class ToolingConfig {
     }
 
     @Nonnull
-    private static List<String> parseCsvTokens(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return List.of();
-        }
-
+    private static List<String> parseTokens(@Nonnull JsonElement element) {
         List<String> parsed = new ArrayList<>();
-        for (String token : raw.split(",")) {
-            String normalized = normalizeToken(token);
-            if (!normalized.isEmpty()) {
-                parsed.add(normalized);
+        if (element.isJsonArray()) {
+            for (JsonElement tokenElement : element.getAsJsonArray()) {
+                if (tokenElement == null || tokenElement.isJsonNull()) {
+                    continue;
+                }
+                String normalized = normalizeToken(tokenElement.getAsString());
+                if (!normalized.isEmpty()) {
+                    parsed.add(normalized);
+                }
+            }
+        } else if (element.isJsonPrimitive()) {
+            for (String token : element.getAsString().split(",")) {
+                String normalized = normalizeToken(token);
+                if (!normalized.isEmpty()) {
+                    parsed.add(normalized);
+                }
             }
         }
 

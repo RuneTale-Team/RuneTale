@@ -13,7 +13,7 @@ import java.nio.file.Path;
 public final class EquipmentExternalConfigBootstrap {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-    private static final String EQUIPMENT_CONFIG_RESOURCE = "Skills/Config/equipment.properties";
+    private static final String EQUIPMENT_CONFIG_RESOURCE = "Skills/Config/equipment.json";
 
     private EquipmentExternalConfigBootstrap() {
     }

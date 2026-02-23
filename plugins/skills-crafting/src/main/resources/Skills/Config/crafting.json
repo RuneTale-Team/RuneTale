@@ -1,0 +1,23 @@
+{
+  "bench": {
+    "anvilId": "RuneTale_Anvil",
+    "furnaceId": "RuneTale_Furnace"
+  },
+  "smithing": {
+    "craftDurationMillis": 3000
+  },
+  "smelting": {
+    "craftDurationMillis": 3000,
+    "outputContainsToken": "runetale_bar_"
+  },
+  "craft": {
+    "maxCount": 999,
+    "quantityPresets": [
+      1,
+      5,
+      10
+    ],
+    "quantityAllToken": "ALL"
+  },
+  "pageProgressTickSeconds": 0.05
+}

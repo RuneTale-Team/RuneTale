@@ -1,5 +1,9 @@
 package org.runetale.skills.service;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.hypixel.hytale.logger.HytaleLogger;
 import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.asset.SkillNodeDefinition;
@@ -8,7 +12,6 @@ import org.runetale.skills.domain.ToolTier;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,7 +25,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
@@ -39,10 +41,8 @@ import java.util.regex.Pattern;
 public class SkillNodeLookupService {
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-	private static final String NODE_INDEX_RESOURCE = "Skills/Nodes/index.list";
-	private static final String NODE_RESOURCE_PREFIX = "Skills/Nodes/";
-	private static final String XP_PROFILE_DEFAULTS_RESOURCE = "Skills/xp-profile-defaults.properties";
-	private static final String TOOL_TIER_DEFAULTS_RESOURCE = "Skills/tool-tier-defaults.properties";
+	private static final String NODES_RESOURCE = "Skills/Nodes/nodes.json";
+	private static final String GATHERING_CONFIG_RESOURCE = "Skills/Config/gathering.json";
 
 	/**
 	 * Keyed by block id for fast break-event matching.
@@ -84,100 +84,80 @@ public class SkillNodeLookupService {
 	 * discoverability.
 	 */
 	private void loadAndLogOptionalSharedDefaults() {
-		Properties xpProfileDefaults = loadPropertiesResource(XP_PROFILE_DEFAULTS_RESOURCE);
-		if (!xpProfileDefaults.isEmpty()) {
+		JsonObject gatheringConfig = loadJsonObjectResource(GATHERING_CONFIG_RESOURCE);
+		if (!gatheringConfig.entrySet().isEmpty()) {
+			JsonObject xpProfileDefaults = objectValue(gatheringConfig, "xpProfileDefaults");
 			LOGGER.atInfo().log("[Skills] XP defaults discovered: profileId=%s curveModel=%s maxLevel=%s",
 					value(xpProfileDefaults, "profileId", "<missing>"),
 					value(xpProfileDefaults, "curveModel", "<missing>"),
 					value(xpProfileDefaults, "maxLevel", "<missing>"));
-		}
 
-		Properties toolTierDefaults = loadPropertiesResource(TOOL_TIER_DEFAULTS_RESOURCE);
-		if (!toolTierDefaults.isEmpty()) {
+			JsonObject toolTierDefaults = objectValue(gatheringConfig, "toolTierDefaults");
 			LOGGER.atInfo().log("[Skills] Tool-tier defaults discovered: keyword.default=%s tiers=%s",
-					value(toolTierDefaults, "keyword.default", "<missing>"),
-					value(toolTierDefaults, "tiers", "<missing>"));
+					value(toolTierDefaults, "keywordDefault", "<missing>"),
+					joinStringArray(toolTierDefaults.get("tiers")));
 		}
 	}
 
 	/**
-	 * Loads node definitions from classpath resources.
-	 *
-	 * <p>
-	 * Loading is intentionally index-driven because classpath directory enumeration
-	 * is not reliable across runtime containers/JAR layouts.
+	 * Loads node definitions from grouped JSON resources.
 	 */
 	private int loadNodesFromResources() {
-		List<String> nodeFiles = readNodeIndex();
-		if (nodeFiles.isEmpty()) {
-			LOGGER.atWarning().log("[Skills] Node index empty or missing: resource=%s", NODE_INDEX_RESOURCE);
+		JsonObject root = loadJsonObjectResource(NODES_RESOURCE);
+		if (root.entrySet().isEmpty()) {
+			LOGGER.atWarning().log("[Skills] Node definition resource empty or missing: resource=%s", NODES_RESOURCE);
 			return 0;
 		}
 
 		int count = 0;
-		for (String fileName : nodeFiles) {
-			if (loadSingleNodeResource(fileName)) {
-				count++;
+		for (Map.Entry<String, JsonElement> skillEntry : root.entrySet()) {
+			String groupedSkill = skillEntry.getKey();
+			JsonElement entryValue = skillEntry.getValue();
+			if (entryValue == null || !entryValue.isJsonArray()) {
+				LOGGER.atWarning().log("[Skills] Skipping node group=%s because it is not an array", groupedSkill);
+				continue;
+			}
+
+			JsonArray definitions = entryValue.getAsJsonArray();
+			int index = 0;
+			for (JsonElement definitionElement : definitions) {
+				if (definitionElement != null && definitionElement.isJsonObject()) {
+					if (loadSingleNodeResource(groupedSkill, index, definitionElement.getAsJsonObject())) {
+						count++;
+					}
+				}
+				index++;
 			}
 		}
 		return count;
 	}
 
-	@Nonnull
-	private List<String> readNodeIndex() {
-		List<String> files = new ArrayList<>();
-		try (InputStream input = openResourceInput(NODE_INDEX_RESOURCE)) {
-			if (input == null) {
-				LOGGER.atWarning().log("[Skills] Node index not found in external config or classpath resource=%s",
-						NODE_INDEX_RESOURCE);
-				return files;
-			}
-
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-				String line;
-				while ((line = reader.readLine()) != null) {
-					String trimmed = line.trim();
-					// Support comments and blank lines to keep index human-editable.
-					if (trimmed.isEmpty() || trimmed.startsWith("#")) {
-						continue;
-					}
-					files.add(trimmed);
-				}
-			}
-		} catch (IOException e) {
-			LOGGER.atWarning().withCause(e).log("[Skills] Failed to read node index resource=%s", NODE_INDEX_RESOURCE);
+	private boolean loadSingleNodeResource(
+			@Nonnull String groupedSkill,
+			int index,
+			@Nonnull JsonObject object) {
+		String sourceLabel = NODES_RESOURCE + "#" + groupedSkill + "[" + index + "]";
+		String id = value(object, "id", groupedSkill + "_" + index);
+		String label = optionalValue(object, "label");
+		String rawSkill = optionalValue(object, "skill");
+		if (rawSkill == null || rawSkill.isBlank()) {
+			rawSkill = groupedSkill;
 		}
-
-		LOGGER.atFine().log("[Skills] Node index resolved %d file(s) from %s", files.size(), NODE_INDEX_RESOURCE);
-		return files;
-	}
-
-	private boolean loadSingleNodeResource(@Nonnull String fileName) {
-		String resourcePath = NODE_RESOURCE_PREFIX + fileName;
-		Properties properties = loadPropertiesResource(resourcePath);
-		if (properties.isEmpty()) {
-			LOGGER.atWarning().log("[Skills] Node resource is missing or empty: %s", resourcePath);
-			return false;
-		}
-
-		String id = value(properties, "id", fileName.replace(".properties", ""));
-		String label = optionalValue(properties, "label");
-		String rawSkill = optionalValue(properties, "skill");
 		SkillType skillType = SkillType.tryParseStrict(rawSkill);
 		if (skillType == null) {
 			LOGGER.atWarning().log(
 					"[Skills] Skipping node resource=%s id=%s because skill is missing or invalid: %s",
-					resourcePath,
+					sourceLabel,
 					id,
 					rawSkill == null ? "<missing>" : rawSkill);
 			return false;
 		}
-		List<String> blockIds = resolveBlockIds(properties);
+		List<String> blockIds = resolveBlockIds(object);
 		String primaryBlockId = blockIds.get(0);
-		int requiredSkillLevel = integerValue(properties, "requiredSkillLevel", 1);
-		ToolTier requiredToolTier = ToolTier.fromString(value(properties, "requiredToolTier", ToolTier.NONE.name()));
-		String requiredToolKeyword = value(properties, "requiredToolKeyword", "axe");
-		double experienceReward = doubleValue(properties, "experienceReward", 0.0D);
+		int requiredSkillLevel = integerValue(object, "requiredSkillLevel", 1);
+		ToolTier requiredToolTier = ToolTier.fromString(value(object, "requiredToolTier", ToolTier.NONE.name()));
+		String requiredToolKeyword = value(object, "requiredToolKeyword", "axe");
+		double experienceReward = doubleValue(object, "experienceReward", 0.0D);
 
 		SkillNodeDefinition definition = new SkillNodeDefinition(id, label, skillType, primaryBlockId, requiredSkillLevel,
 				requiredToolTier, requiredToolKeyword, experienceReward);
@@ -185,7 +165,7 @@ public class SkillNodeLookupService {
 
 		LOGGER.atInfo().log(
 				"[Skills] Loaded node resource=%s id=%s skill=%s blocks=%s level=%d tier=%s keyword=%s xp=%.2f",
-				resourcePath, id, skillType, blockIds, requiredSkillLevel, requiredToolTier,
+				sourceLabel, id, skillType, blockIds, requiredSkillLevel, requiredToolTier,
 				requiredToolKeyword,
 				experienceReward);
 		return true;
@@ -406,127 +386,156 @@ public class SkillNodeLookupService {
 	}
 
 	@Nonnull
-	private static String value(@Nonnull Properties properties, @Nonnull String key, @Nonnull String defaultValue) {
-		String raw = properties.getProperty(key);
-		if (raw == null) {
+	private static String value(@Nonnull JsonObject object, @Nonnull String key, @Nonnull String defaultValue) {
+		JsonElement element = object.get(key);
+		if (element == null || element.isJsonNull()) {
 			return defaultValue;
 		}
-		String trimmed = raw.trim();
+		String trimmed;
+		try {
+			trimmed = element.getAsString().trim();
+		} catch (RuntimeException ignored) {
+			return defaultValue;
+		}
 		return trimmed.isEmpty() ? defaultValue : trimmed;
 	}
 
-	private static int integerValue(@Nonnull Properties properties, @Nonnull String key, int defaultValue) {
-		String raw = properties.getProperty(key);
-		if (raw == null || raw.isBlank()) {
+	private static int integerValue(@Nonnull JsonObject object, @Nonnull String key, int defaultValue) {
+		JsonElement element = object.get(key);
+		if (element == null || element.isJsonNull()) {
 			return defaultValue;
 		}
 
 		try {
-			return Integer.parseInt(raw.trim());
-		} catch (NumberFormatException e) {
-			LOGGER.atWarning().log("[Skills] Invalid integer for key=%s value=%s; using default=%d", key, raw,
-					defaultValue);
+			return element.getAsInt();
+		} catch (RuntimeException e) {
+			LOGGER.atWarning().log("[Skills] Invalid integer for key=%s; using default=%d", key, defaultValue);
 			return defaultValue;
 		}
 	}
 
 	@Nullable
-	private static String optionalValue(@Nonnull Properties properties, @Nonnull String key) {
-		String raw = properties.getProperty(key);
-		if (raw == null) {
+	private static String optionalValue(@Nonnull JsonObject object, @Nonnull String key) {
+		JsonElement element = object.get(key);
+		if (element == null || element.isJsonNull()) {
+			return null;
+		}
+		String raw;
+		try {
+			raw = element.getAsString();
+		} catch (RuntimeException ignored) {
 			return null;
 		}
 		String trimmed = raw.trim();
 		return trimmed.isEmpty() ? null : trimmed;
 	}
 
-	private static double doubleValue(@Nonnull Properties properties, @Nonnull String key, double defaultValue) {
-		String raw = properties.getProperty(key);
-		if (raw == null || raw.isBlank()) {
+	private static double doubleValue(@Nonnull JsonObject object, @Nonnull String key, double defaultValue) {
+		JsonElement element = object.get(key);
+		if (element == null || element.isJsonNull()) {
 			return defaultValue;
 		}
 
 		try {
-			return Double.parseDouble(raw.trim());
-		} catch (NumberFormatException e) {
-			LOGGER.atWarning().log("[Skills] Invalid decimal for key=%s value=%s; using default=%f", key, raw,
-					defaultValue);
+			return element.getAsDouble();
+		} catch (RuntimeException e) {
+			LOGGER.atWarning().log("[Skills] Invalid decimal for key=%s; using default=%f", key, defaultValue);
 			return defaultValue;
 		}
 	}
 
 	@Nonnull
-	private static List<String> resolveBlockIds(@Nonnull Properties properties) {
-		String rawBlockIds = properties.getProperty("blockIds");
-		if (rawBlockIds == null || rawBlockIds.isBlank()) {
-			return List.of(value(properties, "blockId", "Empty"));
+	private static List<String> resolveBlockIds(@Nonnull JsonObject object) {
+		JsonElement blockIdsElement = object.get("blockIds");
+		if (blockIdsElement == null || blockIdsElement.isJsonNull()) {
+			return List.of(value(object, "blockId", "Empty"));
 		}
 
 		LinkedHashSet<String> parsed = new LinkedHashSet<>();
-		for (String token : rawBlockIds.split(",")) {
-			String trimmed = token.trim();
-			if (!trimmed.isEmpty()) {
-				parsed.add(trimmed);
+		if (blockIdsElement.isJsonArray()) {
+			for (JsonElement tokenElement : blockIdsElement.getAsJsonArray()) {
+				if (tokenElement == null || tokenElement.isJsonNull()) {
+					continue;
+				}
+				String trimmed = tokenElement.getAsString().trim();
+				if (!trimmed.isEmpty()) {
+					parsed.add(trimmed);
+				}
+			}
+		} else {
+			for (String token : blockIdsElement.getAsString().split(",")) {
+				String trimmed = token.trim();
+				if (!trimmed.isEmpty()) {
+					parsed.add(trimmed);
+				}
 			}
 		}
 
 		if (parsed.isEmpty()) {
-			return List.of(value(properties, "blockId", "Empty"));
+			return List.of(value(object, "blockId", "Empty"));
 		}
 
 		return List.copyOf(parsed);
 	}
 
 	@Nonnull
-	private Properties loadPropertiesResource(@Nonnull String resourcePath) {
-		Properties properties = new Properties();
-		Path externalPath = resolveExternalPath(resourcePath);
-		if (externalPath != null && Files.isRegularFile(externalPath)) {
-			try (InputStream input = Files.newInputStream(externalPath)) {
-				properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
-				LOGGER.atFine().log("[Skills] Loaded external node resource path=%s entries=%d", externalPath,
-						properties.size());
-				return properties;
-			} catch (IOException e) {
-				LOGGER.atWarning().withCause(e).log("[Skills] Failed loading external node resource path=%s", externalPath);
+	private static JsonObject objectValue(@Nonnull JsonObject object, @Nonnull String key) {
+		JsonElement element = object.get(key);
+		if (element != null && element.isJsonObject()) {
+			return element.getAsJsonObject();
+		}
+		return new JsonObject();
+	}
+
+	@Nonnull
+	private static String joinStringArray(@Nullable JsonElement element) {
+		if (element == null || !element.isJsonArray()) {
+			return "<missing>";
+		}
+
+		List<String> values = new ArrayList<>();
+		for (JsonElement value : element.getAsJsonArray()) {
+			if (value == null || value.isJsonNull()) {
+				continue;
 			}
+			values.add(value.getAsString());
 		}
+		return values.isEmpty() ? "<missing>" : String.join(",", values);
+	}
 
-		ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-		ClassLoader serviceClassLoader = SkillNodeLookupService.class.getClassLoader();
-		ClassLoader classLoader = serviceClassLoader != null ? serviceClassLoader : contextClassLoader;
+	@Nonnull
+	private JsonObject loadJsonObjectResource(@Nonnull String resourcePath) {
+		try (InputStream input = openResourceInput(resourcePath)) {
+			if (input == null) {
+				LOGGER.atFine().log("[Skills] Optional resource not found: %s", resourcePath);
+				ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+				ClassLoader serviceClassLoader = SkillNodeLookupService.class.getClassLoader();
+				LOGGER.atInfo().log(
+						"[Skills][Diag] Resource miss via selectedCL=%s resource=%s contextVisible=%s serviceVisible=%s",
+						describeClassLoader(serviceClassLoader),
+						resourcePath,
+						probeResourceVisible(contextClassLoader, resourcePath),
+						probeResourceVisible(serviceClassLoader, resourcePath));
+				return new JsonObject();
+			}
 
-		if (classLoader == null) {
-			LOGGER.atSevere().log("[Skills] Cannot read resource=%s because no classloader is available",
-					resourcePath);
-			return properties;
-		}
-
-		InputStream selectedInput = classLoader == null ? null : classLoader.getResourceAsStream(resourcePath);
-		if (selectedInput == null && contextClassLoader != null && contextClassLoader != classLoader) {
-			classLoader = contextClassLoader;
-			selectedInput = classLoader.getResourceAsStream(resourcePath);
-		}
-
-		if (selectedInput == null) {
-			LOGGER.atFine().log("[Skills] Optional resource not found: %s", resourcePath);
-			LOGGER.atInfo().log(
-					"[Skills][Diag] Resource miss via selectedCL=%s resource=%s contextVisible=%s serviceVisible=%s",
-					describeClassLoader(classLoader),
-					resourcePath,
-					probeResourceVisible(contextClassLoader, resourcePath),
-					probeResourceVisible(serviceClassLoader, resourcePath));
-			return properties;
-		}
-
-		try (InputStream input = selectedInput) {
-			properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
-			LOGGER.atFine().log("[Skills] Loaded resource=%s entries=%d", resourcePath, properties.size());
+			try (InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+				JsonElement parsed = JsonParser.parseReader(reader);
+				if (parsed != null && parsed.isJsonObject()) {
+					JsonObject object = parsed.getAsJsonObject();
+					LOGGER.atFine().log("[Skills] Loaded resource=%s entries=%d", resourcePath, object.size());
+					return object;
+				}
+				LOGGER.atWarning().log("[Skills] Resource root must be JSON object: %s", resourcePath);
+				return new JsonObject();
+			}
 		} catch (IOException e) {
 			LOGGER.atWarning().withCause(e).log("[Skills] Failed loading resource=%s", resourcePath);
+			return new JsonObject();
+		} catch (RuntimeException e) {
+			LOGGER.atWarning().withCause(e).log("[Skills] Failed parsing JSON resource=%s", resourcePath);
+			return new JsonObject();
 		}
-
-		return properties;
 	}
 
 	@Nullable

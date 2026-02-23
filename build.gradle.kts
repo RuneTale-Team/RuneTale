@@ -195,7 +195,8 @@ val skillsConfigResourceDirs = listOf(
     layout.projectDirectory.dir("plugins/skills/src/main/resources/Skills"),
     layout.projectDirectory.dir("plugins/skills-gathering/src/main/resources/Skills"),
     layout.projectDirectory.dir("plugins/skills-crafting/src/main/resources/Skills"),
-    layout.projectDirectory.dir("plugins/skills-equipment/src/main/resources/Skills")
+    layout.projectDirectory.dir("plugins/skills-equipment/src/main/resources/Skills"),
+    layout.projectDirectory.dir("plugins/skills-combat/src/main/resources/Skills")
 )
 val skillsConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/skills")
 val blockRegenConfigResourceDirs = listOf(

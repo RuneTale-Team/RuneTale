@@ -28,15 +28,25 @@ class CraftingConfigTest {
 
 	@Test
 	void loadClampsAndParsesExternalOverrides(@TempDir Path tempDir) throws IOException {
-		write(tempDir, "Config/crafting.properties", """
-				bench.anvil.id=Custom_Anvil
-				smithing.craftDurationMillis=-20
-				smelting.craftDurationMillis=0
-				craft.maxCount=0
-				craft.quantityPresets=10, bad, -1, 3
-				craft.quantityAllToken=all
-				smelting.outputContainsToken=ingot
-				pageProgressTickSeconds=0
+		write(tempDir, "Config/crafting.json", """
+				{
+				  "bench": {
+				    "anvilId": "Custom_Anvil"
+				  },
+				  "smithing": {
+				    "craftDurationMillis": -20
+				  },
+				  "smelting": {
+				    "craftDurationMillis": 0,
+				    "outputContainsToken": "ingot"
+				  },
+				  "craft": {
+				    "maxCount": 0,
+				    "quantityPresets": [10, "bad", -1, 3],
+				    "quantityAllToken": "all"
+				  },
+				  "pageProgressTickSeconds": 0
+				}
 				""");
 
 		CraftingConfig config = CraftingConfig.load(tempDir);

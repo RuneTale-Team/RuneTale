@@ -9,7 +9,6 @@ import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.RefSystem;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import org.runetale.skills.service.CombatStyleService;
 import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
 
@@ -21,16 +20,13 @@ import java.util.UUID;
  */
 public class PlayerSessionCleanupSystem extends RefSystem<EntityStore> {
 
-	private final CombatStyleService combatStyleService;
 	private final SkillSessionStatsService skillSessionStatsService;
 	private final SkillXpToastHudService skillXpToastHudService;
 	private final Query<EntityStore> query;
 
 	public PlayerSessionCleanupSystem(
-			@Nonnull CombatStyleService combatStyleService,
 			@Nonnull SkillSessionStatsService skillSessionStatsService,
 			@Nonnull SkillXpToastHudService skillXpToastHudService) {
-		this.combatStyleService = combatStyleService;
 		this.skillSessionStatsService = skillSessionStatsService;
 		this.skillXpToastHudService = skillXpToastHudService;
 		this.query = Query.and(PlayerRef.getComponentType());
@@ -66,7 +62,6 @@ public class PlayerSessionCleanupSystem extends RefSystem<EntityStore> {
 		}
 
 		UUID playerId = playerRef.getUuid();
-		this.combatStyleService.clear(playerId);
 		this.skillSessionStatsService.clear(playerId);
 		this.skillXpToastHudService.clear(playerId);
 	}

@@ -1,0 +1,67 @@
+{
+  "tag": {
+    "skillRequired": "EquipSkillRequirement",
+    "levelRequirement": "EquipLevelRequirement",
+    "valueSeparator": ":"
+  },
+  "defaultRequiredLevel": 1,
+  "requireLocationMatchBetweenTags": false,
+  "enforce": {
+    "armor": true,
+    "activeHand": false,
+    "activeHandReconcile": false,
+    "toolUse": {
+      "blockDamage": true,
+      "breakBlock": true,
+      "entityDamage": true
+    }
+  },
+  "activeSection": {
+    "hotbar": -1,
+    "tools": -8
+  },
+  "activeSelectionSlots": {
+    "hotbar": 9,
+    "tools": 9
+  },
+  "armorScanTickSeconds": 0.25,
+  "notification": {
+    "cooldownMillis": 1500,
+    "messageTemplate": "[Skills] %s level %d/%d required to equip %s in %s."
+  },
+  "locationAliases": {
+    "mainhand": [
+      "mainhand",
+      "main_hand",
+      "hand",
+      "right_hand",
+      "right"
+    ],
+    "offhand": [
+      "offhand",
+      "off_hand",
+      "left_hand",
+      "left"
+    ],
+    "head": [
+      "head",
+      "helmet"
+    ],
+    "chest": [
+      "chest",
+      "body",
+      "torso"
+    ],
+    "hands": [
+      "hands",
+      "gloves"
+    ],
+    "legs": [
+      "legs",
+      "pants"
+    ]
+  },
+  "debug": {
+    "pluginKey": "skills-equipment"
+  }
+}

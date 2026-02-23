@@ -115,4 +115,6 @@ Run one plugin module:
 ./gradlew :plugins:skills-gathering:contractTest
 ./gradlew :plugins:skills-crafting:test
 ./gradlew :plugins:skills-crafting:contractTest
+./gradlew :plugins:skills-combat:test
+./gradlew :plugins:skills-combat:contractTest
 ```

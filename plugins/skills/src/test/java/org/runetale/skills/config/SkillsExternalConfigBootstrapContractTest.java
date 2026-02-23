@@ -19,25 +19,24 @@ class SkillsExternalConfigBootstrapContractTest {
 
 		SkillsExternalConfigBootstrap.seedMissingDefaults(layout);
 
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/xp.properties")).exists();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/combat.properties")).exists();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/hud.properties")).exists();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.properties")).doesNotExist();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/tooling.properties")).doesNotExist();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/heuristics.properties")).doesNotExist();
-		assertThat(layout.resolveConfigResourcePath("Skills/Nodes/index.list")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/skills.json")).exists();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/combat.json")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.json")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/gathering.json")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/equipment.json")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Nodes/nodes.json")).doesNotExist();
 	}
 
 	@Test
 	void seedMissingDefaultsDoesNotOverwriteExistingFiles(@TempDir Path tempDir) throws IOException {
 		SkillsPathLayout layout = SkillsPathLayout.fromDataDirectory(tempDir.resolve("mods").resolve("skills-data"));
-		Path xpPath = layout.resolveConfigResourcePath("Skills/Config/xp.properties");
+		Path xpPath = layout.resolveConfigResourcePath("Skills/Config/skills.json");
 		Files.createDirectories(xpPath.getParent());
-		Files.writeString(xpPath, "maxLevel=12\nroundingMode=FLOOR\n");
+		Files.writeString(xpPath, "{\"xp\":{\"maxLevel\":12,\"roundingMode\":\"FLOOR\"}}\n");
 
 		SkillsExternalConfigBootstrap.seedMissingDefaults(layout);
 
-		assertThat(Files.readString(xpPath)).isEqualTo("maxLevel=12\nroundingMode=FLOOR\n");
+		assertThat(Files.readString(xpPath)).isEqualTo("{\"xp\":{\"maxLevel\":12,\"roundingMode\":\"FLOOR\"}}\n");
 	}
 
 	@Test
@@ -46,8 +45,9 @@ class SkillsExternalConfigBootstrapContractTest {
 
 		SkillsExternalConfigBootstrap.seedMissingDefaults(layout);
 
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.properties")).doesNotExist();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/tooling.properties")).doesNotExist();
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/heuristics.properties")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.json")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/gathering.json")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/equipment.json")).doesNotExist();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/combat.json")).doesNotExist();
 	}
 }

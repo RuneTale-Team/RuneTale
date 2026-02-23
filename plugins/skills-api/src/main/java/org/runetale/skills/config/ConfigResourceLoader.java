@@ -1,5 +1,8 @@
 package org.runetale.skills.config;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.hypixel.hytale.logger.HytaleLogger;
 
 import javax.annotation.Nonnull;
@@ -11,7 +14,6 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 
 final class ConfigResourceLoader {
 
@@ -21,13 +23,13 @@ final class ConfigResourceLoader {
     }
 
     @Nonnull
-    static Properties loadProperties(@Nonnull String resourcePath) {
-        return loadProperties(resourcePath, null);
+    static JsonObject loadJsonObject(@Nonnull String resourcePath) {
+        return loadJsonObject(resourcePath, null);
     }
 
     @Nonnull
-    static Properties loadProperties(@Nonnull String resourcePath, @Nullable Path externalConfigRoot) {
-        Properties properties = new Properties();
+    static JsonObject loadJsonObject(@Nonnull String resourcePath, @Nullable Path externalConfigRoot) {
+        JsonObject fallback = new JsonObject();
         LOGGER.atFine().log("[Skills] Loading config resource=%s externalRoot=%s",
                 resourcePath,
                 externalConfigRoot == null ? "<none>" : externalConfigRoot);
@@ -41,9 +43,11 @@ final class ConfigResourceLoader {
         }
         if (externalPath != null && Files.isRegularFile(externalPath)) {
             try (InputStream input = Files.newInputStream(externalPath)) {
-                properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
-                LOGGER.atInfo().log("[Skills] Loaded external config path=%s entries=%d", externalPath, properties.size());
-                return properties;
+                JsonObject loaded = parseJsonObject(input, resourcePath, externalPath.toString());
+                if (loaded != null) {
+                    LOGGER.atInfo().log("[Skills] Loaded external config path=%s entries=%d", externalPath, loaded.size());
+                    return loaded;
+                }
             } catch (IOException e) {
                 LOGGER.atWarning().withCause(e).log("[Skills] Failed loading external config path=%s; falling back", externalPath);
             }
@@ -59,7 +63,7 @@ final class ConfigResourceLoader {
                 describeClassLoader(configClassLoader));
         if (selectedClassLoader == null) {
             LOGGER.atWarning().log("[Skills] No classloader available for config resource=%s", resourcePath);
-            return properties;
+            return fallback;
         }
 
         InputStream selectedInput = selectedClassLoader.getResourceAsStream(resourcePath);
@@ -75,17 +79,20 @@ final class ConfigResourceLoader {
                     resourcePath,
                     probeResourceVisible(contextClassLoader, resourcePath),
                     probeResourceVisible(configClassLoader, resourcePath));
-            return properties;
+            return fallback;
         }
 
         try (InputStream input = selectedInput) {
-            properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
-            LOGGER.atInfo().log("[Skills] Loaded config resource=%s entries=%d", resourcePath, properties.size());
+            JsonObject loaded = parseJsonObject(input, resourcePath, "classpath");
+            if (loaded != null) {
+                LOGGER.atInfo().log("[Skills] Loaded config resource=%s entries=%d", resourcePath, loaded.size());
+                return loaded;
+            }
         } catch (IOException e) {
             LOGGER.atWarning().withCause(e).log("[Skills] Failed loading config resource=%s; using defaults", resourcePath);
         }
 
-        return properties;
+        return fallback;
     }
 
     @Nullable
@@ -99,14 +106,21 @@ final class ConfigResourceLoader {
     }
 
     @Nonnull
-    static String stringValue(@Nonnull Properties properties, @Nonnull String key, @Nonnull String defaultValue) {
-        String raw = properties.getProperty(key);
-        if (raw == null) {
+    static String stringValue(@Nonnull JsonObject object, @Nonnull String key, @Nonnull String defaultValue) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull()) {
             LOGGER.atFiner().log("[Skills] Missing string config key=%s; using default=%s", key, defaultValue);
             return defaultValue;
         }
 
-        String trimmed = raw.trim();
+        String trimmed;
+        try {
+            trimmed = element.getAsString().trim();
+        } catch (RuntimeException e) {
+            LOGGER.atFiner().log("[Skills] Non-string config key=%s; using default=%s", key, defaultValue);
+            return defaultValue;
+        }
+
         if (trimmed.isEmpty()) {
             LOGGER.atFiner().log("[Skills] Blank string config key=%s; using default=%s", key, defaultValue);
             return defaultValue;
@@ -114,48 +128,97 @@ final class ConfigResourceLoader {
         return trimmed;
     }
 
-    static int intValue(@Nonnull Properties properties, @Nonnull String key, int defaultValue) {
-        String raw = properties.getProperty(key);
-        if (raw == null || raw.isBlank()) {
+    static int intValue(@Nonnull JsonObject object, @Nonnull String key, int defaultValue) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull()) {
             LOGGER.atFiner().log("[Skills] Missing integer config key=%s; using default=%d", key, defaultValue);
             return defaultValue;
         }
 
         try {
-            return Integer.parseInt(raw.trim());
-        } catch (NumberFormatException e) {
-            LOGGER.atWarning().log("[Skills] Invalid integer config key=%s value=%s; using default=%d", key, raw, defaultValue);
+            return element.getAsInt();
+        } catch (RuntimeException e) {
+            LOGGER.atWarning().log("[Skills] Invalid integer config key=%s; using default=%d", key, defaultValue);
             return defaultValue;
         }
     }
 
-    static long longValue(@Nonnull Properties properties, @Nonnull String key, long defaultValue) {
-        String raw = properties.getProperty(key);
-        if (raw == null || raw.isBlank()) {
+    static long longValue(@Nonnull JsonObject object, @Nonnull String key, long defaultValue) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull()) {
             LOGGER.atFiner().log("[Skills] Missing long config key=%s; using default=%d", key, defaultValue);
             return defaultValue;
         }
 
         try {
-            return Long.parseLong(raw.trim());
-        } catch (NumberFormatException e) {
-            LOGGER.atWarning().log("[Skills] Invalid long config key=%s value=%s; using default=%d", key, raw, defaultValue);
+            return element.getAsLong();
+        } catch (RuntimeException e) {
+            LOGGER.atWarning().log("[Skills] Invalid long config key=%s; using default=%d", key, defaultValue);
             return defaultValue;
         }
     }
 
-    static double doubleValue(@Nonnull Properties properties, @Nonnull String key, double defaultValue) {
-        String raw = properties.getProperty(key);
-        if (raw == null || raw.isBlank()) {
+    static double doubleValue(@Nonnull JsonObject object, @Nonnull String key, double defaultValue) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull()) {
             LOGGER.atFiner().log("[Skills] Missing decimal config key=%s; using default=%f", key, defaultValue);
             return defaultValue;
         }
 
         try {
-            return Double.parseDouble(raw.trim());
-        } catch (NumberFormatException e) {
-            LOGGER.atWarning().log("[Skills] Invalid decimal config key=%s value=%s; using default=%f", key, raw, defaultValue);
+            return element.getAsDouble();
+        } catch (RuntimeException e) {
+            LOGGER.atWarning().log("[Skills] Invalid decimal config key=%s; using default=%f", key, defaultValue);
             return defaultValue;
+        }
+    }
+
+    static boolean booleanValue(@Nonnull JsonObject object, @Nonnull String key, boolean defaultValue) {
+        JsonElement element = object.get(key);
+        if (element == null || element.isJsonNull()) {
+            return defaultValue;
+        }
+
+        try {
+            return element.getAsBoolean();
+        } catch (RuntimeException ignored) {
+            String raw = element.getAsString();
+            if (raw == null) {
+                return defaultValue;
+            }
+            String trimmed = raw.trim();
+            if (trimmed.equalsIgnoreCase("true") || trimmed.equalsIgnoreCase("false")) {
+                return Boolean.parseBoolean(trimmed);
+            }
+            return defaultValue;
+        }
+    }
+
+    @Nonnull
+    static JsonObject objectValue(@Nonnull JsonObject object, @Nonnull String key) {
+        JsonElement element = object.get(key);
+        if (element != null && element.isJsonObject()) {
+            return element.getAsJsonObject();
+        }
+        return new JsonObject();
+    }
+
+    @Nullable
+    private static JsonObject parseJsonObject(
+            @Nonnull InputStream input,
+            @Nonnull String resourcePath,
+            @Nonnull String sourceName) {
+        try {
+            InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8);
+            JsonElement parsed = JsonParser.parseReader(reader);
+            if (parsed != null && parsed.isJsonObject()) {
+                return parsed.getAsJsonObject();
+            }
+            LOGGER.atWarning().log("[Skills] Config resource root is not JSON object resource=%s source=%s", resourcePath, sourceName);
+            return null;
+        } catch (RuntimeException e) {
+            LOGGER.atWarning().withCause(e).log("[Skills] Failed parsing JSON config resource=%s source=%s", resourcePath, sourceName);
+            return null;
         }
     }
 

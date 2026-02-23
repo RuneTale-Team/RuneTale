@@ -20,7 +20,13 @@ class HeuristicsConfigTest {
 
 	@Test
 	void loadNormalizesConfiguredTokensToLowercase(@TempDir Path tempDir) throws IOException {
-		write(tempDir, "Config/heuristics.properties", "nodeCandidateTokens= Log,TREE, Ore_Chunk ");
+		write(tempDir, "Config/gathering.json", """
+				{
+				  "heuristics": {
+				    "nodeCandidateTokens": ["Log", "TREE", "Ore_Chunk"]
+				  }
+				}
+				""");
 
 		HeuristicsConfig config = HeuristicsConfig.load(tempDir);
 

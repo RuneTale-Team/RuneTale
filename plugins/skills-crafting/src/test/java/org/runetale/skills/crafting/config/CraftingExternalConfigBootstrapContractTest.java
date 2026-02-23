@@ -20,18 +20,18 @@ class CraftingExternalConfigBootstrapContractTest {
 
 		CraftingExternalConfigBootstrap.seedMissingDefaults(layout);
 
-		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.properties")).exists();
+		assertThat(layout.resolveConfigResourcePath("Skills/Config/crafting.json")).exists();
 	}
 
 	@Test
 	void seedMissingDefaultsDoesNotOverwriteExistingFiles(@TempDir Path tempDir) throws IOException {
 		SkillsPathLayout layout = SkillsPathLayout.fromDataDirectory(tempDir.resolve("mods").resolve("skills-data"));
-		Path craftingPath = layout.resolveConfigResourcePath("Skills/Config/crafting.properties");
+		Path craftingPath = layout.resolveConfigResourcePath("Skills/Config/crafting.json");
 		Files.createDirectories(craftingPath.getParent());
-		Files.writeString(craftingPath, "bench.anvil.id=Custom_Anvil\n");
+		Files.writeString(craftingPath, "{\"bench\":{\"anvilId\":\"Custom_Anvil\"}}\n");
 
 		CraftingExternalConfigBootstrap.seedMissingDefaults(layout);
 
-		assertThat(Files.readString(craftingPath)).isEqualTo("bench.anvil.id=Custom_Anvil\n");
+		assertThat(Files.readString(craftingPath)).isEqualTo("{\"bench\":{\"anvilId\":\"Custom_Anvil\"}}\n");
 	}
 }

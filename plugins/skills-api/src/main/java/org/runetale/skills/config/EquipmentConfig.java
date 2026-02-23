@@ -1,5 +1,8 @@
 package org.runetale.skills.config;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -7,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 
 public record EquipmentConfig(
         @Nonnull String tagSkillRequired,
@@ -31,63 +33,57 @@ public record EquipmentConfig(
         @Nonnull Map<String, List<String>> locationAliases,
         @Nonnull String debugPluginKey) {
 
-    private static final String RESOURCE_PATH = "Skills/Config/equipment.properties";
-    private static final String LOCATION_ALIAS_PREFIX = "locationAlias.";
+    private static final String RESOURCE_PATH = "Skills/Config/equipment.json";
 
     @Nonnull
     public static EquipmentConfig load(@Nonnull Path externalConfigRoot) {
-        Properties properties = ConfigResourceLoader.loadProperties(RESOURCE_PATH, externalConfigRoot);
+        JsonObject root = ConfigResourceLoader.loadJsonObject(RESOURCE_PATH, externalConfigRoot);
+        JsonObject tagConfig = ConfigResourceLoader.objectValue(root, "tag");
+        JsonObject enforceConfig = ConfigResourceLoader.objectValue(root, "enforce");
+        JsonObject toolUseConfig = ConfigResourceLoader.objectValue(enforceConfig, "toolUse");
+        JsonObject activeSectionConfig = ConfigResourceLoader.objectValue(root, "activeSection");
+        JsonObject activeSelectionSlotsConfig = ConfigResourceLoader.objectValue(root, "activeSelectionSlots");
+        JsonObject notificationConfig = ConfigResourceLoader.objectValue(root, "notification");
+        JsonObject debugConfig = ConfigResourceLoader.objectValue(root, "debug");
 
-        int defaultRequiredLevel = Math.max(1, ConfigResourceLoader.intValue(properties, "defaultRequiredLevel", 1));
+        int defaultRequiredLevel = Math.max(1, ConfigResourceLoader.intValue(root, "defaultRequiredLevel", 1));
 
         return new EquipmentConfig(
-                ConfigResourceLoader.stringValue(properties, "tag.skillRequired", "EquipSkillRequirement"),
-                ConfigResourceLoader.stringValue(properties, "tag.levelRequirement", "EquipLevelRequirement"),
-                ConfigResourceLoader.stringValue(properties, "tag.valueSeparator", ":"),
-                booleanValue(properties, "requireLocationMatchBetweenTags", false),
+                ConfigResourceLoader.stringValue(tagConfig, "skillRequired", "EquipSkillRequirement"),
+                ConfigResourceLoader.stringValue(tagConfig, "levelRequirement", "EquipLevelRequirement"),
+                ConfigResourceLoader.stringValue(tagConfig, "valueSeparator", ":"),
+                ConfigResourceLoader.booleanValue(root, "requireLocationMatchBetweenTags", false),
                 defaultRequiredLevel,
-                booleanValue(properties, "enforce.armor", true),
-                booleanValue(properties, "enforce.activeHand", false),
-                booleanValue(properties, "enforce.activeHandReconcile", false),
-                booleanValue(properties, "enforce.toolUse.blockDamage", true),
-                booleanValue(properties, "enforce.toolUse.breakBlock", true),
-                booleanValue(properties, "enforce.toolUse.entityDamage", true),
-                ConfigResourceLoader.intValue(properties, "activeSection.hotbar", -1),
-                ConfigResourceLoader.intValue(properties, "activeSection.tools", -8),
-                Math.max(1, ConfigResourceLoader.intValue(properties, "activeSelectionSlots.hotbar", 9)),
-                Math.max(1, ConfigResourceLoader.intValue(properties, "activeSelectionSlots.tools", 9)),
-                (float) Math.max(0.05D, ConfigResourceLoader.doubleValue(properties, "armorScanTickSeconds", 0.25D)),
-                Math.max(0L, ConfigResourceLoader.longValue(properties, "notification.cooldownMillis", 1500L)),
+                ConfigResourceLoader.booleanValue(enforceConfig, "armor", true),
+                ConfigResourceLoader.booleanValue(enforceConfig, "activeHand", false),
+                ConfigResourceLoader.booleanValue(enforceConfig, "activeHandReconcile", false),
+                ConfigResourceLoader.booleanValue(toolUseConfig, "blockDamage", true),
+                ConfigResourceLoader.booleanValue(toolUseConfig, "breakBlock", true),
+                ConfigResourceLoader.booleanValue(toolUseConfig, "entityDamage", true),
+                ConfigResourceLoader.intValue(activeSectionConfig, "hotbar", -1),
+                ConfigResourceLoader.intValue(activeSectionConfig, "tools", -8),
+                Math.max(1, ConfigResourceLoader.intValue(activeSelectionSlotsConfig, "hotbar", 9)),
+                Math.max(1, ConfigResourceLoader.intValue(activeSelectionSlotsConfig, "tools", 9)),
+                (float) Math.max(0.05D, ConfigResourceLoader.doubleValue(root, "armorScanTickSeconds", 0.25D)),
+                Math.max(0L, ConfigResourceLoader.longValue(notificationConfig, "cooldownMillis", 1500L)),
                 ConfigResourceLoader.stringValue(
-                        properties,
-                        "notification.messageTemplate",
+                        notificationConfig,
+                        "messageTemplate",
                         "[Skills] %s level %d/%d required to equip %s in %s."),
-                parseLocationAliases(properties),
-                ConfigResourceLoader.stringValue(properties, "debug.pluginKey", "skills-equipment"));
-    }
-
-    private static boolean booleanValue(@Nonnull Properties properties, @Nonnull String key, boolean defaultValue) {
-        String raw = properties.getProperty(key);
-        if (raw == null || raw.isBlank()) {
-            return defaultValue;
-        }
-        return Boolean.parseBoolean(raw.trim());
+                parseLocationAliases(ConfigResourceLoader.objectValue(root, "locationAliases")),
+                ConfigResourceLoader.stringValue(debugConfig, "pluginKey", "skills-equipment"));
     }
 
     @Nonnull
-    private static Map<String, List<String>> parseLocationAliases(@Nonnull Properties properties) {
+    private static Map<String, List<String>> parseLocationAliases(@Nonnull JsonObject aliasesObject) {
         Map<String, List<String>> aliasMap = new HashMap<>();
-        for (String key : properties.stringPropertyNames()) {
-            if (!key.startsWith(LOCATION_ALIAS_PREFIX)) {
-                continue;
-            }
-
-            String locationKey = normalizeToken(key.substring(LOCATION_ALIAS_PREFIX.length()));
+        for (Map.Entry<String, JsonElement> entry : aliasesObject.entrySet()) {
+            String locationKey = normalizeToken(entry.getKey());
             if (locationKey.isEmpty()) {
                 continue;
             }
 
-            List<String> aliases = parseCsvTokens(properties.getProperty(key));
+            List<String> aliases = parseTokens(entry.getValue());
             if (aliases.isEmpty()) {
                 continue;
             }
@@ -108,18 +104,28 @@ public record EquipmentConfig(
     }
 
     @Nonnull
-    private static List<String> parseCsvTokens(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return List.of();
-        }
-
+    private static List<String> parseTokens(@Nonnull JsonElement element) {
         List<String> parsed = new ArrayList<>();
-        for (String token : raw.split(",")) {
-            String normalized = normalizeToken(token);
-            if (!normalized.isEmpty()) {
-                parsed.add(normalized);
+        if (element.isJsonArray()) {
+            for (JsonElement tokenElement : element.getAsJsonArray()) {
+                if (tokenElement == null || tokenElement.isJsonNull()) {
+                    continue;
+                }
+                String normalized = normalizeToken(tokenElement.getAsString());
+                if (!normalized.isEmpty()) {
+                    parsed.add(normalized);
+                }
+            }
+        } else if (element.isJsonPrimitive()) {
+            String raw = element.getAsString();
+            for (String token : raw.split(",")) {
+                String normalized = normalizeToken(token);
+                if (!normalized.isEmpty()) {
+                    parsed.add(normalized);
+                }
             }
         }
+
         return parsed.isEmpty() ? List.of() : List.copyOf(parsed);
     }
 

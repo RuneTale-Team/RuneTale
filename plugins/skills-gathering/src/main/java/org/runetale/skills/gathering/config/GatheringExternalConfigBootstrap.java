@@ -5,11 +5,8 @@ import org.runetale.skills.config.SkillsPathLayout;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,7 +15,6 @@ import java.util.List;
 public final class GatheringExternalConfigBootstrap {
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-	private static final String NODE_INDEX_RESOURCE = "Skills/Nodes/index.list";
 
 	private GatheringExternalConfigBootstrap() {
 	}
@@ -47,44 +43,10 @@ public final class GatheringExternalConfigBootstrap {
 	@Nonnull
 	private static List<String> defaultResourcePaths() {
 		List<String> resources = new ArrayList<>();
-		resources.add("Skills/Config/tooling.properties");
-		resources.add("Skills/Config/heuristics.properties");
-		resources.add("Skills/tool-tier-defaults.properties");
-		resources.add("Skills/xp-profile-defaults.properties");
-		resources.add(NODE_INDEX_RESOURCE);
-
-		for (String nodePath : readNodeIndexFromClasspath()) {
-			resources.add("Skills/Nodes/" + nodePath);
-		}
+		resources.add("Skills/Config/gathering.json");
+		resources.add("Skills/Nodes/nodes.json");
 		LOGGER.atFine().log("[Skills Gathering] Bootstrap resource manifest contains %d resource(s)", resources.size());
 		return resources;
-	}
-
-	@Nonnull
-	private static List<String> readNodeIndexFromClasspath() {
-		List<String> files = new ArrayList<>();
-		try (InputStream input = openClasspathResource(NODE_INDEX_RESOURCE)) {
-			if (input == null) {
-				LOGGER.atWarning().log("[Skills Gathering] Missing bundled node index resource=%s during bootstrap", NODE_INDEX_RESOURCE);
-				return files;
-			}
-
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-				String line;
-				while ((line = reader.readLine()) != null) {
-					String trimmed = line.trim();
-					if (trimmed.isEmpty() || trimmed.startsWith("#")) {
-						continue;
-					}
-					files.add(trimmed);
-				}
-			}
-		} catch (IOException e) {
-			LOGGER.atWarning().withCause(e).log("[Skills Gathering] Failed reading bundled node index during bootstrap");
-		}
-
-		LOGGER.atFine().log("[Skills Gathering] Bootstrap node index resolved %d node resource(s)", files.size());
-		return files;
 	}
 
 	private static boolean copyClasspathResourceIfMissing(

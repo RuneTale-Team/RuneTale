@@ -46,8 +46,8 @@ This document explains how the Skills custom UI is wired, where assets live, and
 
 ## Node definition labels
 - Node files live in:
-  - External runtime path: `server/mods/runetale/config/skills/Nodes/**/*.properties`
-  - Bundled fallback path: `plugins/skills-gathering/src/main/resources/Skills/Nodes/**/*.properties`
+  - External runtime path: `server/mods/runetale/config/skills/Nodes/nodes.json`
+  - Bundled fallback path: `plugins/skills-gathering/src/main/resources/Skills/Nodes/nodes.json`
 - Optional display label key:
   - `label=Oak Tree`
 - Fallback behavior when label is missing/blank:
@@ -64,10 +64,10 @@ This document explains how the Skills custom UI is wired, where assets live, and
    - verify list icon, overview card icon, selection, and detail view rendering.
 
 ## Add or edit node cards (checklist)
-1. Create/update node `.properties` file in `server/mods/runetale/config/skills/Nodes/<skill>/`.
+1. Create/update grouped node entry in `server/mods/runetale/config/skills/Nodes/nodes.json` under the matching skill group.
 2. Ensure `id` is present.
 3. Add `label` if you want human-friendly UI text.
-4. Ensure node file is included in `server/mods/runetale/config/skills/Nodes/index.list`.
+4. Ensure the entry has at least one block mapping (`blockIds` preferred, or `blockId`).
 5. Deploy and verify detail roadmap cards.
 
 ## Scroll behavior notes

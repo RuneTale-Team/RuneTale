@@ -12,7 +12,6 @@ import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.config.SkillsConfigService;
 import org.runetale.skills.config.SkillsExternalConfigBootstrap;
 import org.runetale.skills.config.SkillsPathLayout;
-import org.runetale.skills.command.CombatStyleCommand;
 import org.runetale.skills.command.SkillCommand;
 import org.runetale.skills.command.debug.RtDebugCommand;
 import org.runetale.skills.command.debug.SkillXpCommand;
@@ -21,12 +20,10 @@ import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.progression.service.SkillProgressionService;
 import org.runetale.skills.progression.service.SkillXpDispatchService;
 import org.runetale.skills.progression.system.SkillXpGrantSystem;
-import org.runetale.skills.service.CombatStyleService;
 import org.runetale.skills.service.DebugModeService;
-import org.runetale.skills.service.XpService;
 import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
-import org.runetale.skills.system.CombatDamageXpSystem;
+import org.runetale.skills.service.XpService;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
 import org.runetale.skills.system.PlayerSessionCleanupSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
@@ -60,11 +57,6 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
      * Session-scoped telemetry used by skill UI and feedback messaging.
      */
     private SkillSessionStatsService sessionStatsService;
-
-    /**
-     * Session-scoped player melee combat style preferences.
-     */
-    private CombatStyleService combatStyleService;
 
     /**
      * Session-scoped custom HUD toasts for XP gains.
@@ -214,7 +206,6 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
         registerCodecs();
         registerComponents();
         this.getCommandRegistry().registerCommand(new SkillCommand(this.xpService, this.playerSkillProfileComponentType));
-        this.getCommandRegistry().registerCommand(new CombatStyleCommand(this.combatStyleService));
         this.getCommandRegistry().registerCommand(new SkillXpCommand(this.xpDispatchService));
         this.getCommandRegistry().registerCommand(new RtDebugCommand(this.debugModeService));
         registerSystems();
@@ -238,7 +229,6 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
         this.skillsConfigService = new SkillsConfigService(this.pathLayout.pluginConfigRoot());
         this.xpService = new XpService(this.skillsConfigService.getXpConfig());
         this.sessionStatsService = new SkillSessionStatsService();
-        this.combatStyleService = new CombatStyleService();
         this.skillXpToastHudService = new SkillXpToastHudService(this.skillsConfigService.getHudConfig());
         this.debugModeService = new DebugModeService(List.of("skills"));
         this.xpDispatchService = new SkillXpDispatchService(this.debugModeService);
@@ -290,17 +280,12 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
                         this.skillXpToastHudService,
                         this.debugModeService));
 
-        // Apply combat-derived XP from damage events (melee style + ranged).
-        this.getEntityStoreRegistry().registerSystem(
-                new CombatDamageXpSystem(this.xpDispatchService, this.combatStyleService, this.skillsConfigService.getCombatConfig()));
-
         // Keep custom XP toasts transient and auto-expiring.
         this.getEntityStoreRegistry().registerSystem(
                 new SkillXpToastHudExpirySystem(this.skillXpToastHudService, this.skillsConfigService.getHudConfig()));
 
         // Clear session-scoped state maps when a player entity is removed.
         this.getEntityStoreRegistry().registerSystem(new PlayerSessionCleanupSystem(
-                this.combatStyleService,
                 this.sessionStatsService,
                 this.skillXpToastHudService));
 
@@ -321,7 +306,6 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
         this.xpService = null;
         this.skillsConfigService = null;
         this.sessionStatsService = null;
-        this.combatStyleService = null;
         this.skillXpToastHudService = null;
         this.progressionService = null;
         this.xpDispatchService = null;
