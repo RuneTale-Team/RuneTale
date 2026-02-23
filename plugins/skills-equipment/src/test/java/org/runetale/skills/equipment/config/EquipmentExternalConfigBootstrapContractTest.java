@@ -20,18 +20,18 @@ class EquipmentExternalConfigBootstrapContractTest {
 
         EquipmentExternalConfigBootstrap.seedMissingDefaults(layout);
 
-        assertThat(layout.resolveConfigResourcePath("Skills/Config/equipment.properties")).exists();
+        assertThat(layout.resolveConfigResourcePath("Skills/Config/equipment.json")).exists();
     }
 
     @Test
     void seedMissingDefaultsDoesNotOverwriteExistingFiles(@TempDir Path tempDir) throws IOException {
         SkillsPathLayout layout = SkillsPathLayout.fromDataDirectory(tempDir.resolve("mods").resolve("skills-data"));
-        Path equipmentPath = layout.resolveConfigResourcePath("Skills/Config/equipment.properties");
+        Path equipmentPath = layout.resolveConfigResourcePath("Skills/Config/equipment.json");
         Files.createDirectories(equipmentPath.getParent());
-        Files.writeString(equipmentPath, "enforce.armor=false\n");
+        Files.writeString(equipmentPath, "{\"enforce\":{\"armor\":false}}\n");
 
         EquipmentExternalConfigBootstrap.seedMissingDefaults(layout);
 
-        assertThat(Files.readString(equipmentPath)).isEqualTo("enforce.armor=false\n");
+        assertThat(Files.readString(equipmentPath)).isEqualTo("{\"enforce\":{\"armor\":false}}\n");
     }
 }

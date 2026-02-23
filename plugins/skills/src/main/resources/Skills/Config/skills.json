@@ -1,0 +1,45 @@
+{
+  "xp": {
+    "maxLevel": 99,
+    "levelTermMultiplier": 1.0,
+    "growthScale": 300.0,
+    "growthBase": 2.0,
+    "growthDivisor": 7.0,
+    "pointsDivisor": 4,
+    "roundingMode": "NEAREST"
+  },
+  "combat": {
+    "xpPerDamage": 4.0,
+    "source": {
+      "ranged": "combat:ranged",
+      "melee": {
+        "prefix": "combat:melee:",
+        "accurate": "accurate",
+        "aggressive": "aggressive",
+        "defensive": "defensive",
+        "controlled": {
+          "attack": "controlled:attack",
+          "strength": "controlled:strength",
+          "defence": "controlled:defence"
+        }
+      },
+      "block": {
+        "defence": "combat:block:defence"
+      }
+    },
+    "projectileCauseTokens": [
+      "projectile"
+    ]
+  },
+  "hud": {
+    "toast": {
+      "durationMillis": 1400,
+      "fadeDurationMillis": 180,
+      "fade": {
+        "rootBackground": "#1b314b",
+        "innerBackground": "#0a1421"
+      },
+      "expiryTickSeconds": 0.1
+    }
+  }
+}

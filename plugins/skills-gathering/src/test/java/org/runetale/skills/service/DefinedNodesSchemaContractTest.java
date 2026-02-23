@@ -1,43 +1,34 @@
 package org.runetale.skills.service;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestReporter;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.domain.ToolTier;
 import org.runetale.testing.junit.ContractTest;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ContractTest
 class DefinedNodesSchemaContractTest {
 
-	private static final String NODE_INDEX_RESOURCE = "Skills/Nodes/index.list";
-	private static final String NODE_RESOURCE_PREFIX = "Skills/Nodes/";
-	private static final String EXAMPLE_NODE_FILE = "example.properties";
+	private static final String NODES_RESOURCE = "Skills/Nodes/nodes.json";
 
 	private static final Set<String> REQUIRED_KEYS = Set.of(
 			"id",
-			"skill",
 			"requiredSkillLevel",
 			"requiredToolKeyword",
 			"requiredToolTier",
@@ -55,225 +46,203 @@ class DefinedNodesSchemaContractTest {
 			"blockId");
 
 	@Test
-	void indexEntriesAreUniqueAndResolveToResources() throws IOException {
-		List<String> indexEntries = readNodeIndexEntries();
+	void groupedNodeDefinitionsExistAndContainArrays() throws IOException {
+		JsonObject root = loadRoot();
 
-		assertThat(indexEntries).isNotEmpty();
-		assertThat(new LinkedHashSet<>(indexEntries))
-				.as("index entries are unique")
-				.hasSameSizeAs(indexEntries);
-
-		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		for (String entry : indexEntries) {
-			assertThat(classLoader.getResource(NODE_RESOURCE_PREFIX + entry))
-					.as("indexed node resource exists: %s", entry)
-					.isNotNull();
+		assertThat(root.keySet()).isNotEmpty();
+		for (String group : root.keySet()) {
+			JsonElement groupElement = root.get(group);
+			assertThat(groupElement != null && groupElement.isJsonArray())
+					.as("group %s is an array", group)
+					.isTrue();
 		}
 	}
 
 	@Test
-	void allRealNodeResourcesAreIndexed() throws IOException, URISyntaxException {
-		Set<String> indexEntries = new LinkedHashSet<>(readNodeIndexEntries());
-		Set<String> realNodeResources = listAllNodePropertyResources();
-
-		assertThat(indexEntries)
-				.as("all real node resources are indexed")
-				.containsAll(realNodeResources);
-	}
-
-	@Test
-	void definedNodeFilesHaveRequiredKeysAndWarnOnUnknown(TestReporter reporter) throws IOException {
-		List<String> indexEntries = readNodeIndexEntries();
+	void definedNodesHaveRequiredKeysAndUniqueIds(TestReporter reporter) throws IOException {
+		JsonObject root = loadRoot();
 		LinkedHashMap<String, String> pathByNodeId = new LinkedHashMap<>();
 
-		for (String entry : indexEntries) {
-			Properties properties = loadProperties(NODE_RESOURCE_PREFIX + entry);
-			Set<String> presentKeys = properties.stringPropertyNames();
+		for (String groupedSkill : root.keySet()) {
+			JsonArray entries = root.getAsJsonArray(groupedSkill);
+			int index = 0;
+			for (JsonElement entryElement : entries) {
+				assertThat(entryElement != null && entryElement.isJsonObject())
+						.as("node entry is object at %s[%d]", groupedSkill, index)
+						.isTrue();
+				JsonObject node = entryElement.getAsJsonObject();
+				String nodePath = groupedSkill + "[" + index + "]";
 
-			assertThat(presentKeys)
-					.as("required keys present in %s", entry)
-					.containsAll(REQUIRED_KEYS);
+				for (String requiredKey : REQUIRED_KEYS) {
+					JsonElement value = node.get(requiredKey);
+					assertThat(value)
+							.as("required key %s in %s", requiredKey, nodePath)
+							.isNotNull();
+					assertThat(value.isJsonNull())
+							.as("required key %s is non-null in %s", requiredKey, nodePath)
+							.isFalse();
+					if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+						assertThat(value.getAsString().trim())
+								.as("required key %s is non-blank in %s", requiredKey, nodePath)
+								.isNotEmpty();
+					}
+				}
 
-			for (String requiredKey : REQUIRED_KEYS) {
-				String rawValue = properties.getProperty(requiredKey);
-				assertThat(rawValue)
-						.as("required key %s in %s", requiredKey, entry)
-						.isNotNull();
-				assertThat(rawValue.trim())
-						.as("required key %s is non-blank in %s", requiredKey, entry)
-						.isNotEmpty();
+				Set<String> unknownKeys = node.keySet().stream()
+						.filter(key -> !KNOWN_KEYS.contains(key))
+						.collect(LinkedHashSet::new, Set::add, Set::addAll);
+				if (!unknownKeys.isEmpty()) {
+					reporter.publishEntry(
+							"node-schema-warning",
+							"Unknown key(s) in " + nodePath + ": " + String.join(", ", unknownKeys));
+				}
+
+				validateNodeValueSemantics(groupedSkill, nodePath, node);
+
+				String nodeId = node.get("id").getAsString().trim();
+				String previousPath = pathByNodeId.putIfAbsent(nodeId, nodePath);
+				assertThat(previousPath)
+						.as("duplicate node id %s across %s and %s", nodeId, previousPath, nodePath)
+						.isNull();
+
+				index++;
 			}
-
-			String blockIdsRaw = properties.getProperty("blockIds");
-			String blockIdRaw = properties.getProperty("blockId");
-			boolean hasBlockIds = blockIdsRaw != null && !blockIdsRaw.isBlank();
-			boolean hasBlockId = blockIdRaw != null && !blockIdRaw.isBlank();
-			assertThat(hasBlockIds || hasBlockId)
-					.as("node %s defines blockIds or blockId", entry)
-					.isTrue();
-
-			Set<String> unknownKeys = presentKeys.stream()
-					.filter(key -> !KNOWN_KEYS.contains(key))
-					.collect(Collectors.toCollection(LinkedHashSet::new));
-			if (!unknownKeys.isEmpty()) {
-				reporter.publishEntry(
-						"node-schema-warning",
-						"Unknown key(s) in " + entry + ": " + String.join(", ", unknownKeys));
-			}
-
-			validateNodeValueSemantics(entry, properties);
-
-			String nodeId = properties.getProperty("id").trim();
-			String previousPath = pathByNodeId.putIfAbsent(nodeId, entry);
-			assertThat(previousPath)
-					.as("duplicate node id %s across %s and %s", nodeId, previousPath, entry)
-					.isNull();
 		}
 	}
 
-	private static void validateNodeValueSemantics(String entry, Properties properties) {
-		String skillRaw = properties.getProperty("skill").trim();
+	private static void validateNodeValueSemantics(String groupedSkill, String nodePath, JsonObject node) {
+		String skillRaw = stringValue(node, "skill");
+		if (skillRaw == null || skillRaw.isBlank()) {
+			skillRaw = groupedSkill;
+		}
+
 		assertThat(SkillType.tryParseStrict(skillRaw))
-				.as("skill is valid in %s", entry)
+				.as("skill is valid in %s", nodePath)
 				.isNotNull();
 
-		int requiredSkillLevel = parseInt(entry, "requiredSkillLevel", properties.getProperty("requiredSkillLevel"));
+		int requiredSkillLevel = intValue(node, "requiredSkillLevel", Integer.MIN_VALUE);
 		assertThat(requiredSkillLevel)
-				.as("requiredSkillLevel is non-negative in %s", entry)
+				.as("requiredSkillLevel is non-negative in %s", nodePath)
 				.isGreaterThanOrEqualTo(0);
 
-		double experienceReward = parseDouble(entry, "experienceReward", properties.getProperty("experienceReward"));
+		double experienceReward = doubleValue(node, "experienceReward", Double.NaN);
 		assertThat(experienceReward)
-				.as("experienceReward is non-negative in %s", entry)
+				.as("experienceReward is non-negative in %s", nodePath)
 				.isGreaterThanOrEqualTo(0.0D);
 
-		String rawToolTier = properties.getProperty("requiredToolTier").trim();
+		String rawToolTier = stringValue(node, "requiredToolTier");
+		assertThat(rawToolTier)
+				.as("requiredToolTier exists in %s", nodePath)
+				.isNotBlank();
 		ToolTier parsedToolTier = ToolTier.fromString(rawToolTier);
 		boolean recognized = "NONE".equalsIgnoreCase(rawToolTier) || parsedToolTier != ToolTier.NONE;
 		assertThat(recognized)
-				.as("requiredToolTier is recognized in %s", entry)
+				.as("requiredToolTier is recognized in %s", nodePath)
 				.isTrue();
 
-		List<String> blockMappings = resolveBlockMappings(properties);
+		List<String> blockMappings = resolveBlockMappings(node);
 		assertThat(blockMappings)
-				.as("node has at least one block mapping in %s", entry)
+				.as("node has at least one block mapping in %s", nodePath)
 				.isNotEmpty();
 
 		Set<String> deduped = blockMappings.stream()
 				.map(token -> token.toLowerCase(Locale.ROOT))
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+				.collect(LinkedHashSet::new, Set::add, Set::addAll);
 		assertThat(deduped)
-				.as("node block mappings are unique in %s", entry)
+				.as("node block mappings are unique in %s", nodePath)
 				.hasSameSizeAs(blockMappings);
 	}
 
-	private static List<String> resolveBlockMappings(Properties properties) {
-		String blockIdsRaw = properties.getProperty("blockIds");
-		if (blockIdsRaw != null && !blockIdsRaw.isBlank()) {
-			List<String> parsed = splitCsv(blockIdsRaw);
-			if (!parsed.isEmpty()) {
-				return parsed;
-			}
-		}
-
-		String blockIdRaw = properties.getProperty("blockId");
-		if (blockIdRaw == null || blockIdRaw.isBlank()) {
-			return List.of();
-		}
-		return List.of(blockIdRaw.trim());
-	}
-
-	private static List<String> splitCsv(String raw) {
-		List<String> parsed = new ArrayList<>();
-		for (String token : raw.split(",")) {
-			String trimmed = token.trim();
-			if (!trimmed.isEmpty()) {
-				parsed.add(trimmed);
-			}
-		}
-		return parsed;
-	}
-
-	private static int parseInt(String entry, String key, String raw) {
-		try {
-			return Integer.parseInt(raw.trim());
-		} catch (RuntimeException e) {
-			throw new AssertionError("Invalid integer key=" + key + " in " + entry + ": " + raw, e);
-		}
-	}
-
-	private static double parseDouble(String entry, String key, String raw) {
-		try {
-			return Double.parseDouble(raw.trim());
-		} catch (RuntimeException e) {
-			throw new AssertionError("Invalid decimal key=" + key + " in " + entry + ": " + raw, e);
-		}
-	}
-
-	private static List<String> readNodeIndexEntries() throws IOException {
-		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		try (InputStream input = classLoader.getResourceAsStream(NODE_INDEX_RESOURCE)) {
-			assertThat(input).as("node index exists").isNotNull();
-
-			List<String> entries = new ArrayList<>();
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-				String line;
-				while ((line = reader.readLine()) != null) {
-					String trimmed = line.trim();
-					if (!trimmed.isEmpty() && !trimmed.startsWith("#")) {
-						entries.add(trimmed);
+	private static List<String> resolveBlockMappings(JsonObject node) {
+		JsonElement blockIds = node.get("blockIds");
+		if (blockIds != null && !blockIds.isJsonNull()) {
+			if (blockIds.isJsonArray()) {
+				LinkedHashSet<String> parsed = new LinkedHashSet<>();
+				for (JsonElement element : blockIds.getAsJsonArray()) {
+					if (element == null || element.isJsonNull()) {
+						continue;
+					}
+					String trimmed = element.getAsString().trim();
+					if (!trimmed.isEmpty()) {
+						parsed.add(trimmed);
+					}
+				}
+				if (!parsed.isEmpty()) {
+					return List.copyOf(parsed);
+				}
+			} else {
+				String raw = blockIds.getAsString();
+				if (raw != null && !raw.isBlank()) {
+					String[] split = raw.split(",");
+					LinkedHashSet<String> parsed = new LinkedHashSet<>();
+					for (String token : split) {
+						String trimmed = token.trim();
+						if (!trimmed.isEmpty()) {
+							parsed.add(trimmed);
+						}
+					}
+					if (!parsed.isEmpty()) {
+						return List.copyOf(parsed);
 					}
 				}
 			}
-			return entries;
 		}
+
+		String singleBlock = stringValue(node, "blockId");
+		if (singleBlock == null || singleBlock.isBlank()) {
+			return List.of();
+		}
+		return List.of(singleBlock.trim());
 	}
 
-	private static Properties loadProperties(String resourcePath) throws IOException {
+	private static JsonObject loadRoot() throws IOException {
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		try (InputStream input = classLoader.getResourceAsStream(resourcePath)) {
-			assertThat(input).as("resource exists: %s", resourcePath).isNotNull();
+		try (InputStream input = classLoader.getResourceAsStream(NODES_RESOURCE)) {
+			assertThat(input).as("nodes resource exists").isNotNull();
 
-			Properties properties = new Properties();
-			properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
-			return properties;
-		}
-	}
-
-	private static Set<String> listAllNodePropertyResources() throws IOException, URISyntaxException {
-		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-		var nodesRootUrl = classLoader.getResource("Skills/Nodes");
-		assertThat(nodesRootUrl).as("node resource root exists").isNotNull();
-
-		URI nodesRootUri = nodesRootUrl.toURI();
-		if (!"jar".equalsIgnoreCase(nodesRootUri.getScheme())) {
-			Path nodesRoot = Path.of(nodesRootUri);
-			try (var stream = Files.walk(nodesRoot)) {
-				return stream
-						.filter(Files::isRegularFile)
-						.filter(path -> path.getFileName().toString().endsWith(".properties"))
-						.map(path -> nodesRoot.relativize(path).toString().replace('\\', '/'))
-						.filter(path -> !path.equals(EXAMPLE_NODE_FILE))
-						.collect(Collectors.toCollection(LinkedHashSet::new));
-			}
-		}
-
-		String raw = nodesRootUri.toString();
-		int separatorIndex = raw.indexOf("!/");
-		assertThat(separatorIndex).isGreaterThan(0);
-		URI jarUri = URI.create(raw.substring(0, separatorIndex));
-
-		try (FileSystem fileSystem = FileSystems.newFileSystem(jarUri, java.util.Map.of())) {
-			Path nodesRoot = fileSystem.getPath("/Skills/Nodes");
-			try (var stream = Files.walk(nodesRoot)) {
-				return stream
-						.filter(Files::isRegularFile)
-						.filter(path -> path.getFileName().toString().endsWith(".properties"))
-						.map(path -> nodesRoot.relativize(path).toString().replace('\\', '/'))
-						.filter(path -> !path.equals(EXAMPLE_NODE_FILE))
-						.collect(Collectors.toCollection(LinkedHashSet::new));
+			try (InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+				JsonElement parsed = JsonParser.parseReader(reader);
+				assertThat(parsed != null && parsed.isJsonObject())
+						.as("nodes root is object")
+						.isTrue();
+				return parsed.getAsJsonObject();
 			}
 		}
 	}
 
+	private static String stringValue(JsonObject object, String key) {
+		JsonElement element = object.get(key);
+		if (element == null || element.isJsonNull()) {
+			return null;
+		}
+		try {
+			return element.getAsString();
+		} catch (RuntimeException ignored) {
+			return null;
+		}
+	}
+
+	private static int intValue(JsonObject object, String key, int fallback) {
+		JsonElement element = object.get(key);
+		if (element == null || element.isJsonNull()) {
+			return fallback;
+		}
+		try {
+			return element.getAsInt();
+		} catch (RuntimeException ignored) {
+			return fallback;
+		}
+	}
+
+	private static double doubleValue(JsonObject object, String key, double fallback) {
+		JsonElement element = object.get(key);
+		if (element == null || element.isJsonNull()) {
+			return fallback;
+		}
+		try {
+			return element.getAsDouble();
+		} catch (RuntimeException ignored) {
+			return fallback;
+		}
+	}
 }

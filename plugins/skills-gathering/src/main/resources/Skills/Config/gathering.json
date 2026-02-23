@@ -1,0 +1,102 @@
+{
+  "heuristics": {
+    "nodeCandidateTokens": [
+      "log",
+      "tree",
+      "ore",
+      "rock"
+    ]
+  },
+  "tooling": {
+    "keywordDefault": "Tool_Hatchet_",
+    "families": {
+      "tool_hatchet": [
+        "tool_hatchet"
+      ],
+      "tool_pickaxe": [
+        "tool_pickaxe"
+      ]
+    },
+    "tiers": {
+      "WOOD": [
+        "wood",
+        "bronze"
+      ],
+      "CRUDE": [
+        "crude",
+        "steel"
+      ],
+      "COPPER": [
+        "copper"
+      ],
+      "IRON": [
+        "iron"
+      ],
+      "THORIUM": [
+        "thorium"
+      ],
+      "COBALT": [
+        "cobalt"
+      ],
+      "ADAMANTITE": [
+        "adamant",
+        "adamantite"
+      ],
+      "ONYXIUM": [
+        "onyxium",
+        "rune"
+      ],
+      "MITHRIL": [
+        "mithril",
+        "dragon",
+        "crystal"
+      ]
+    }
+  },
+  "xpProfileDefaults": {
+    "profileId": "osrs_default",
+    "description": "OSRS-like nonlinear progression curve used by the skills plugin",
+    "curveModel": "OSRS_CLASSIC",
+    "maxLevel": 99,
+    "roundingMode": "NEAREST"
+  },
+  "toolTierDefaults": {
+    "keywordDefault": "Tool_Hatchet_",
+    "tiers": [
+      "NONE",
+      "WOOD",
+      "CRUDE",
+      "COPPER",
+      "IRON",
+      "THORIUM",
+      "COBALT",
+      "ADAMANTITE",
+      "ONYXIUM",
+      "MITHRIL"
+    ],
+    "keywordTiers": {
+      "axe": [
+        "wood",
+        "crude",
+        "copper",
+        "iron",
+        "thorium",
+        "cobalt",
+        "adamantite",
+        "onyxium",
+        "mithril"
+      ]
+    },
+    "aliases": {
+      "wood": "WOOD",
+      "crude": "CRUDE",
+      "copper": "COPPER",
+      "iron": "IRON",
+      "thorium": "THORIUM",
+      "cobalt": "COBALT",
+      "adamantite": "ADAMANTITE",
+      "onyxium": "ONYXIUM",
+      "mithril": "MITHRIL"
+    }
+  }
+}

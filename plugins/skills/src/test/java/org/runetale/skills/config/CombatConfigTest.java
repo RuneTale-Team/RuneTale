@@ -23,11 +23,19 @@ class CombatConfigTest {
 
 	@Test
 	void loadClampsNegativeXpAndNormalizesProjectileTokens(@TempDir Path tempDir) throws IOException {
-		write(tempDir, "Config/combat.properties", """
-				xpPerDamage=-4.5
-				source.ranged=Combat:RANGED
-				source.melee.prefix=Combat:Melee:
-				projectileCauseTokens= Projectile, ARROW_HIT ,  
+		write(tempDir, "Config/skills.json", """
+				{
+				  "combat": {
+				    "xpPerDamage": -4.5,
+				    "source": {
+				      "ranged": "Combat:RANGED",
+				      "melee": {
+				        "prefix": "Combat:Melee:"
+				      }
+				    },
+				    "projectileCauseTokens": ["Projectile", "ARROW_HIT", "  "]
+				  }
+				}
 				""");
 
 		CombatConfig config = CombatConfig.load(tempDir);

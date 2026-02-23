@@ -25,10 +25,18 @@ class ToolingConfigTest {
 
 	@Test
 	void loadRespectsExternalOverrides(@TempDir Path tempDir) throws IOException {
-		write(tempDir, "Config/tooling.properties", """
-				family.custom_hammer=custom_hammer,rune_hammer
-				tier.MITHRIL=ultra
-				keyword.default=Custom_Hammer
+		write(tempDir, "Config/gathering.json", """
+				{
+				  "tooling": {
+				    "keywordDefault": "Custom_Hammer",
+				    "families": {
+				      "custom_hammer": ["custom_hammer", "rune_hammer"]
+				    },
+				    "tiers": {
+				      "MITHRIL": ["ultra"]
+				    }
+				  }
+				}
 				""");
 
 		ToolingConfig config = ToolingConfig.load(tempDir);

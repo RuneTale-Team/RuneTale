@@ -13,7 +13,7 @@ import java.nio.file.Path;
 public final class CraftingExternalConfigBootstrap {
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
-	private static final String CRAFTING_CONFIG_RESOURCE = "Skills/Config/crafting.properties";
+	private static final String CRAFTING_CONFIG_RESOURCE = "Skills/Config/crafting.json";
 
 	private CraftingExternalConfigBootstrap() {
 	}

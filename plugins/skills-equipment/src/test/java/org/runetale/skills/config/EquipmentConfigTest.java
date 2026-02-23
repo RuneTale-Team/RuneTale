@@ -32,16 +32,30 @@ class EquipmentConfigTest {
 
     @Test
     void loadRespectsExternalOverrides(@TempDir Path tempDir) throws IOException {
-        write(tempDir, "Config/equipment.properties", """
-                enforce.armor=false
-                enforce.activeHand=true
-                enforce.activeHandReconcile=true
-                enforce.toolUse.entityDamage=false
-                activeSection.hotbar=-5
-                activeSelectionSlots.tools=7
-                armorScanTickSeconds=0.75
-                tag.skillRequired=EquipSkillRequirement
-                locationAlias.mainhand=main,mh
+        write(tempDir, "Config/equipment.json", """
+                {
+                  "tag": {
+                    "skillRequired": "EquipSkillRequirement"
+                  },
+                  "enforce": {
+                    "armor": false,
+                    "activeHand": true,
+                    "activeHandReconcile": true,
+                    "toolUse": {
+                      "entityDamage": false
+                    }
+                  },
+                  "activeSection": {
+                    "hotbar": -5
+                  },
+                  "activeSelectionSlots": {
+                    "tools": 7
+                  },
+                  "armorScanTickSeconds": 0.75,
+                  "locationAliases": {
+                    "mainhand": ["main", "mh"]
+                  }
+                }
                 """);
 
         EquipmentConfig config = EquipmentConfig.load(tempDir);

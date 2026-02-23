@@ -24,12 +24,20 @@ class HudConfigTest {
 
 	@Test
 	void loadClampsTimingAndUsesExternalColors(@TempDir Path tempDir) throws IOException {
-		write(tempDir, "Config/hud.properties", """
-				toast.durationMillis=0
-				toast.fadeDurationMillis=-2
-				toast.fade.rootBackground=#000000
-				toast.fade.innerBackground=#111111
-				toast.expiryTickSeconds=0
+		write(tempDir, "Config/skills.json", """
+				{
+				  "hud": {
+				    "toast": {
+				      "durationMillis": 0,
+				      "fadeDurationMillis": -2,
+				      "fade": {
+				        "rootBackground": "#000000",
+				        "innerBackground": "#111111"
+				      },
+				      "expiryTickSeconds": 0
+				    }
+				  }
+				}
 				""");
 
 		HudConfig config = HudConfig.load(tempDir);

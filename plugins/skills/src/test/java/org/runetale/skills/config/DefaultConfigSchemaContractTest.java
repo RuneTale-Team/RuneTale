@@ -1,5 +1,8 @@
 package org.runetale.skills.config;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestReporter;
 import org.runetale.testing.junit.ContractTest;
@@ -9,8 +12,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,87 +19,97 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ContractTest
 class DefaultConfigSchemaContractTest {
 
-	private static final List<ConfigSchema> CONFIG_SCHEMAS = List.of(
-			ConfigSchema.exact(
-					"Skills/Config/xp.properties",
-					Set.of("maxLevel", "levelTermMultiplier", "growthScale", "growthBase", "growthDivisor",
-							"pointsDivisor", "roundingMode")),
-			ConfigSchema.exact(
-					"Skills/Config/combat.properties",
-					Set.of("xpPerDamage", "source.ranged", "source.melee.prefix", "source.melee.accurate",
-							"source.melee.aggressive", "source.melee.defensive", "source.melee.controlled.attack",
-							"source.melee.controlled.strength", "source.melee.controlled.defence",
-							"source.block.defence", "projectileCauseTokens")),
-			ConfigSchema.exact(
-					"Skills/Config/hud.properties",
-					Set.of("toast.durationMillis", "toast.fadeDurationMillis", "toast.fade.rootBackground",
-							"toast.fade.innerBackground", "toast.expiryTickSeconds")));
+	private static final String RESOURCE_PATH = "Skills/Config/skills.json";
+
+	private static final Set<String> REQUIRED_PATHS = Set.of(
+			"xp.maxLevel",
+			"xp.levelTermMultiplier",
+			"xp.growthScale",
+			"xp.growthBase",
+			"xp.growthDivisor",
+			"xp.pointsDivisor",
+			"xp.roundingMode",
+			"combat.xpPerDamage",
+			"combat.source.ranged",
+			"combat.source.melee.prefix",
+			"combat.source.melee.accurate",
+			"combat.source.melee.aggressive",
+			"combat.source.melee.defensive",
+			"combat.source.melee.controlled.attack",
+			"combat.source.melee.controlled.strength",
+			"combat.source.melee.controlled.defence",
+			"combat.source.block.defence",
+			"combat.projectileCauseTokens",
+			"hud.toast.durationMillis",
+			"hud.toast.fadeDurationMillis",
+			"hud.toast.fade.rootBackground",
+			"hud.toast.fade.innerBackground",
+			"hud.toast.expiryTickSeconds");
 
 	@Test
-	void defaultConfigFilesHaveRequiredKeysAndWarnOnUnknown(TestReporter reporter) throws IOException {
-		for (ConfigSchema schema : CONFIG_SCHEMAS) {
-			Properties properties = loadProperties(schema.resourcePath());
-			Set<String> presentKeys = properties.stringPropertyNames();
+	void defaultSkillsConfigJsonHasRequiredPathsAndWarnsOnUnknownTopLevelSections(TestReporter reporter) throws IOException {
+		JsonObject root = loadJsonObject(RESOURCE_PATH);
 
-			assertThat(presentKeys)
-					.as("required keys present in %s", schema.resourcePath())
-					.containsAll(schema.requiredExactKeys());
-
-			for (String requiredKey : schema.requiredExactKeys()) {
-				String rawValue = properties.getProperty(requiredKey);
-				assertThat(rawValue)
-						.as("required key %s in %s", requiredKey, schema.resourcePath())
-						.isNotNull();
-				assertThat(rawValue.trim())
-						.as("required key %s is non-blank in %s", requiredKey, schema.resourcePath())
+		for (String path : REQUIRED_PATHS) {
+			JsonElement value = valueAt(root, path);
+			assertThat(value)
+					.as("required path %s in %s", path, RESOURCE_PATH)
+					.isNotNull();
+			assertThat(value.isJsonNull())
+					.as("required path %s is non-null in %s", path, RESOURCE_PATH)
+					.isFalse();
+			if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+				assertThat(value.getAsString().trim())
+						.as("required string path %s is non-blank in %s", path, RESOURCE_PATH)
 						.isNotEmpty();
 			}
+		}
 
-			for (String requiredPrefix : schema.requiredPrefixes()) {
-				assertThat(presentKeys.stream().anyMatch(key -> key.startsWith(requiredPrefix)))
-						.as("required prefix %s is present in %s", requiredPrefix, schema.resourcePath())
-						.isTrue();
-			}
+		Set<String> unknownTopLevelKeys = root.keySet().stream()
+				.filter(key -> !Set.of("xp", "combat", "hud").contains(key))
+				.collect(LinkedHashSet::new, Set::add, Set::addAll);
 
-			Set<String> allowedExactKeys = new LinkedHashSet<>(schema.requiredExactKeys());
-			allowedExactKeys.addAll(schema.allowedExactKeys());
-
-			Set<String> unknownKeys = presentKeys.stream()
-					.filter(key -> !allowedExactKeys.contains(key))
-					.filter(key -> schema.allowedPrefixes().stream().noneMatch(key::startsWith))
-					.collect(LinkedHashSet::new, Set::add, Set::addAll);
-
-			if (!unknownKeys.isEmpty()) {
-				reporter.publishEntry(
-						"config-schema-warning",
-						"Unknown key(s) in " + schema.resourcePath() + ": " + String.join(", ", unknownKeys));
-			}
+		if (!unknownTopLevelKeys.isEmpty()) {
+			reporter.publishEntry(
+					"config-schema-warning",
+					"Unknown top-level section(s) in " + RESOURCE_PATH + ": " + String.join(", ", unknownTopLevelKeys));
 		}
 	}
 
-	private static Properties loadProperties(String resourcePath) throws IOException {
+	private static JsonObject loadJsonObject(String resourcePath) throws IOException {
 		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		try (InputStream input = classLoader.getResourceAsStream(resourcePath)) {
 			assertThat(input)
 					.as("resource exists: %s", resourcePath)
 					.isNotNull();
 
-			Properties properties = new Properties();
-			properties.load(new InputStreamReader(input, StandardCharsets.UTF_8));
-			return properties;
+			try (InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+				JsonElement parsed = JsonParser.parseReader(reader);
+				assertThat(parsed != null && parsed.isJsonObject())
+						.as("resource root is object: %s", resourcePath)
+						.isTrue();
+				return parsed.getAsJsonObject();
+			}
 		}
 	}
 
-	private record ConfigSchema(
-			String resourcePath,
-			Set<String> requiredExactKeys,
-			Set<String> allowedExactKeys,
-			List<String> requiredPrefixes,
-			List<String> allowedPrefixes) {
-
-		private static ConfigSchema exact(String resourcePath, Set<String> requiredExactKeys) {
-			return new ConfigSchema(resourcePath, Set.copyOf(requiredExactKeys), Set.of(), List.of(), List.of());
+	private static JsonElement valueAt(JsonObject root, String dottedPath) {
+		JsonObject currentObject = root;
+		String[] segments = dottedPath.split("\\.");
+		for (int i = 0; i < segments.length; i++) {
+			String segment = segments[i];
+			JsonElement element = currentObject.get(segment);
+			if (element == null) {
+				return null;
+			}
+			if (i == segments.length - 1) {
+				return element;
+			}
+			if (!element.isJsonObject()) {
+				return null;
+			}
+			currentObject = element.getAsJsonObject();
 		}
-
+		return null;
 	}
 }

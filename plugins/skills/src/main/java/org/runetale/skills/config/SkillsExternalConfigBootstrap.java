@@ -45,9 +45,7 @@ public final class SkillsExternalConfigBootstrap {
     @Nonnull
     private static List<String> defaultResourcePaths() {
         List<String> resources = new ArrayList<>();
-        resources.add("Skills/Config/xp.properties");
-        resources.add("Skills/Config/combat.properties");
-        resources.add("Skills/Config/hud.properties");
+        resources.add("Skills/Config/skills.json");
         LOGGER.atFine().log("[Skills] Bootstrap resource manifest contains %d resource(s)", resources.size());
         return resources;
     }
