@@ -18,37 +18,31 @@
       ]
     },
     "tiers": {
-      "WOOD": [
-        "wood",
+      "BRONZE": [
         "bronze"
-      ],
-      "CRUDE": [
-        "crude",
-        "steel"
-      ],
-      "COPPER": [
-        "copper"
       ],
       "IRON": [
         "iron"
       ],
-      "THORIUM": [
-        "thorium"
+      "STEEL": [
+        "steel"
       ],
-      "COBALT": [
-        "cobalt"
-      ],
-      "ADAMANTITE": [
-        "adamant",
-        "adamantite"
-      ],
-      "ONYXIUM": [
-        "onyxium",
-        "rune"
+      "BLACK": [
+        "black"
       ],
       "MITHRIL": [
-        "mithril",
-        "dragon",
+        "mithril"
+      ],
+      "ADAMANT": [
+        "adamant"
+      ],
+      "RUNE": [
+        "rune"
+      ],
+      "DRAGON": [
+        "dragon"
+      ],
+      "CRYSTAL": [
         "crystal"
       ]
     }
@@ -64,39 +58,39 @@
     "keywordDefault": "Tool_Hatchet_",
     "tiers": [
       "NONE",
-      "WOOD",
-      "CRUDE",
-      "COPPER",
+      "BRONZE",
       "IRON",
-      "THORIUM",
-      "COBALT",
-      "ADAMANTITE",
-      "ONYXIUM",
-      "MITHRIL"
+      "STEEL",
+      "BLACK",
+      "MITHRIL",
+      "ADAMANT",
+      "RUNE",
+      "DRAGON",
+      "CRYSTAL"
     ],
     "keywordTiers": {
       "axe": [
-        "wood",
-        "crude",
-        "copper",
+        "bronze",
         "iron",
-        "thorium",
-        "cobalt",
-        "adamantite",
-        "onyxium",
-        "mithril"
+        "steel",
+        "black",
+        "mithril",
+        "adamant",
+        "rune",
+        "dragon",
+        "crystal"
       ]
     },
     "aliases": {
-      "wood": "WOOD",
-      "crude": "CRUDE",
-      "copper": "COPPER",
+      "bronze": "BRONZE",
       "iron": "IRON",
-      "thorium": "THORIUM",
-      "cobalt": "COBALT",
-      "adamantite": "ADAMANTITE",
-      "onyxium": "ONYXIUM",
-      "mithril": "MITHRIL"
+      "steel": "STEEL",
+      "black": "BLACK",
+      "mithril": "MITHRIL",
+      "adamant": "ADAMANT",
+      "rune": "RUNE",
+      "dragon": "DRAGON",
+      "crystal": "CRYSTAL"
     }
   }
 }

@@ -113,7 +113,7 @@ class SkillNodeLookupServiceContractTest {
 		SkillNodeDefinition first = new SkillNodeDefinition("first_node", SkillType.WOODCUTTING, "Custom_Block", 1,
 				ToolTier.NONE, "Tool_Hatchet", 10.0D);
 		SkillNodeDefinition second = new SkillNodeDefinition("second_node", SkillType.MINING, "Custom_Block", 20,
-				ToolTier.COPPER, "Tool_Pickaxe", 20.0D);
+				ToolTier.BRONZE, "Tool_Pickaxe", 20.0D);
 
 		service.register(first);
 		service.register(second);

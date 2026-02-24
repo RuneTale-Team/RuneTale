@@ -176,7 +176,7 @@ public class SkillNodeLookupService {
 	 * registry.
 	 */
 	private void registerFallbackDefaults() {
-		register(new SkillNodeDefinition("oak_tree", SkillType.WOODCUTTING, "OakLog", 1, ToolTier.WOOD,
+		register(new SkillNodeDefinition("oak_tree", SkillType.WOODCUTTING, "OakLog", 1, ToolTier.BRONZE,
 				"Tool_Hatchet", 25.0D));
 		register(new SkillNodeDefinition("birch_tree", SkillType.WOODCUTTING, "BirchLog", 15, ToolTier.IRON,
 				"Tool_Hatchet",

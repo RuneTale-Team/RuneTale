@@ -18,36 +18,36 @@ class ToolRequirementEvaluatorTest {
 	@Test
 	void evaluateAcceptsMatchingToolFamilyAtRequiredTier(@TempDir Path tempDir) {
 		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator(ToolingConfig.load(tempDir));
-		ItemStack heldItem = mockHeldItem("Tool_Hatchet_Copper");
+		ItemStack heldItem = mockHeldItem("Tool_Hatchet_Bronze");
 
-		RequirementCheckResult result = evaluator.evaluate(heldItem, "Tool_Hatchet", ToolTier.COPPER);
+		RequirementCheckResult result = evaluator.evaluate(heldItem, "Tool_Hatchet", ToolTier.BRONZE);
 
 		assertThat(result.isSuccess()).isTrue();
-		assertThat(result.getDetectedTier()).isEqualTo(ToolTier.COPPER);
-		assertThat(result.getHeldItemId()).isEqualTo("Tool_Hatchet_Copper");
+		assertThat(result.getDetectedTier()).isEqualTo(ToolTier.BRONZE);
+		assertThat(result.getHeldItemId()).isEqualTo("Tool_Hatchet_Bronze");
 	}
 
 	@Test
 	void evaluateRejectsInsufficientTierWithinMatchingFamily(@TempDir Path tempDir) {
 		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator(ToolingConfig.load(tempDir));
-		ItemStack heldItem = mockHeldItem("Tool_Hatchet_Wood");
+		ItemStack heldItem = mockHeldItem("Tool_Hatchet_Bronze");
 
 		RequirementCheckResult result = evaluator.evaluate(heldItem, "Tool_Hatchet", ToolTier.IRON);
 
 		assertThat(result.isSuccess()).isFalse();
-		assertThat(result.getDetectedTier()).isEqualTo(ToolTier.WOOD);
+		assertThat(result.getDetectedTier()).isEqualTo(ToolTier.BRONZE);
 	}
 
 	@Test
 	void evaluateRejectsNonMatchingToolFamily(@TempDir Path tempDir) {
 		ToolRequirementEvaluator evaluator = new ToolRequirementEvaluator(ToolingConfig.load(tempDir));
-		ItemStack heldItem = mockHeldItem("Tool_Pickaxe_Copper");
+		ItemStack heldItem = mockHeldItem("Tool_Pickaxe_Bronze");
 
 		RequirementCheckResult result = evaluator.evaluate(heldItem, "Tool_Hatchet", ToolTier.NONE);
 
 		assertThat(result.isSuccess()).isFalse();
 		assertThat(result.getDetectedTier()).isEqualTo(ToolTier.NONE);
-		assertThat(result.getHeldItemId()).isEqualTo("Tool_Pickaxe_Copper");
+		assertThat(result.getHeldItemId()).isEqualTo("Tool_Pickaxe_Bronze");
 	}
 
 	private static ItemStack mockHeldItem(String itemId) {

@@ -136,15 +136,15 @@ public final class ToolingConfig {
     @Nonnull
     private static EnumMap<ToolTier, List<String>> defaultTierTokens() {
         EnumMap<ToolTier, List<String>> defaults = new EnumMap<>(ToolTier.class);
-        defaults.put(ToolTier.WOOD, List.of("wood", "bronze"));
-        defaults.put(ToolTier.CRUDE, List.of("crude", "steel"));
-        defaults.put(ToolTier.COPPER, List.of("copper"));
+        defaults.put(ToolTier.BRONZE, List.of("bronze"));
         defaults.put(ToolTier.IRON, List.of("iron"));
-        defaults.put(ToolTier.THORIUM, List.of("thorium"));
-        defaults.put(ToolTier.COBALT, List.of("cobalt"));
-        defaults.put(ToolTier.ADAMANTITE, List.of("adamant", "adamantite"));
-        defaults.put(ToolTier.ONYXIUM, List.of("onyxium", "rune"));
-        defaults.put(ToolTier.MITHRIL, List.of("mithril", "dragon", "crystal"));
+        defaults.put(ToolTier.STEEL, List.of("steel"));
+        defaults.put(ToolTier.BLACK, List.of("black"));
+        defaults.put(ToolTier.MITHRIL, List.of("mithril"));
+        defaults.put(ToolTier.ADAMANT, List.of("adamant"));
+        defaults.put(ToolTier.RUNE, List.of("rune"));
+        defaults.put(ToolTier.DRAGON, List.of("dragon"));
+        defaults.put(ToolTier.CRYSTAL, List.of("crystal"));
         return defaults;
     }
 
