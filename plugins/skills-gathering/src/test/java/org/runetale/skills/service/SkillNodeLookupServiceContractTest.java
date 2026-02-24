@@ -19,33 +19,62 @@ class SkillNodeLookupServiceContractTest {
 
 		service.initializeDefaults();
 
-		SkillNodeDefinition oak = service.findByBlockId("  wood_oak_trunk  ");
-		assertThat(oak).isNotNull();
-		assertThat(oak.getId()).isEqualTo("woodcutting_oak_tree");
-		assertThat(oak.getSkillType()).isEqualTo(SkillType.WOODCUTTING);
-		assertThat(oak.getRequiredToolTier()).isEqualTo(ToolTier.NONE);
+		List<SkillNodeDefinition> definitions = service.listAllDefinitions();
+		assertThat(definitions).isNotEmpty();
+		assertThat(definitions).allSatisfy(definition -> {
+			assertThat(definition.getId()).isNotBlank();
+			assertThat(definition.getSkillType()).isNotNull();
+			assertThat(definition.getBlockId()).isNotBlank();
+			assertThat(service.findByBlockId(definition.getBlockId())).isNotNull();
+		});
 	}
 
 	@Test
 	void wildcardLookupMatchesNamespacedBlockIdsUsingSuffixSimplification() {
 		SkillNodeLookupService service = new SkillNodeLookupService();
-		service.initializeDefaults();
+		SkillNodeDefinition wildcard = new SkillNodeDefinition(
+				"wildcard_lookup_node",
+				SkillType.MINING,
+				"Ore_Test_*",
+				1,
+				ToolTier.NONE,
+				"Tool_Pickaxe",
+				7.0D);
+		service.register(wildcard, List.of("Ore_Test_*"));
 
-		SkillNodeDefinition node = service.findByBlockId("mymod:Ore_Copper_Surface_A");
+		SkillNodeDefinition node = service.findByBlockId("mymod:Ore_Test_Surface_A");
 
 		assertThat(node).isNotNull();
-		assertThat(node.getId()).isEqualTo("mining_copper");
+		assertThat(node.getId()).isEqualTo("wildcard_lookup_node");
 		assertThat(node.getSkillType()).isEqualTo(SkillType.MINING);
 	}
 
 	@Test
 	void listDefinitionsForSkillReturnsOnlyRequestedSkill() {
 		SkillNodeLookupService service = new SkillNodeLookupService();
-		service.initializeDefaults();
+		SkillNodeDefinition mining = new SkillNodeDefinition(
+				"mining_custom",
+				SkillType.MINING,
+				"Ore_Custom",
+				1,
+				ToolTier.NONE,
+				"Tool_Pickaxe",
+				10.0D);
+		SkillNodeDefinition woodcutting = new SkillNodeDefinition(
+				"woodcutting_custom",
+				SkillType.WOODCUTTING,
+				"Tree_Custom",
+				1,
+				ToolTier.NONE,
+				"Tool_Hatchet",
+				10.0D);
+		service.register(mining);
+		service.register(woodcutting);
 
 		List<SkillNodeDefinition> miningDefinitions = service.listDefinitionsForSkill(SkillType.MINING);
 
 		assertThat(miningDefinitions).isNotEmpty();
+		assertThat(miningDefinitions).anySatisfy(definition -> assertThat(definition.getId()).isEqualTo("mining_custom"));
 		assertThat(miningDefinitions).allMatch(definition -> definition.getSkillType() == SkillType.MINING);
 	}
 

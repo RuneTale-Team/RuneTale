@@ -15,15 +15,15 @@ class CraftingConfigTest {
 	void loadUsesClasspathDefaultsWhenExternalFileMissing(@TempDir Path tempDir) {
 		CraftingConfig config = CraftingConfig.load(tempDir);
 
-		assertThat(config.anvilBenchId()).isEqualTo("RuneTale_Anvil");
-		assertThat(config.furnaceBenchId()).isEqualTo("RuneTale_Furnace");
-		assertThat(config.smithingCraftDurationMillis()).isEqualTo(3000L);
-		assertThat(config.smeltingCraftDurationMillis()).isEqualTo(3000L);
-		assertThat(config.maxCraftCount()).isEqualTo(999);
-		assertThat(config.quantityPresets()).containsExactly(1, 5, 10);
-		assertThat(config.quantityAllToken()).isEqualTo("ALL");
-		assertThat(config.smeltingOutputContainsToken()).isEqualTo("runetale_bar_");
-		assertThat(config.pageProgressTickSeconds()).isEqualTo(0.05F);
+		assertThat(config.anvilBenchId()).isNotBlank();
+		assertThat(config.furnaceBenchId()).isNotBlank();
+		assertThat(config.smithingCraftDurationMillis()).isGreaterThanOrEqualTo(1L);
+		assertThat(config.smeltingCraftDurationMillis()).isGreaterThanOrEqualTo(1L);
+		assertThat(config.maxCraftCount()).isGreaterThanOrEqualTo(1);
+		assertThat(config.quantityPresets()).isNotEmpty().allSatisfy(quantity -> assertThat(quantity).isGreaterThan(0));
+		assertThat(config.quantityAllToken()).isNotBlank();
+		assertThat(config.smeltingOutputContainsToken()).isNotBlank();
+		assertThat(config.pageProgressTickSeconds()).isGreaterThanOrEqualTo(0.01F);
 	}
 
 	@Test

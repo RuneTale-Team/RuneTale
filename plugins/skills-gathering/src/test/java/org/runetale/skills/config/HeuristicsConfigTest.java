@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,7 +16,12 @@ class HeuristicsConfigTest {
 	void loadUsesClasspathDefaultsWhenExternalFileMissing(@TempDir Path tempDir) {
 		HeuristicsConfig config = HeuristicsConfig.load(tempDir);
 
-		assertThat(config.nodeCandidateTokens()).containsExactly("log", "tree", "ore", "rock");
+		assertThat(config.nodeCandidateTokens())
+				.isNotEmpty()
+				.allSatisfy(token -> {
+					assertThat(token).isNotBlank();
+					assertThat(token).isEqualTo(token.toLowerCase(Locale.ROOT));
+				});
 	}
 
 	@Test

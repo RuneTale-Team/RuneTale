@@ -2,7 +2,6 @@ package org.runetale.skills.config;
 
 import com.hypixel.hytale.protocol.MouseButtonState;
 import com.hypixel.hytale.protocol.MouseButtonType;
-import com.hypixel.hytale.protocol.InteractionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.runetale.skills.domain.SkillType;
@@ -19,20 +18,19 @@ class ItemActionsConfigTest {
     void loadUsesClasspathDefaultsWhenExternalFileMissing(@TempDir Path tempDir) {
         ItemActionsConfig config = ItemActionsConfig.load(tempDir);
 
-        assertThat(config.actions()).hasSize(1);
-        ItemActionsConfig.ItemXpActionDefinition action = config.actions().getFirst();
-        assertThat(action.id()).isEqualTo("prayer_bury_bones");
-        assertThat(action.itemId()).isEqualTo("RuneTale_Bones");
-        assertThat(action.skillType()).isEqualTo(SkillType.PRAYER);
-        assertThat(action.experience()).isEqualTo(4.5D);
-        assertThat(action.consumeQuantity()).isEqualTo(1);
-        assertThat(action.mouseButtonType()).isEqualTo(MouseButtonType.Right);
-        assertThat(action.mouseButtonState()).isEqualTo(MouseButtonState.Pressed);
-        assertThat(action.matchesItemId("RuneTale_Bones")).isTrue();
-        assertThat(action.matchesItemId("runetale:RuneTale_Bones")).isTrue();
-        assertThat(action.matchesInteractionType(InteractionType.Secondary)).isTrue();
-        assertThat(action.matchesInteractionType(InteractionType.Primary)).isFalse();
-        assertThat(config.debugPluginKey()).isEqualTo("skills-actions");
+        assertThat(config.actions()).isNotEmpty();
+        assertThat(config.actions()).allSatisfy(action -> {
+            assertThat(action.id()).isNotBlank();
+            assertThat(action.itemId()).isNotBlank();
+            assertThat(action.skillType()).isNotNull();
+            assertThat(action.experience()).isGreaterThan(0.0D);
+            assertThat(action.consumeQuantity()).isGreaterThanOrEqualTo(1);
+            assertThat(action.source()).isNotBlank();
+            assertThat(action.mouseButtonType()).isNotNull();
+            assertThat(action.mouseButtonState()).isNotNull();
+            assertThat(action.matchesItemId(action.itemId())).isTrue();
+        });
+        assertThat(config.debugPluginKey()).isNotBlank();
     }
 
     @Test

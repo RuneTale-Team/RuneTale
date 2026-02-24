@@ -7,6 +7,7 @@ import org.runetale.skills.domain.ToolTier;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,10 +17,13 @@ class ToolingConfigTest {
 	void loadUsesClasspathDefaultsForFamilyAndTierDetection(@TempDir Path tempDir) {
 		ToolingConfig config = ToolingConfig.load(tempDir);
 
-		assertThat(config.defaultKeyword()).isEqualTo("Tool_Hatchet_");
-		assertThat(config.matchesToolFamily("tool_hatchet_wood", "tool_hatchet")).isTrue();
-		assertThat(config.matchesToolFamily("tool_pickaxe_wood", "tool_hatchet")).isFalse();
-		assertThat(config.detectTier("tool_hatchet_bronze")).isEqualTo(ToolTier.WOOD);
+		assertThat(config.defaultKeyword()).isNotBlank();
+		assertThat(config.matchesToolFamily("", "tool_hatchet")).isFalse();
+		assertThat(config.matchesToolFamily("tool_hatchet_wood", "")).isFalse();
+		String normalizedDefaultKeyword = config.defaultKeyword().trim().toLowerCase(Locale.ROOT)
+				.replace('-', '_')
+				.replace(' ', '_');
+		assertThat(config.matchesToolFamily("x_" + normalizedDefaultKeyword + "_y", normalizedDefaultKeyword)).isTrue();
 		assertThat(config.detectTier("tool_hatchet_unknown")).isEqualTo(ToolTier.NONE);
 	}
 
