@@ -93,7 +93,7 @@ class ConsumeSkillActionInteractionTest {
         when(container.getItemStack((short) 5)).thenReturn(null);
         when(this.runtimeApi.grantSkillXp(store, playerRef, SkillType.PRAYER, 4.5D, "prayer:bury", true)).thenReturn(true);
 
-        interaction.firstRun(InteractionType.Primary, context, cooldownHandler);
+        interaction.firstRun(InteractionType.Secondary, context, cooldownHandler);
 
         verify(container).removeItemStackFromSlot((short) 5, heldItem, 1, true, true);
         verify(this.runtimeApi).grantSkillXp(store, playerRef, SkillType.PRAYER, 4.5D, "prayer:bury", true);
@@ -132,7 +132,7 @@ class ConsumeSkillActionInteractionTest {
         when(heldItem.getItemId()).thenReturn("RuneTale_Bones");
         when(heldItem.getQuantity()).thenReturn(1);
 
-        interaction.firstRun(InteractionType.Secondary, context, cooldownHandler);
+        interaction.firstRun(InteractionType.Primary, context, cooldownHandler);
 
         verify(container, never()).removeItemStackFromSlot((short) 5, heldItem, 1, true, true);
         assertThat(state.state).isEqualTo(InteractionState.Failed);
@@ -150,7 +150,7 @@ class ConsumeSkillActionInteractionTest {
                 true,
                 true,
                 false,
-                MouseButtonType.Left,
+                MouseButtonType.Right,
                 MouseButtonState.Pressed);
     }
 }

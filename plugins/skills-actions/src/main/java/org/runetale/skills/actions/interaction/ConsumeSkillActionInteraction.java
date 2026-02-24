@@ -75,6 +75,7 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
         ItemActionsConfig.ItemXpActionDefinition action = matchAction(itemActionsConfig, interactionType, player, heldItem);
         if (action == null) {
             context.getState().state = InteractionState.Failed;
+            LOGGER.atInfo().log("[Skills Actions] No action match interaction=%s item=%s", interactionType, heldItem.getItemId());
             debugLog(runtimeApi, itemActionsConfig, "No configured action matched item=%s interactionType=%s", heldItem.getItemId(), interactionType);
             return;
         }
@@ -115,6 +116,7 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
         }
 
         context.getState().state = InteractionState.Finished;
+        LOGGER.atInfo().log("[Skills Actions] Applied action=%s interaction=%s item=%s qty=%d", action.id(), interactionType, heldItem.getItemId(), action.consumeQuantity());
         debugLog(runtimeApi, itemActionsConfig, "Applied action id=%s item=%s qty=%d skill=%s xp=%.4f interaction=%s", action.id(), heldItem.getItemId(), action.consumeQuantity(), action.skillType(), action.experience(), interactionType);
     }
 
