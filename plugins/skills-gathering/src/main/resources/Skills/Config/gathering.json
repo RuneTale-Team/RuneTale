@@ -51,15 +51,15 @@
       "mismatchedFamilyMultiplier": 0.18,
       "defaultTierMultiplier": 1.0,
       "tierMultipliers": {
-        "NONE": 0.20,
-        "BRONZE": 0.42,
-        "IRON": 0.50,
-        "STEEL": 0.60,
-        "BLACK": 0.68,
-        "MITHRIL": 0.76,
-        "ADAMANT": 0.84,
-        "RUNE": 0.92,
-        "DRAGON": 0.97,
+        "NONE": 1.00,
+        "BRONZE": 1.00,
+        "IRON": 1.00,
+        "STEEL": 1.00,
+        "BLACK": 1.00,
+        "MITHRIL": 1.00,
+        "ADAMANT": 1.00,
+        "RUNE": 1.00,
+        "DRAGON": 1.00,
         "CRYSTAL": 1.0
       }
     }
