@@ -1,0 +1,157 @@
+package org.runetale.skills.actions.interaction;
+
+import com.hypixel.hytale.codec.builder.BuilderCodec;
+import com.hypixel.hytale.component.CommandBuffer;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.GameMode;
+import com.hypixel.hytale.protocol.InteractionState;
+import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.server.core.entity.InteractionContext;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
+import com.hypixel.hytale.server.core.inventory.transaction.ItemStackSlotTransaction;
+import com.hypixel.hytale.server.core.modules.interaction.interaction.CooldownHandler;
+import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInstantInteraction;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import org.runetale.skills.actions.ItemActionsRuntimeRegistry;
+import org.runetale.skills.api.SkillsRuntimeApi;
+import org.runetale.skills.api.SkillsRuntimeRegistry;
+import org.runetale.skills.config.ItemActionsConfig;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+public final class ConsumeSkillActionInteraction extends SimpleInstantInteraction {
+
+    public static final String TYPE_NAME = "runetale_consume_skill_action";
+
+    public static final BuilderCodec<ConsumeSkillActionInteraction> CODEC = BuilderCodec
+            .builder(ConsumeSkillActionInteraction.class, ConsumeSkillActionInteraction::new, SimpleInstantInteraction.CODEC)
+            .build();
+
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+
+    @Override
+    protected void firstRun(
+            @Nonnull InteractionType interactionType,
+            @Nonnull InteractionContext context,
+            @Nonnull CooldownHandler cooldownHandler) {
+        CommandBuffer<EntityStore> commandBuffer = context.getCommandBuffer();
+        if (commandBuffer == null) {
+            context.getState().state = InteractionState.Failed;
+            return;
+        }
+
+        Ref<EntityStore> playerRef = context.getEntity();
+        if (!playerRef.isValid()) {
+            context.getState().state = InteractionState.Failed;
+            return;
+        }
+
+        Player player = (Player) commandBuffer.getComponent(playerRef, Player.getComponentType());
+        if (player == null) {
+            context.getState().state = InteractionState.Failed;
+            return;
+        }
+
+        SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
+        ItemActionsConfig itemActionsConfig = ItemActionsRuntimeRegistry.get();
+        if (runtimeApi == null || itemActionsConfig == null) {
+            context.getState().state = InteractionState.Failed;
+            return;
+        }
+
+        ItemContainer heldItemContainer = context.getHeldItemContainer();
+        short heldItemSlot = context.getHeldItemSlot();
+        ItemStack heldItem = context.getHeldItem();
+        if (heldItemContainer == null || heldItemSlot < 0 || heldItem == null || ItemStack.isEmpty(heldItem)) {
+            context.getState().state = InteractionState.Failed;
+            return;
+        }
+
+        ItemActionsConfig.ItemXpActionDefinition action = matchAction(itemActionsConfig, interactionType, player, heldItem);
+        if (action == null) {
+            context.getState().state = InteractionState.Failed;
+            debugLog(runtimeApi, itemActionsConfig, "No configured action matched item=%s interactionType=%s", heldItem.getItemId(), interactionType);
+            return;
+        }
+
+        Store<EntityStore> store = playerRef.getStore();
+        if (!runtimeApi.hasSkillProfile(store, playerRef)) {
+            context.getState().state = InteractionState.Failed;
+            debugLog(runtimeApi, itemActionsConfig, "Skipped action id=%s due to missing profile player=%s", action.id(), playerRef);
+            return;
+        }
+
+        ItemStackSlotTransaction consumeTransaction = heldItemContainer.removeItemStackFromSlot(
+                heldItemSlot,
+                heldItem,
+                action.consumeQuantity(),
+                true,
+                true);
+        if (!consumeTransaction.succeeded()) {
+            context.getState().state = InteractionState.Failed;
+            debugLog(runtimeApi, itemActionsConfig, "Failed consume action id=%s slot=%d item=%s qty=%d", action.id(), heldItemSlot, heldItem.getItemId(), action.consumeQuantity());
+            return;
+        }
+
+        ItemStack updated = heldItemContainer.getItemStack(heldItemSlot);
+        context.setHeldItem(ItemStack.isEmpty(updated) ? null : updated);
+
+        boolean granted = runtimeApi.grantSkillXp(
+                store,
+                playerRef,
+                action.skillType(),
+                action.experience(),
+                action.source(),
+                action.notifyPlayer());
+        if (!granted) {
+            context.getState().state = InteractionState.Failed;
+            LOGGER.atWarning().log("[Skills Actions] XP dispatch failed after consume action=%s player=%s skill=%s", action.id(), playerRef, action.skillType());
+            return;
+        }
+
+        context.getState().state = InteractionState.Finished;
+        debugLog(runtimeApi, itemActionsConfig, "Applied action id=%s item=%s qty=%d skill=%s xp=%.4f interaction=%s", action.id(), heldItem.getItemId(), action.consumeQuantity(), action.skillType(), action.experience(), interactionType);
+    }
+
+    @Nullable
+    private static ItemActionsConfig.ItemXpActionDefinition matchAction(
+            @Nonnull ItemActionsConfig config,
+            @Nonnull InteractionType interactionType,
+            @Nonnull Player player,
+            @Nonnull ItemStack heldItem) {
+        for (ItemActionsConfig.ItemXpActionDefinition action : config.actions()) {
+            if (!action.enabled()) {
+                continue;
+            }
+            if (!action.matchesInteractionType(interactionType)) {
+                continue;
+            }
+            if (!action.matchesItemId(heldItem.getItemId())) {
+                continue;
+            }
+            if (heldItem.getQuantity() < action.consumeQuantity()) {
+                continue;
+            }
+            if (!action.allowCreative() && player.getGameMode() == GameMode.Creative) {
+                continue;
+            }
+            return action;
+        }
+        return null;
+    }
+
+    private static void debugLog(
+            @Nonnull SkillsRuntimeApi runtimeApi,
+            @Nonnull ItemActionsConfig config,
+            @Nonnull String message,
+            Object... args) {
+        if (runtimeApi.isDebugEnabled(config.debugPluginKey())) {
+            LOGGER.atInfo().log("[Skills][Diag] " + message, args);
+        }
+    }
+}

@@ -230,7 +230,7 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
         this.xpService = new XpService(this.skillsConfigService.getXpConfig());
         this.sessionStatsService = new SkillSessionStatsService();
         this.skillXpToastHudService = new SkillXpToastHudService(this.skillsConfigService.getHudConfig());
-        this.debugModeService = new DebugModeService(List.of("skills"));
+        this.debugModeService = new DebugModeService(List.of("skills", "skills-actions"));
         this.xpDispatchService = new SkillXpDispatchService(this.debugModeService);
         LOGGER.atInfo().log("[Skills] Services registered.");
     }

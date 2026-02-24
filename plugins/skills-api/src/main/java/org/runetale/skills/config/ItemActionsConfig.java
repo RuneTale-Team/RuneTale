@@ -2,6 +2,7 @@ package org.runetale.skills.config;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.MouseButtonState;
 import com.hypixel.hytale.protocol.MouseButtonType;
 import org.runetale.skills.domain.SkillType;
@@ -144,6 +145,18 @@ public record ItemActionsConfig(
             boolean allowCreative,
             @Nonnull MouseButtonType mouseButtonType,
             @Nonnull MouseButtonState mouseButtonState) {
+
+        public boolean matchesInteractionType(@Nonnull InteractionType interactionType) {
+            if (this.mouseButtonState != MouseButtonState.Pressed) {
+                return false;
+            }
+
+            return switch (interactionType) {
+                case Primary -> this.mouseButtonType == MouseButtonType.Left;
+                case Secondary, Use -> this.mouseButtonType == MouseButtonType.Right;
+                default -> false;
+            };
+        }
 
         public boolean matchesItemId(@Nullable String heldItemId) {
             if (heldItemId == null) {

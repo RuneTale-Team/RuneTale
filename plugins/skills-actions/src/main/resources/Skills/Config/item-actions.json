@@ -12,7 +12,7 @@
       "cancelInputEvent": true,
       "allowCreative": false,
       "trigger": {
-        "mouseButton": "Right",
+        "mouseButton": "Left",
         "mouseState": "Pressed"
       }
     }

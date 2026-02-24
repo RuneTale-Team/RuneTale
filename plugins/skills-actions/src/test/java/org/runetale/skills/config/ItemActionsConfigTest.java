@@ -2,6 +2,7 @@ package org.runetale.skills.config;
 
 import com.hypixel.hytale.protocol.MouseButtonState;
 import com.hypixel.hytale.protocol.MouseButtonType;
+import com.hypixel.hytale.protocol.InteractionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.runetale.skills.domain.SkillType;
@@ -25,10 +26,12 @@ class ItemActionsConfigTest {
         assertThat(action.skillType()).isEqualTo(SkillType.PRAYER);
         assertThat(action.experience()).isEqualTo(4.5D);
         assertThat(action.consumeQuantity()).isEqualTo(1);
-        assertThat(action.mouseButtonType()).isEqualTo(MouseButtonType.Right);
+        assertThat(action.mouseButtonType()).isEqualTo(MouseButtonType.Left);
         assertThat(action.mouseButtonState()).isEqualTo(MouseButtonState.Pressed);
         assertThat(action.matchesItemId("RuneTale_Bones")).isTrue();
         assertThat(action.matchesItemId("runetale:RuneTale_Bones")).isTrue();
+        assertThat(action.matchesInteractionType(InteractionType.Primary)).isTrue();
+        assertThat(action.matchesInteractionType(InteractionType.Secondary)).isFalse();
         assertThat(config.debugPluginKey()).isEqualTo("skills-actions");
     }
 
