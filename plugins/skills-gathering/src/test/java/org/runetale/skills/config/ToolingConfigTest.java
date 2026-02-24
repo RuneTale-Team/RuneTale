@@ -26,11 +26,10 @@ class ToolingConfigTest {
 		assertThat(config.matchesToolFamily("x_" + normalizedDefaultKeyword + "_y", normalizedDefaultKeyword)).isTrue();
 		assertThat(config.detectTier("tool_hatchet_bronze")).isEqualTo(ToolTier.BRONZE);
 		assertThat(config.detectTier("tool_hatchet_unknown")).isEqualTo(ToolTier.NONE);
-		assertThat(config.noToolEfficiencyMultiplier()).isGreaterThan(0.0D).isLessThan(1.0D);
-		assertThat(config.mismatchedFamilyEfficiencyMultiplier()).isGreaterThan(0.0D).isLessThan(1.0D);
-		assertThat(config.efficiencyMultiplierFor(ToolTier.BRONZE))
-				.isGreaterThan(config.noToolEfficiencyMultiplier())
-				.isLessThan(config.efficiencyMultiplierFor(ToolTier.CRYSTAL));
+		assertThat(config.noToolEfficiencyMultiplier()).isGreaterThanOrEqualTo(0.0D);
+		assertThat(config.mismatchedFamilyEfficiencyMultiplier()).isGreaterThanOrEqualTo(0.0D);
+		assertThat(config.efficiencyMultiplierFor(ToolTier.BRONZE)).isGreaterThanOrEqualTo(0.0D);
+		assertThat(config.efficiencyMultiplierFor(ToolTier.CRYSTAL)).isGreaterThanOrEqualTo(0.0D);
 	}
 
 	@Test

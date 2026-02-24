@@ -172,6 +172,12 @@ public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStor
 
 		ItemStack heldItem = event.getItemInHand();
 		double toolEfficiency = resolveToolEfficiencyMultiplier(heldItem, node);
+		if (toolEfficiency <= 0.0D) {
+			sendPlayerNotification(
+					playerRef,
+					"[Skills] That doesn't seem to be working well...",
+					NotificationStyle.Warning);
+		}
 		double originalDamage = event.getDamage();
 		double scaledDamage = originalDamage * toolEfficiency;
 		event.setDamage((float) Math.max(0.0D, scaledDamage));
