@@ -1,46 +1,6 @@
 {
   "woodcutting": [
     {
-      "id": "woodcutting_oak_tree",
-      "label": "Oak Tree",
-      "skill": "WOODCUTTING",
-      "requiredSkillLevel": 0,
-      "requiredToolKeyword": "Tool_Hatchet",
-      "requiredToolTier": "NONE",
-      "experienceReward": 7.0,
-      "blockIds": [
-        "Wood_Oak_Trunk",
-        "Wood_Oak_Trunk_Full",
-        "Tree_Oak"
-      ]
-    },
-    {
-      "id": "woodcutting_beech_tree",
-      "label": "Beech Tree",
-      "skill": "WOODCUTTING",
-      "requiredSkillLevel": 10,
-      "requiredToolKeyword": "Tool_Hatchet",
-      "requiredToolTier": "NONE",
-      "experienceReward": 12.0,
-      "blockIds": [
-        "Wood_Beech_Trunk",
-        "Wood_Beech_Trunk_Full"
-      ]
-    },
-    {
-      "id": "woodcutting_birch_tree",
-      "label": "Birch Tree",
-      "skill": "WOODCUTTING",
-      "requiredSkillLevel": 15,
-      "requiredToolKeyword": "Tool_Hatchet",
-      "requiredToolTier": "NONE",
-      "experienceReward": 17.0,
-      "blockIds": [
-        "Wood_Birch_Trunk",
-        "Wood_Birch_Trunk_Full"
-      ]
-    },
-    {
       "id": "woodcutting_tree",
       "label": "Tree",
       "skill": "WOODCUTTING",
@@ -49,7 +9,7 @@
       "requiredToolTier": "NONE",
       "experienceReward": 25.0,
       "blockIds": [
-        "RuneTale_Decoration_Tree"
+        "RuneTale_Tree"
       ]
     },
     {
@@ -61,7 +21,7 @@
       "requiredToolTier": "NONE",
       "experienceReward": 37.5,
       "blockIds": [
-        "RuneTale_Decoration_Tree_Oak"
+        "RuneTale_Tree_Oak"
       ]
     },
     {
@@ -73,7 +33,7 @@
       "requiredToolTier": "NONE",
       "experienceReward": 67.5,
       "blockIds": [
-        "RuneTale_Decoration_Tree_Willow"
+        "RuneTale_Tree_Willow"
       ]
     },
     {
@@ -85,7 +45,7 @@
       "requiredToolTier": "NONE",
       "experienceReward": 100.0,
       "blockIds": [
-        "RuneTale_Decoration_Tree_Maple"
+        "RuneTale_Tree_Maple"
       ]
     },
     {
@@ -97,7 +57,7 @@
       "requiredToolTier": "NONE",
       "experienceReward": 175.0,
       "blockIds": [
-        "RuneTale_Decoration_Tree_Yew"
+        "RuneTale_Tree_Yew"
       ]
     },
     {
@@ -109,7 +69,7 @@
       "requiredToolTier": "NONE",
       "experienceReward": 250.0,
       "blockIds": [
-        "RuneTale_Decoration_Tree_Magic"
+        "RuneTale_Tree_Magic"
       ]
     }
   ],
