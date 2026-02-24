@@ -9,6 +9,7 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 - `:plugins:skills-combat` (`SkillsCombatPlugin`): combat XP routing (melee styles, ranged, block defence) and `/combatstyle` UI/command.
 - `:plugins:skills-gathering` (`SkillsGatheringPlugin`): node lookup, gather block-break enforcement, `/skills` overview page command.
 - `:plugins:skills-crafting` (`SkillsCraftingPlugin`): smithing/smelting pages, crafting XP dispatch, recipe unlock synchronization.
+- `:plugins:skills-actions` (`SkillsActionsPlugin`): generic item-use action routing (`mouse input -> active hand consume -> XP dispatch`) for skills like Prayer/Firemaking.
 
 ## Config ownership
 
@@ -16,6 +17,7 @@ The skills runtime now uses a split-plugin topology while preserving the same OS
 - Combat-owned defaults: `combat.json`.
 - Gathering-owned defaults: `gathering.json` and `Skills/Nodes/nodes.json`.
 - Crafting-owned defaults: `crafting.json`.
+- Item-action-owned defaults: `item-actions.json`.
 
 ## Runtime flow
 
