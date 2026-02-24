@@ -146,7 +146,31 @@ public record ItemActionsConfig(
             @Nonnull MouseButtonState mouseButtonState) {
 
         public boolean matchesItemId(@Nullable String heldItemId) {
-            return heldItemId != null && this.itemId.equalsIgnoreCase(heldItemId.trim());
+            if (heldItemId == null) {
+                return false;
+            }
+
+            String configured = this.itemId.trim();
+            String held = heldItemId.trim();
+            if (configured.equalsIgnoreCase(held)) {
+                return true;
+            }
+
+            int heldNamespaceSeparator = held.lastIndexOf(':');
+            if (heldNamespaceSeparator >= 0 && heldNamespaceSeparator + 1 < held.length()) {
+                String heldWithoutNamespace = held.substring(heldNamespaceSeparator + 1);
+                if (configured.equalsIgnoreCase(heldWithoutNamespace)) {
+                    return true;
+                }
+            }
+
+            int configuredNamespaceSeparator = configured.lastIndexOf(':');
+            if (configuredNamespaceSeparator >= 0 && configuredNamespaceSeparator + 1 < configured.length()) {
+                String configuredWithoutNamespace = configured.substring(configuredNamespaceSeparator + 1);
+                return configuredWithoutNamespace.equalsIgnoreCase(held);
+            }
+
+            return false;
         }
     }
 }

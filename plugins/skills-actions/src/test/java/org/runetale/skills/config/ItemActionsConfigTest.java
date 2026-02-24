@@ -27,6 +27,8 @@ class ItemActionsConfigTest {
         assertThat(action.consumeQuantity()).isEqualTo(1);
         assertThat(action.mouseButtonType()).isEqualTo(MouseButtonType.Right);
         assertThat(action.mouseButtonState()).isEqualTo(MouseButtonState.Pressed);
+        assertThat(action.matchesItemId("RuneTale_Bones")).isTrue();
+        assertThat(action.matchesItemId("runetale:RuneTale_Bones")).isTrue();
         assertThat(config.debugPluginKey()).isEqualTo("skills-actions");
     }
 

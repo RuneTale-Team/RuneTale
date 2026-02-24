@@ -1,6 +1,7 @@
 package org.runetale.skills.actions;
 
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -51,6 +52,7 @@ public class ActionsSkillsPlugin extends JavaPlugin {
 
         this.actionListener = new ItemXpActionMouseButtonListener(runtimeApi, this.itemActionsConfig);
         this.getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, this.actionListener::handle);
+        this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, this.actionListener::handle);
     }
 
     @Override

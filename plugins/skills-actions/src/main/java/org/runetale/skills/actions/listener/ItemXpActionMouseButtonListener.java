@@ -2,10 +2,15 @@ package org.runetale.skills.actions.listener;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.event.ICancellable;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.GameMode;
+import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.MouseButtonEvent;
+import com.hypixel.hytale.protocol.MouseButtonState;
+import com.hypixel.hytale.protocol.MouseButtonType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
 import com.hypixel.hytale.server.core.inventory.Inventory;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
@@ -17,6 +22,9 @@ import org.runetale.skills.config.ItemActionsConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class ItemXpActionMouseButtonListener {
 
@@ -24,6 +32,7 @@ public final class ItemXpActionMouseButtonListener {
 
     private final SkillsRuntimeApi runtimeApi;
     private final ItemActionsConfig itemActionsConfig;
+    private final Map<UUID, Long> lastProcessedUseTimeByPlayer = new ConcurrentHashMap<>();
 
     public ItemXpActionMouseButtonListener(
             @Nonnull SkillsRuntimeApi runtimeApi,
@@ -33,16 +42,47 @@ public final class ItemXpActionMouseButtonListener {
     }
 
     public void handle(@Nonnull PlayerMouseButtonEvent event) {
-        if (event.isCancelled()) {
-            return;
-        }
-
         MouseButtonEvent mouseButton = event.getMouseButton();
         if (mouseButton == null) {
             return;
         }
 
-        Player player = event.getPlayer();
+        applyConfiguredAction(
+                event.getPlayer(),
+                event.getPlayerRef(),
+                event.getClientUseTime(),
+                mouseButton.mouseButtonType,
+                mouseButton.state,
+                event);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void handle(@Nonnull PlayerInteractEvent event) {
+        InteractionType actionType = event.getActionType();
+        if (actionType != InteractionType.Secondary && actionType != InteractionType.Use) {
+            return;
+        }
+
+        applyConfiguredAction(
+                event.getPlayer(),
+                event.getPlayerRef(),
+                event.getClientUseTime(),
+                MouseButtonType.Right,
+                MouseButtonState.Pressed,
+                event);
+    }
+
+    private void applyConfiguredAction(
+            @Nonnull Player player,
+            @Nullable Ref<EntityStore> playerRef,
+            long clientUseTime,
+            @Nonnull MouseButtonType mouseButtonType,
+            @Nonnull MouseButtonState mouseButtonState,
+            @Nonnull ICancellable cancellable) {
+        if (isDuplicateUse(player, clientUseTime)) {
+            return;
+        }
+
         Inventory inventory = player.getInventory();
         if (inventory == null) {
             return;
@@ -59,12 +99,11 @@ public final class ItemXpActionMouseButtonListener {
             return;
         }
 
-        ItemActionsConfig.ItemXpActionDefinition action = matchAction(mouseButton, player, slotStack);
+        ItemActionsConfig.ItemXpActionDefinition action = matchAction(mouseButtonType, mouseButtonState, player, slotStack);
         if (action == null) {
             return;
         }
 
-        Ref<EntityStore> playerRef = event.getPlayerRef();
         if (playerRef == null || !playerRef.isValid()) {
             return;
         }
@@ -100,7 +139,7 @@ public final class ItemXpActionMouseButtonListener {
         }
 
         if (action.cancelInputEvent()) {
-            event.setCancelled(true);
+            cancellable.setCancelled(true);
         }
 
         debugLog("Applied action id=%s item=%s qty=%d skill=%s xp=%.4f", action.id(), slotStack.getItemId(), action.consumeQuantity(), action.skillType(), action.experience());
@@ -108,17 +147,18 @@ public final class ItemXpActionMouseButtonListener {
 
     @Nullable
     private ItemActionsConfig.ItemXpActionDefinition matchAction(
-            @Nonnull MouseButtonEvent mouseButton,
+            @Nonnull MouseButtonType mouseButtonType,
+            @Nonnull MouseButtonState mouseButtonState,
             @Nonnull Player player,
             @Nonnull ItemStack heldStack) {
         for (ItemActionsConfig.ItemXpActionDefinition action : this.itemActionsConfig.actions()) {
             if (!action.enabled()) {
                 continue;
             }
-            if (mouseButton.mouseButtonType != action.mouseButtonType()) {
+            if (mouseButtonType != action.mouseButtonType()) {
                 continue;
             }
-            if (mouseButton.state != action.mouseButtonState()) {
+            if (mouseButtonState != action.mouseButtonState()) {
                 continue;
             }
             if (!action.matchesItemId(heldStack.getItemId())) {
@@ -133,6 +173,20 @@ public final class ItemXpActionMouseButtonListener {
             return action;
         }
         return null;
+    }
+
+    private boolean isDuplicateUse(@Nonnull Player player, long clientUseTime) {
+        if (clientUseTime <= 0L) {
+            return false;
+        }
+
+        UUID playerUuid = player.getUuid();
+        if (playerUuid == null) {
+            return false;
+        }
+
+        Long previous = this.lastProcessedUseTimeByPlayer.put(playerUuid, clientUseTime);
+        return previous != null && previous == clientUseTime;
     }
 
     private void debugLog(@Nonnull String message, Object... args) {
