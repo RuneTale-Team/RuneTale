@@ -360,6 +360,9 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 		if (skill == SkillType.DEFENCE) {
 			return "defense";
 		}
+		if (skill == SkillType.PRAYER) {
+			return "unknown";
+		}
 		return skill.name().toLowerCase(Locale.ROOT);
 	}
 

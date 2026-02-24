@@ -144,6 +144,9 @@ public class SkillXpToastHudService {
 		if (skillType == SkillType.DEFENCE) {
 			return "defense";
 		}
+		if (skillType == SkillType.PRAYER) {
+			return "unknown";
+		}
 		return skillType.name().toLowerCase(Locale.ROOT);
 	}
 
