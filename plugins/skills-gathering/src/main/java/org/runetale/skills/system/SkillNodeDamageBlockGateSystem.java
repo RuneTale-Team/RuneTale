@@ -7,7 +7,6 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.server.core.Message;
@@ -28,7 +27,6 @@ import org.runetale.skills.domain.ToolTier;
 import org.runetale.skills.service.GatheringBypassService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
-import org.runetale.skills.service.ToolSpeedThrottleService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -50,7 +48,6 @@ public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStor
 	private final HeuristicsConfig heuristicsConfig;
 	private final ToolingConfig toolingConfig;
 	private final ToolRequirementEvaluator toolRequirementEvaluator;
-	private final ToolSpeedThrottleService toolSpeedThrottleService;
 	private final GatheringBypassService bypassService;
 	private final String debugPluginKey;
 	private final Query<EntityStore> query;
@@ -62,7 +59,6 @@ public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStor
 			@Nonnull HeuristicsConfig heuristicsConfig,
 			@Nonnull ToolingConfig toolingConfig,
 			@Nonnull ToolRequirementEvaluator toolRequirementEvaluator,
-			@Nonnull ToolSpeedThrottleService toolSpeedThrottleService,
 			@Nonnull GatheringBypassService bypassService,
 			@Nonnull String debugPluginKey) {
 		super(DamageBlockEvent.class);
@@ -71,7 +67,6 @@ public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStor
 		this.heuristicsConfig = heuristicsConfig;
 		this.toolingConfig = toolingConfig;
 		this.toolRequirementEvaluator = toolRequirementEvaluator;
-		this.toolSpeedThrottleService = toolSpeedThrottleService;
 		this.bypassService = bypassService;
 		this.debugPluginKey = debugPluginKey;
 		this.query = Query.and(PlayerRef.getComponentType());
@@ -171,33 +166,24 @@ public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStor
 					damagedBlockType.getId());
 		}
 
-		if (bypassActive || playerRef == null) {
+		if (bypassActive) {
 			return;
 		}
 
 		ItemStack heldItem = event.getItemInHand();
 		double toolEfficiency = resolveToolEfficiencyMultiplier(heldItem, node);
-		Vector3i target = event.getTargetBlock();
-		boolean allowDamage = this.toolSpeedThrottleService.allowHit(
-				playerRef.getUuid(),
-				damagedBlockType.getId(),
-				target.x,
-				target.y,
-				target.z,
-				toolEfficiency,
-				System.currentTimeMillis());
-		if (allowDamage) {
-			return;
-		}
-
-		event.setCancelled(true);
+		double originalDamage = event.getDamage();
+		double scaledDamage = originalDamage * toolEfficiency;
+		event.setDamage((float) Math.max(0.0D, scaledDamage));
 		if (isSkillsDebugEnabled()) {
 			LOGGER.atFine().log(
-					"[Skills][Diag] Tool efficiency throttled hit node=%s block=%s tool=%s multiplier=%.3f keyword=%s",
+					"[Skills][Diag] Tool efficiency scaled hit node=%s block=%s tool=%s multiplier=%.3f damage=%.3f->%.3f keyword=%s",
 					node.getId(),
 					damagedBlockType.getId(),
 					heldItem == null || ItemStack.isEmpty(heldItem) ? "<empty>" : heldItem.getItemId(),
 					toolEfficiency,
+					originalDamage,
+					scaledDamage,
 					node.getRequiredToolKeyword());
 		}
 	}

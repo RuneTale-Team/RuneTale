@@ -14,7 +14,6 @@ import org.runetale.skills.gathering.config.GatheringExternalConfigBootstrap;
 import org.runetale.skills.service.GatheringBypassService;
 import org.runetale.skills.service.SkillNodeLookupService;
 import org.runetale.skills.service.ToolRequirementEvaluator;
-import org.runetale.skills.service.ToolSpeedThrottleService;
 import org.runetale.skills.system.SkillNodeBreakBlockSystem;
 import org.runetale.skills.system.SkillNodeDamageBlockGateSystem;
 
@@ -28,7 +27,6 @@ public class GatheringSkillsPlugin extends JavaPlugin {
     private HeuristicsConfig heuristicsConfig;
     private ToolingConfig toolingConfig;
     private ToolRequirementEvaluator toolRequirementEvaluator;
-    private ToolSpeedThrottleService toolSpeedThrottleService;
     private GatheringBypassService bypassService;
 
     public SkillNodeLookupService getNodeLookupService() {
@@ -54,7 +52,6 @@ public class GatheringSkillsPlugin extends JavaPlugin {
         this.heuristicsConfig = HeuristicsConfig.load(pathLayout.pluginConfigRoot());
         this.toolingConfig = ToolingConfig.load(pathLayout.pluginConfigRoot());
         this.toolRequirementEvaluator = new ToolRequirementEvaluator(this.toolingConfig);
-        this.toolSpeedThrottleService = new ToolSpeedThrottleService();
         this.nodeLookupService = new SkillNodeLookupService(pathLayout.pluginConfigRoot());
         this.nodeLookupService.initializeDefaults();
         this.bypassService = new GatheringBypassService();
@@ -88,7 +85,6 @@ public class GatheringSkillsPlugin extends JavaPlugin {
                         this.heuristicsConfig,
                         this.toolingConfig,
                         this.toolRequirementEvaluator,
-                        this.toolSpeedThrottleService,
                         this.bypassService,
                         "skills"));
 
@@ -113,7 +109,6 @@ public class GatheringSkillsPlugin extends JavaPlugin {
         this.heuristicsConfig = null;
         this.toolingConfig = null;
         this.toolRequirementEvaluator = null;
-        this.toolSpeedThrottleService = null;
         this.bypassService = null;
     }
 }
