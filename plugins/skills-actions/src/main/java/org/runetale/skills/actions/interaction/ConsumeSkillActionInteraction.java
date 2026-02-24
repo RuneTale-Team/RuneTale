@@ -3,7 +3,6 @@ package org.runetale.skills.actions.interaction;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.InteractionState;
@@ -23,6 +22,7 @@ import org.runetale.skills.config.ItemActionsConfig;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Locale;
 
 public final class ConsumeSkillActionInteraction extends SimpleInstantInteraction {
 
@@ -80,8 +80,7 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             return;
         }
 
-        Store<EntityStore> store = playerRef.getStore();
-        if (!runtimeApi.hasSkillProfile(store, playerRef)) {
+        if (!runtimeApi.hasSkillProfile(commandBuffer, playerRef)) {
             context.getState().state = InteractionState.Failed;
             debugLog(runtimeApi, itemActionsConfig, "Skipped action id=%s due to missing profile player=%s", action.id(), playerRef);
             return;
@@ -102,13 +101,24 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
         ItemStack updated = heldItemContainer.getItemStack(heldItemSlot);
         context.setHeldItem(ItemStack.isEmpty(updated) ? null : updated);
 
-        boolean granted = runtimeApi.grantSkillXp(
-                store,
-                playerRef,
-                action.skillType(),
-                action.experience(),
-                action.source(),
-                action.notifyPlayer());
+        boolean granted;
+        try {
+            granted = runtimeApi.grantSkillXp(
+                    commandBuffer,
+                    playerRef,
+                    action.skillType(),
+                    action.experience(),
+                    action.source(),
+                    action.notifyPlayer());
+        } catch (RuntimeException exception) {
+            context.getState().state = InteractionState.Failed;
+            LOGGER.atWarning().withCause(exception).log(
+                    "[Skills Actions] XP dispatch threw for action=%s player=%s skill=%s",
+                    action.id(),
+                    playerRef,
+                    action.skillType());
+            return;
+        }
         if (!granted) {
             context.getState().state = InteractionState.Failed;
             LOGGER.atWarning().log("[Skills Actions] XP dispatch failed after consume action=%s player=%s skill=%s", action.id(), playerRef, action.skillType());
@@ -153,7 +163,7 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             @Nonnull String message,
             Object... args) {
         if (runtimeApi.isDebugEnabled(config.debugPluginKey())) {
-            LOGGER.atInfo().log("[Skills][Diag] " + message, args);
+            LOGGER.atInfo().log("[Skills][Diag] %s", String.format(Locale.ROOT, message, args));
         }
     }
 }
