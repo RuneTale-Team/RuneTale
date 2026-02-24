@@ -16,18 +16,30 @@ import java.util.Map;
 public final class ToolingConfig {
 
     private static final String RESOURCE_PATH = "Skills/Config/gathering.json";
+    private static final double DEFAULT_NO_TOOL_EFFICIENCY = 0.20D;
+    private static final double DEFAULT_MISMATCHED_FAMILY_EFFICIENCY = 0.25D;
+    private static final double DEFAULT_TIER_EFFICIENCY = 1.0D;
 
     private final String defaultKeyword;
     private final Map<String, List<String>> familyFragmentsByKeyword;
     private final List<Map.Entry<ToolTier, List<String>>> orderedTierFragments;
+    private final double noToolEfficiencyMultiplier;
+    private final double mismatchedFamilyEfficiencyMultiplier;
+    private final Map<ToolTier, Double> efficiencyMultiplierByTier;
 
     private ToolingConfig(
             @Nonnull String defaultKeyword,
             @Nonnull Map<String, List<String>> familyFragmentsByKeyword,
-            @Nonnull List<Map.Entry<ToolTier, List<String>>> orderedTierFragments) {
+            @Nonnull List<Map.Entry<ToolTier, List<String>>> orderedTierFragments,
+            double noToolEfficiencyMultiplier,
+            double mismatchedFamilyEfficiencyMultiplier,
+            @Nonnull Map<ToolTier, Double> efficiencyMultiplierByTier) {
         this.defaultKeyword = defaultKeyword;
         this.familyFragmentsByKeyword = familyFragmentsByKeyword;
         this.orderedTierFragments = orderedTierFragments;
+        this.noToolEfficiencyMultiplier = noToolEfficiencyMultiplier;
+        this.mismatchedFamilyEfficiencyMultiplier = mismatchedFamilyEfficiencyMultiplier;
+        this.efficiencyMultiplierByTier = efficiencyMultiplierByTier;
     }
 
     @Nonnull
@@ -60,12 +72,48 @@ public final class ToolingConfig {
         }
         orderedFragments.sort((left, right) -> Integer.compare(right.getKey().rank(), left.getKey().rank()));
 
-        return new ToolingConfig(defaultKeyword, Map.copyOf(families), List.copyOf(orderedFragments));
+        JsonObject efficiency = ConfigResourceLoader.objectValue(tooling, "efficiency");
+        double noToolEfficiencyMultiplier = sanitizeMultiplier(
+                ConfigResourceLoader.doubleValue(efficiency, "noToolMultiplier", DEFAULT_NO_TOOL_EFFICIENCY),
+                DEFAULT_NO_TOOL_EFFICIENCY);
+        double mismatchedFamilyEfficiencyMultiplier = sanitizeMultiplier(
+                ConfigResourceLoader.doubleValue(
+                        efficiency,
+                        "mismatchedFamilyMultiplier",
+                        DEFAULT_MISMATCHED_FAMILY_EFFICIENCY),
+                DEFAULT_MISMATCHED_FAMILY_EFFICIENCY);
+        double defaultTierEfficiencyMultiplier = sanitizeMultiplier(
+                ConfigResourceLoader.doubleValue(efficiency, "defaultTierMultiplier", DEFAULT_TIER_EFFICIENCY),
+                DEFAULT_TIER_EFFICIENCY);
+        EnumMap<ToolTier, Double> efficiencyMultiplierByTier = parseTierEfficiencyMultipliers(
+                ConfigResourceLoader.objectValue(efficiency, "tierMultipliers"),
+                defaultTierEfficiencyMultiplier);
+
+        return new ToolingConfig(
+                defaultKeyword,
+                Map.copyOf(families),
+                List.copyOf(orderedFragments),
+                noToolEfficiencyMultiplier,
+                mismatchedFamilyEfficiencyMultiplier,
+                Map.copyOf(efficiencyMultiplierByTier));
     }
 
     @Nonnull
     public String defaultKeyword() {
         return this.defaultKeyword;
+    }
+
+    public double noToolEfficiencyMultiplier() {
+        return this.noToolEfficiencyMultiplier;
+    }
+
+    public double mismatchedFamilyEfficiencyMultiplier() {
+        return this.mismatchedFamilyEfficiencyMultiplier;
+    }
+
+    public double efficiencyMultiplierFor(@Nonnull ToolTier toolTier) {
+        Double configured = this.efficiencyMultiplierByTier.get(toolTier);
+        return configured == null ? DEFAULT_TIER_EFFICIENCY : configured;
     }
 
     public boolean matchesToolFamily(@Nonnull String normalizedItemId, @Nonnull String normalizedKeyword) {
@@ -146,6 +194,44 @@ public final class ToolingConfig {
         defaults.put(ToolTier.DRAGON, List.of("dragon"));
         defaults.put(ToolTier.CRYSTAL, List.of("crystal"));
         return defaults;
+    }
+
+    @Nonnull
+    private static EnumMap<ToolTier, Double> parseTierEfficiencyMultipliers(
+            @Nonnull JsonObject multipliersObject,
+            double fallbackMultiplier) {
+        EnumMap<ToolTier, Double> multipliersByTier = new EnumMap<>(ToolTier.class);
+        for (ToolTier tier : ToolTier.values()) {
+            multipliersByTier.put(tier, fallbackMultiplier);
+        }
+
+        for (Map.Entry<String, JsonElement> entry : multipliersObject.entrySet()) {
+            String rawTier = entry.getKey().trim();
+            ToolTier tier = ToolTier.fromString(rawTier);
+            if (tier == ToolTier.NONE && !"NONE".equalsIgnoreCase(rawTier)) {
+                continue;
+            }
+
+            JsonElement rawMultiplier = entry.getValue();
+            if (rawMultiplier == null || rawMultiplier.isJsonNull()) {
+                continue;
+            }
+
+            try {
+                multipliersByTier.put(tier, sanitizeMultiplier(rawMultiplier.getAsDouble(), fallbackMultiplier));
+            } catch (RuntimeException ignored) {
+                // Ignore malformed entry and keep fallback for this tier.
+            }
+        }
+
+        return multipliersByTier;
+    }
+
+    private static double sanitizeMultiplier(double candidate, double fallback) {
+        if (!Double.isFinite(candidate) || candidate < 0.0D) {
+            return fallback;
+        }
+        return candidate;
     }
 
     @Nonnull

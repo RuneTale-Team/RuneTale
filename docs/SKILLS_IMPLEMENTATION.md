@@ -285,8 +285,8 @@ public class ExampleCraftingPage extends AbstractTimedCraftingPage<ExampleCrafti
 ### Tool tier / keyword mapping guidance
 
 - Node definitions still support `requiredToolKeyword` and `requiredToolTier` fields for schema compatibility.
-- Current gather break enforcement does not gate on held-tool keyword/tier.
-- Tool family/tier logic remains available via `ToolRequirementEvaluator` and `Skills/Config/gathering.json` (`tooling` section) for other call sites.
+- Gathering does not hard-block by tool tier: any tool can gather any configured node when skill level is sufficient.
+- Tool family/tier now applies a configurable damage-speed throttle via `Skills/Config/gathering.json` (`tooling.efficiency`), so lower-tier or mismatched tools progress more slowly.
 
 ### Caveats / staged behavior TODOs
 

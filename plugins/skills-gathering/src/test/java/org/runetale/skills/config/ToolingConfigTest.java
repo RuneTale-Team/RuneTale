@@ -24,7 +24,13 @@ class ToolingConfigTest {
 				.replace('-', '_')
 				.replace(' ', '_');
 		assertThat(config.matchesToolFamily("x_" + normalizedDefaultKeyword + "_y", normalizedDefaultKeyword)).isTrue();
+		assertThat(config.detectTier("tool_hatchet_bronze")).isEqualTo(ToolTier.BRONZE);
 		assertThat(config.detectTier("tool_hatchet_unknown")).isEqualTo(ToolTier.NONE);
+		assertThat(config.noToolEfficiencyMultiplier()).isGreaterThan(0.0D).isLessThan(1.0D);
+		assertThat(config.mismatchedFamilyEfficiencyMultiplier()).isGreaterThan(0.0D).isLessThan(1.0D);
+		assertThat(config.efficiencyMultiplierFor(ToolTier.BRONZE))
+				.isGreaterThan(config.noToolEfficiencyMultiplier())
+				.isLessThan(config.efficiencyMultiplierFor(ToolTier.CRYSTAL));
 	}
 
 	@Test
@@ -38,6 +44,15 @@ class ToolingConfigTest {
 				    },
 				    "tiers": {
 				      "MITHRIL": ["ultra"]
+				    },
+				    "efficiency": {
+				      "noToolMultiplier": 0.05,
+				      "mismatchedFamilyMultiplier": 0.15,
+				      "defaultTierMultiplier": 0.70,
+				      "tierMultipliers": {
+				        "MITHRIL": 0.90,
+				        "NONE": 0.25
+				      }
 				    }
 				  }
 				}
@@ -50,6 +65,11 @@ class ToolingConfigTest {
 		assertThat(config.matchesToolFamily("tool_hatchet_ultra", "custom_hammer")).isFalse();
 		assertThat(config.detectTier("rune_hammer_ultra")).isEqualTo(ToolTier.MITHRIL);
 		assertThat(config.detectTier("tool_hatchet_wood")).isEqualTo(ToolTier.NONE);
+		assertThat(config.noToolEfficiencyMultiplier()).isEqualTo(0.05D);
+		assertThat(config.mismatchedFamilyEfficiencyMultiplier()).isEqualTo(0.15D);
+		assertThat(config.efficiencyMultiplierFor(ToolTier.MITHRIL)).isEqualTo(0.90D);
+		assertThat(config.efficiencyMultiplierFor(ToolTier.NONE)).isEqualTo(0.25D);
+		assertThat(config.efficiencyMultiplierFor(ToolTier.RUNE)).isEqualTo(0.70D);
 	}
 
 	private static void write(Path root, String relativePath, String content) throws IOException {

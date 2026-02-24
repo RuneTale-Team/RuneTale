@@ -45,6 +45,23 @@
       "CRYSTAL": [
         "crystal"
       ]
+    },
+    "efficiency": {
+      "noToolMultiplier": 0.12,
+      "mismatchedFamilyMultiplier": 0.18,
+      "defaultTierMultiplier": 1.0,
+      "tierMultipliers": {
+        "NONE": 0.20,
+        "BRONZE": 0.42,
+        "IRON": 0.50,
+        "STEEL": 0.60,
+        "BLACK": 0.68,
+        "MITHRIL": 0.76,
+        "ADAMANT": 0.84,
+        "RUNE": 0.92,
+        "DRAGON": 0.97,
+        "CRYSTAL": 1.0
+      }
     }
   },
   "xpProfileDefaults": {

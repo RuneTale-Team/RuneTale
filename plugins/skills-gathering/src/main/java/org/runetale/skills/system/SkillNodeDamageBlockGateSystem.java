@@ -7,21 +7,28 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.ecs.DamageBlockEvent;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
 import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.asset.SkillNodeDefinition;
 import org.runetale.skills.config.HeuristicsConfig;
+import org.runetale.skills.config.ToolingConfig;
+import org.runetale.skills.domain.RequirementCheckResult;
 import org.runetale.skills.domain.SkillType;
+import org.runetale.skills.domain.ToolTier;
 import org.runetale.skills.service.GatheringBypassService;
 import org.runetale.skills.service.SkillNodeLookupService;
+import org.runetale.skills.service.ToolRequirementEvaluator;
+import org.runetale.skills.service.ToolSpeedThrottleService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,6 +48,9 @@ public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStor
 	private final SkillsRuntimeApi runtimeApi;
 	private final SkillNodeLookupService nodeLookupService;
 	private final HeuristicsConfig heuristicsConfig;
+	private final ToolingConfig toolingConfig;
+	private final ToolRequirementEvaluator toolRequirementEvaluator;
+	private final ToolSpeedThrottleService toolSpeedThrottleService;
 	private final GatheringBypassService bypassService;
 	private final String debugPluginKey;
 	private final Query<EntityStore> query;
@@ -50,12 +60,18 @@ public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStor
 			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull SkillNodeLookupService nodeLookupService,
 			@Nonnull HeuristicsConfig heuristicsConfig,
+			@Nonnull ToolingConfig toolingConfig,
+			@Nonnull ToolRequirementEvaluator toolRequirementEvaluator,
+			@Nonnull ToolSpeedThrottleService toolSpeedThrottleService,
 			@Nonnull GatheringBypassService bypassService,
 			@Nonnull String debugPluginKey) {
 		super(DamageBlockEvent.class);
 		this.runtimeApi = runtimeApi;
 		this.nodeLookupService = nodeLookupService;
 		this.heuristicsConfig = heuristicsConfig;
+		this.toolingConfig = toolingConfig;
+		this.toolRequirementEvaluator = toolRequirementEvaluator;
+		this.toolSpeedThrottleService = toolSpeedThrottleService;
 		this.bypassService = bypassService;
 		this.debugPluginKey = debugPluginKey;
 		this.query = Query.and(PlayerRef.getComponentType());
@@ -154,6 +170,50 @@ public class SkillNodeDamageBlockGateSystem extends EntityEventSystem<EntityStor
 					node.getRequiredSkillLevel(),
 					damagedBlockType.getId());
 		}
+
+		if (bypassActive || playerRef == null) {
+			return;
+		}
+
+		ItemStack heldItem = event.getItemInHand();
+		double toolEfficiency = resolveToolEfficiencyMultiplier(heldItem, node);
+		Vector3i target = event.getTargetBlock();
+		boolean allowDamage = this.toolSpeedThrottleService.allowHit(
+				playerRef.getUuid(),
+				damagedBlockType.getId(),
+				target.x,
+				target.y,
+				target.z,
+				toolEfficiency,
+				System.currentTimeMillis());
+		if (allowDamage) {
+			return;
+		}
+
+		event.setCancelled(true);
+		if (isSkillsDebugEnabled()) {
+			LOGGER.atFine().log(
+					"[Skills][Diag] Tool efficiency throttled hit node=%s block=%s tool=%s multiplier=%.3f keyword=%s",
+					node.getId(),
+					damagedBlockType.getId(),
+					heldItem == null || ItemStack.isEmpty(heldItem) ? "<empty>" : heldItem.getItemId(),
+					toolEfficiency,
+					node.getRequiredToolKeyword());
+		}
+	}
+
+	private double resolveToolEfficiencyMultiplier(@Nullable ItemStack heldItem, @Nonnull SkillNodeDefinition node) {
+		if (heldItem == null || ItemStack.isEmpty(heldItem)) {
+			return this.toolingConfig.noToolEfficiencyMultiplier();
+		}
+
+		RequirementCheckResult familyCheck = this.toolRequirementEvaluator
+				.evaluate(heldItem, node.getRequiredToolKeyword(), ToolTier.NONE);
+		if (!familyCheck.isSuccess()) {
+			return this.toolingConfig.mismatchedFamilyEfficiencyMultiplier();
+		}
+
+		return this.toolingConfig.efficiencyMultiplierFor(familyCheck.getDetectedTier());
 	}
 
 	@Nonnull
