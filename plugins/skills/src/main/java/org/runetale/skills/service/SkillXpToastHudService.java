@@ -141,9 +141,6 @@ public class SkillXpToastHudService {
 
 	@Nonnull
 	private String skillIconId(@Nonnull SkillType skillType) {
-		if (skillType == SkillType.DEFENCE) {
-			return "defense";
-		}
 		return skillType.name().toLowerCase(Locale.ROOT);
 	}
 

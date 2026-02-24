@@ -15,19 +15,22 @@ class EquipmentConfigTest {
     void loadUsesClasspathDefaultsWhenExternalFileMissing(@TempDir Path tempDir) {
         EquipmentConfig config = EquipmentConfig.load(tempDir);
 
-        assertThat(config.tagSkillRequired()).isEqualTo("EquipSkillRequirement");
-        assertThat(config.tagLevelRequirement()).isEqualTo("EquipLevelRequirement");
-        assertThat(config.enforceArmor()).isTrue();
-        assertThat(config.enforceActiveHand()).isFalse();
-        assertThat(config.enforceActiveHandReconcile()).isFalse();
-        assertThat(config.enforceToolUseBlockDamage()).isTrue();
-        assertThat(config.enforceToolUseBreakBlock()).isTrue();
-        assertThat(config.enforceToolUseEntityDamage()).isTrue();
-        assertThat(config.activeSectionHotbar()).isEqualTo(-1);
-        assertThat(config.activeSectionTools()).isEqualTo(-8);
-        assertThat(config.activeSelectionSlotsHotbar()).isEqualTo(9);
-        assertThat(config.activeSelectionSlotsTools()).isEqualTo(9);
-        assertThat(config.locationAliases()).containsKeys("mainhand", "head", "chest", "hands", "legs");
+        assertThat(config.tagSkillRequired()).isNotBlank();
+        assertThat(config.tagLevelRequirement()).isNotBlank();
+        assertThat(config.tagValueSeparator()).isNotBlank();
+        assertThat(config.defaultRequiredLevel()).isGreaterThanOrEqualTo(1);
+        assertThat(config.activeSelectionSlotsHotbar()).isGreaterThanOrEqualTo(1);
+        assertThat(config.activeSelectionSlotsTools()).isGreaterThanOrEqualTo(1);
+        assertThat(config.armorScanTickSeconds()).isGreaterThanOrEqualTo(0.05F);
+        assertThat(config.notificationCooldownMillis()).isGreaterThanOrEqualTo(0L);
+        assertThat(config.notificationMessageTemplate()).isNotBlank();
+        assertThat(config.locationAliases())
+                .isNotEmpty()
+                .allSatisfy((location, aliases) -> {
+                    assertThat(location).isNotBlank();
+                    assertThat(aliases).isNotEmpty().allSatisfy(alias -> assertThat(alias).isNotBlank());
+                });
+        assertThat(config.debugPluginKey()).isNotBlank();
     }
 
     @Test

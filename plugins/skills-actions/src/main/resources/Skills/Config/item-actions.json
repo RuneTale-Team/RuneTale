@@ -1,0 +1,55 @@
+{
+  "actions": [
+    {
+      "id": "prayer_bury_bones",
+      "enabled": true,
+      "itemId": "RuneTale_Bones",
+      "skill": "PRAYER",
+      "xp": 4.5,
+      "consumeQuantity": 1,
+      "source": "prayer:bury",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+      }
+	},
+    {
+      "id": "prayer_bury_Big_bones",
+      "enabled": true,
+      "itemId": "RuneTale_Big_Bones",
+      "skill": "PRAYER",
+      "xp": 15.0,
+      "consumeQuantity": 1,
+      "source": "prayer:bury",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+      }
+	},
+    {
+      "id": "prayer_bury_Dragon_bones",
+      "enabled": true,
+      "itemId": "RuneTale_Dragon_Bones",
+      "skill": "PRAYER",
+      "xp": 72.0,
+      "consumeQuantity": 1,
+      "source": "prayer:bury",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+    }
+	}
+  ],
+  "debug": {
+    "pluginKey": "skills-actions"
+  }
+}

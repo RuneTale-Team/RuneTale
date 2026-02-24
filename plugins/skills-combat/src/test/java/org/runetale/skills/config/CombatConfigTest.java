@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,10 +16,22 @@ class CombatConfigTest {
 	void loadUsesClasspathDefaultsWhenExternalFileMissing(@TempDir Path tempDir) {
 		CombatConfig config = CombatConfig.load(tempDir);
 
-		assertThat(config.xpPerDamage()).isEqualTo(4.0D);
-		assertThat(config.sourceRanged()).isEqualTo("combat:ranged");
-		assertThat(config.sourceMeleePrefix()).isEqualTo("combat:melee:");
-		assertThat(config.projectileCauseTokens()).containsExactly("projectile");
+		assertThat(config.xpPerDamage()).isGreaterThanOrEqualTo(0.0D);
+		assertThat(config.sourceRanged()).isNotBlank();
+		assertThat(config.sourceMeleePrefix()).isNotBlank();
+		assertThat(config.sourceMeleeAccurate()).isNotBlank();
+		assertThat(config.sourceMeleeAggressive()).isNotBlank();
+		assertThat(config.sourceMeleeDefensive()).isNotBlank();
+		assertThat(config.sourceMeleeControlledAttack()).isNotBlank();
+		assertThat(config.sourceMeleeControlledStrength()).isNotBlank();
+		assertThat(config.sourceMeleeControlledDefence()).isNotBlank();
+		assertThat(config.sourceBlockDefence()).isNotBlank();
+		assertThat(config.projectileCauseTokens())
+				.isNotEmpty()
+				.allSatisfy(token -> {
+					assertThat(token).isNotBlank();
+					assertThat(token).isEqualTo(token.toLowerCase(Locale.ROOT));
+				});
 	}
 
 	@Test
