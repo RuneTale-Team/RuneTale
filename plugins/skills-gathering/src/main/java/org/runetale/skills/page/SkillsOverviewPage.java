@@ -357,12 +357,6 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 
 	@Nonnull
 	private String skillIconId(@Nonnull SkillType skill) {
-		if (skill == SkillType.DEFENCE) {
-			return "defense";
-		}
-		if (skill == SkillType.PRAYER) {
-			return "unknown";
-		}
 		return skill.name().toLowerCase(Locale.ROOT);
 	}
 
