@@ -70,44 +70,5 @@
     "curveModel": "OSRS_CLASSIC",
     "maxLevel": 99,
     "roundingMode": "NEAREST"
-  },
-  "toolTierDefaults": {
-    "keywordDefault": "Tool_Hatchet_",
-    "tiers": [
-      "NONE",
-      "BRONZE",
-      "IRON",
-      "STEEL",
-      "BLACK",
-      "MITHRIL",
-      "ADAMANT",
-      "RUNE",
-      "DRAGON",
-      "CRYSTAL"
-    ],
-    "keywordTiers": {
-      "axe": [
-        "bronze",
-        "iron",
-        "steel",
-        "black",
-        "mithril",
-        "adamant",
-        "rune",
-        "dragon",
-        "crystal"
-      ]
-    },
-    "aliases": {
-      "bronze": "BRONZE",
-      "iron": "IRON",
-      "steel": "STEEL",
-      "black": "BLACK",
-      "mithril": "MITHRIL",
-      "adamant": "ADAMANT",
-      "rune": "RUNE",
-      "dragon": "DRAGON",
-      "crystal": "CRYSTAL"
-    }
   }
 }

@@ -91,11 +91,6 @@ public class SkillNodeLookupService {
 					value(xpProfileDefaults, "profileId", "<missing>"),
 					value(xpProfileDefaults, "curveModel", "<missing>"),
 					value(xpProfileDefaults, "maxLevel", "<missing>"));
-
-			JsonObject toolTierDefaults = objectValue(gatheringConfig, "toolTierDefaults");
-			LOGGER.atInfo().log("[Skills] Tool-tier defaults discovered: keyword.default=%s tiers=%s",
-					value(toolTierDefaults, "keywordDefault", "<missing>"),
-					joinStringArray(toolTierDefaults.get("tiers")));
 		}
 	}
 
@@ -485,22 +480,6 @@ public class SkillNodeLookupService {
 			return element.getAsJsonObject();
 		}
 		return new JsonObject();
-	}
-
-	@Nonnull
-	private static String joinStringArray(@Nullable JsonElement element) {
-		if (element == null || !element.isJsonArray()) {
-			return "<missing>";
-		}
-
-		List<String> values = new ArrayList<>();
-		for (JsonElement value : element.getAsJsonArray()) {
-			if (value == null || value.isJsonNull()) {
-				continue;
-			}
-			values.add(value.getAsString());
-		}
-		return values.isEmpty() ? "<missing>" : String.join(",", values);
 	}
 
 	@Nonnull
