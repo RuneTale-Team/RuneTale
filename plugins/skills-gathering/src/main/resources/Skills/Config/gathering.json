@@ -8,13 +8,13 @@
     ]
   },
   "tooling": {
-    "keywordDefault": "Tool_Hatchet_",
+    "keywordDefault": "RuneTale_Tool_Pickaxe_",
     "families": {
       "tool_hatchet": [
-        "tool_hatchet"
+        "RuneTale_Tool_Axe_"
       ],
       "tool_pickaxe": [
-        "tool_pickaxe"
+        "RuneTale_Tool_Pickaxe_"
       ]
     },
     "tiers": {
@@ -48,7 +48,7 @@
     },
     "efficiency": {
       "noToolMultiplier": 0.12,
-      "mismatchedFamilyMultiplier": 0.18,
+      "mismatchedFamilyMultiplier": 0.00,
       "defaultTierMultiplier": 1.0,
       "tierMultipliers": {
         "NONE": 1.00,
@@ -70,44 +70,5 @@
     "curveModel": "OSRS_CLASSIC",
     "maxLevel": 99,
     "roundingMode": "NEAREST"
-  },
-  "toolTierDefaults": {
-    "keywordDefault": "Tool_Hatchet_",
-    "tiers": [
-      "NONE",
-      "BRONZE",
-      "IRON",
-      "STEEL",
-      "BLACK",
-      "MITHRIL",
-      "ADAMANT",
-      "RUNE",
-      "DRAGON",
-      "CRYSTAL"
-    ],
-    "keywordTiers": {
-      "axe": [
-        "bronze",
-        "iron",
-        "steel",
-        "black",
-        "mithril",
-        "adamant",
-        "rune",
-        "dragon",
-        "crystal"
-      ]
-    },
-    "aliases": {
-      "bronze": "BRONZE",
-      "iron": "IRON",
-      "steel": "STEEL",
-      "black": "BLACK",
-      "mithril": "MITHRIL",
-      "adamant": "ADAMANT",
-      "rune": "RUNE",
-      "dragon": "DRAGON",
-      "crystal": "CRYSTAL"
-    }
   }
 }
