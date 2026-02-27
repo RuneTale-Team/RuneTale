@@ -40,6 +40,7 @@ allprojects {
         // Official Hytale maven repos (release + pre-release)
         maven("https://maven.hytale.com/release")
     }
+
 }
 
 subprojects {
@@ -83,9 +84,9 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     val hytaleServerVersion = providers.gradleProperty("hytaleServerVersion").get()
 
     dependencies {
-        "compileOnly"("com.hypixel.hytale:Server:+")
-        "testCompileOnly"("com.hypixel.hytale:Server:+")
-        "testRuntimeOnly"("com.hypixel.hytale:Server:+")
+        "compileOnly"("com.hypixel.hytale:Server:$hytaleServerVersion")
+        "testCompileOnly"("com.hypixel.hytale:Server:$hytaleServerVersion")
+        "testRuntimeOnly"("com.hypixel.hytale:Server:$hytaleServerVersion")
         "testImplementation"(project(":platform:testing-core"))
         "testImplementation"(project(":platform:testing-ecs"))
         "testImplementation"(project(":platform:testing-junit"))
@@ -113,6 +114,7 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     // Produce a single distributable jar per plugin (no “-all” classifier)
     tasks.named<Jar>("shadowJar") {
         archiveClassifier.set("")
+        archiveBaseName.set("runetale-${project.name}")
     }
 
     // Convenience: `./gradlew :plugins:skills:build` produces the plugin jar
@@ -162,14 +164,19 @@ tasks.register("verifyTests") {
 }
 
 tasks.register<Delete>("cleanDeployedPlugins") {
-    // Only delete jars that match your plugin project names, e.g. "skills-*.jar"
-    val patterns = pluginProjects.map { "${it.name}-*.jar" }
-
-    delete(
-        fileTree(modsDir.asFile).apply {
-            patterns.forEach { include(it) }
+    doFirst {
+        val currentPatterns = pluginProjects.map { project ->
+            val baseName = project.tasks.named<Jar>("shadowJar").get().archiveBaseName.get()
+            "$baseName-*.jar"
         }
-    )
+        val legacyPatterns = pluginProjects.map { "${it.name}-*.jar" }
+
+        delete(
+            fileTree(modsDir.asFile).apply {
+                (legacyPatterns + currentPatterns).distinct().forEach { include(it) }
+            }
+        )
+    }
 
     doLast {
         println("Cleaned deployed plugin jars from: ${modsDir.asFile}")
