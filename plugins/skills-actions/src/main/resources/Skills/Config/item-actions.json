@@ -51,17 +51,20 @@
     {
       "id": "firemaking_burn_log",
       "enabled": true,
-      "itemId": "RuneTale_Log",
+      "itemId": "RuneTale_Tinderbox",
       "skill": "FIREMAKING",
       "xp": 40.0,
-      "consumeQuantity": 1,
-      "source": "firemaking:burn",
+      "consumeQuantity": 0,
+      "source": "firemaking:campfire",
       "notifyPlayer": true,
       "cancelInputEvent": true,
       "allowCreative": false,
       "targetBlockIds": [
-        "Furniture_Crude_Brazier"
+        "RuneTale_Log"
       ],
+      "replaceTargetBlockId": "Furniture_Crude_Brazier",
+      "replaceTargetBlockDelayMillis": 1200,
+      "requireTargetBlockMatchForReplacement": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -70,17 +73,20 @@
     {
       "id": "firemaking_burn_oak_log",
       "enabled": true,
-      "itemId": "RuneTale_Oak_Log",
+      "itemId": "RuneTale_Tinderbox",
       "skill": "FIREMAKING",
       "xp": 60.0,
-      "consumeQuantity": 1,
-      "source": "firemaking:burn",
+      "consumeQuantity": 0,
+      "source": "firemaking:campfire",
       "notifyPlayer": true,
       "cancelInputEvent": true,
       "allowCreative": false,
       "targetBlockIds": [
-        "Furniture_Crude_Brazier"
+        "RuneTale_Oak_Log"
       ],
+      "replaceTargetBlockId": "Furniture_Crude_Brazier",
+      "replaceTargetBlockDelayMillis": 1200,
+      "requireTargetBlockMatchForReplacement": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -89,17 +95,20 @@
     {
       "id": "firemaking_burn_willow_log",
       "enabled": true,
-      "itemId": "RuneTale_Willow_Log",
+      "itemId": "RuneTale_Tinderbox",
       "skill": "FIREMAKING",
       "xp": 90.0,
-      "consumeQuantity": 1,
-      "source": "firemaking:burn",
+      "consumeQuantity": 0,
+      "source": "firemaking:campfire",
       "notifyPlayer": true,
       "cancelInputEvent": true,
       "allowCreative": false,
       "targetBlockIds": [
-        "Furniture_Crude_Brazier"
+        "RuneTale_Willow_Log"
       ],
+      "replaceTargetBlockId": "Furniture_Crude_Brazier",
+      "replaceTargetBlockDelayMillis": 1200,
+      "requireTargetBlockMatchForReplacement": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -108,17 +117,20 @@
     {
       "id": "firemaking_burn_maple_log",
       "enabled": true,
-      "itemId": "RuneTale_Maple_Log",
+      "itemId": "RuneTale_Tinderbox",
       "skill": "FIREMAKING",
       "xp": 135.0,
-      "consumeQuantity": 1,
-      "source": "firemaking:burn",
+      "consumeQuantity": 0,
+      "source": "firemaking:campfire",
       "notifyPlayer": true,
       "cancelInputEvent": true,
       "allowCreative": false,
       "targetBlockIds": [
-        "Furniture_Crude_Brazier"
+        "RuneTale_Maple_Log"
       ],
+      "replaceTargetBlockId": "Furniture_Crude_Brazier",
+      "replaceTargetBlockDelayMillis": 1200,
+      "requireTargetBlockMatchForReplacement": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -127,17 +139,20 @@
     {
       "id": "firemaking_burn_yew_log",
       "enabled": true,
-      "itemId": "RuneTale_Yew_Log",
+      "itemId": "RuneTale_Tinderbox",
       "skill": "FIREMAKING",
       "xp": 202.5,
-      "consumeQuantity": 1,
-      "source": "firemaking:burn",
+      "consumeQuantity": 0,
+      "source": "firemaking:campfire",
       "notifyPlayer": true,
       "cancelInputEvent": true,
       "allowCreative": false,
       "targetBlockIds": [
-        "Furniture_Crude_Brazier"
+        "RuneTale_Yew_Log"
       ],
+      "replaceTargetBlockId": "Furniture_Crude_Brazier",
+      "replaceTargetBlockDelayMillis": 1200,
+      "requireTargetBlockMatchForReplacement": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -146,17 +161,20 @@
     {
       "id": "firemaking_burn_magic_log",
       "enabled": true,
-      "itemId": "RuneTale_Magic_Log",
+      "itemId": "RuneTale_Tinderbox",
       "skill": "FIREMAKING",
       "xp": 303.8,
-      "consumeQuantity": 1,
-      "source": "firemaking:burn",
+      "consumeQuantity": 0,
+      "source": "firemaking:campfire",
       "notifyPlayer": true,
       "cancelInputEvent": true,
       "allowCreative": false,
       "targetBlockIds": [
-        "Furniture_Crude_Brazier"
+        "RuneTale_Magic_Log"
       ],
+      "replaceTargetBlockId": "Furniture_Crude_Brazier",
+      "replaceTargetBlockDelayMillis": 1200,
+      "requireTargetBlockMatchForReplacement": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"

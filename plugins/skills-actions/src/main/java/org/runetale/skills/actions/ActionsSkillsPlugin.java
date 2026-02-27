@@ -6,6 +6,8 @@ import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import org.runetale.skills.actions.config.ItemActionsExternalConfigBootstrap;
 import org.runetale.skills.actions.interaction.ConsumeSkillActionInteraction;
+import org.runetale.skills.actions.service.ItemActionPlacementQueueService;
+import org.runetale.skills.actions.system.ItemActionPendingPlacementSystem;
 import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.config.ItemActionsConfig;
@@ -18,6 +20,7 @@ public class ActionsSkillsPlugin extends JavaPlugin {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     private ItemActionsConfig itemActionsConfig;
+    private ItemActionPlacementQueueService placementQueueService;
 
     public ActionsSkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -42,7 +45,10 @@ public class ActionsSkillsPlugin extends JavaPlugin {
         SkillsPathLayout pathLayout = SkillsPathLayout.fromDataDirectory(this.getDataDirectory());
         ItemActionsExternalConfigBootstrap.seedMissingDefaults(pathLayout);
         this.itemActionsConfig = ItemActionsConfig.load(pathLayout.pluginConfigRoot());
+        this.placementQueueService = new ItemActionPlacementQueueService();
         ItemActionsRuntimeRegistry.register(this.itemActionsConfig);
+        ItemActionsRuntimeRegistry.registerPlacementQueueService(this.placementQueueService);
+        this.getEntityStoreRegistry().registerSystem(new ItemActionPendingPlacementSystem(this.placementQueueService));
 
         SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
         if (runtimeApi != null && this.itemActionsConfig != null && runtimeApi.isDebugEnabled(this.itemActionsConfig.debugPluginKey())) {
@@ -58,9 +64,13 @@ public class ActionsSkillsPlugin extends JavaPlugin {
     @Override
     protected void shutdown() {
         LOGGER.atInfo().log("Shutting down skills actions plugin...");
+        if (this.placementQueueService != null) {
+            this.placementQueueService.clearAll();
+        }
         if (this.itemActionsConfig != null) {
             ItemActionsRuntimeRegistry.clear(this.itemActionsConfig);
         }
+        this.placementQueueService = null;
         this.itemActionsConfig = null;
     }
 }
