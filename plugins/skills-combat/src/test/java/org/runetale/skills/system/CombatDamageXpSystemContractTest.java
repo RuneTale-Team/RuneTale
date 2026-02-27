@@ -16,6 +16,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.doubleThat;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -45,6 +46,13 @@ class CombatDamageXpSystemContractTest {
 		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
+				eq(SkillType.CONSTITUTION),
+				closeTo(8.25D),
+				eq("combat:constitution:damage"),
+				eq(true));
+		verify(runtimeApi).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
 				eq(SkillType.ATTACK),
 				eq(10.0D),
 				eq("combat:melee:accurate"),
@@ -69,6 +77,13 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 2.0D);
 
+		verify(runtimeApi).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
+				eq(SkillType.CONSTITUTION),
+				closeTo(6.6D),
+				eq("combat:constitution:damage"),
+				eq(true));
 		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
@@ -113,6 +128,13 @@ class CombatDamageXpSystemContractTest {
 		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
+				eq(SkillType.CONSTITUTION),
+				closeTo(9.9D),
+				eq("combat:constitution:damage"),
+				eq(true));
+		verify(runtimeApi).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
 				eq(SkillType.STRENGTH),
 				eq(12.0D),
 				eq("combat:melee:aggressive"),
@@ -137,6 +159,13 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 3.0D);
 
+		verify(runtimeApi).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
+				eq(SkillType.CONSTITUTION),
+				closeTo(9.9D),
+				eq("combat:constitution:damage"),
+				eq(true));
 		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
@@ -167,6 +196,13 @@ class CombatDamageXpSystemContractTest {
 		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
+				eq(SkillType.CONSTITUTION),
+				closeTo(5.775D),
+				eq("combat:constitution:damage"),
+				eq(true));
+		verify(runtimeApi).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
 				eq(SkillType.ATTACK),
 				eq(3.0D),
 				eq("combat:melee:controlled:attack"),
@@ -194,6 +230,9 @@ class CombatDamageXpSystemContractTest {
 		CombatStyleService styleService = mock(CombatStyleService.class);
 		CombatConfig config = new CombatConfig(
 				4.0D,
+				3.3D,
+				10,
+				10.0D,
 				"Combat:Ranged",
 				"Combat:Melee:",
 				"Accurate",
@@ -203,6 +242,8 @@ class CombatDamageXpSystemContractTest {
 				"Controlled:Strength",
 				"Controlled:Defence",
 				"Combat:Block:Defence",
+				"Combat:Constitution:Damage",
+				"Combat:Constitution:Baseline",
 				List.of("projectile"));
 		CombatDamageXpSystem system = new CombatDamageXpSystem(runtimeApi, styleService, config);
 
@@ -215,6 +256,13 @@ class CombatDamageXpSystemContractTest {
 
 		invokeGrantAttackerDamageXp(system, commandBuffer, attackerRef, attackerId, event, source, 2.0D);
 
+		verify(runtimeApi).grantSkillXp(
+				eq(commandBuffer),
+				eq(attackerRef),
+				eq(SkillType.CONSTITUTION),
+				closeTo(6.6D),
+				eq("combat:constitution:damage"),
+				eq(true));
 		verify(runtimeApi).grantSkillXp(
 				eq(commandBuffer),
 				eq(attackerRef),
@@ -248,6 +296,9 @@ class CombatDamageXpSystemContractTest {
 	private static CombatConfig createConfig() {
 		return new CombatConfig(
 				4.0D,
+				3.3D,
+				10,
+				10.0D,
 				"combat:ranged",
 				"combat:melee:",
 				"accurate",
@@ -257,6 +308,8 @@ class CombatDamageXpSystemContractTest {
 				"controlled:strength",
 				"controlled:defence",
 				"combat:block:defence",
+				"combat:constitution:damage",
+				"combat:constitution:baseline",
 				List.of("projectile"));
 	}
 
@@ -282,5 +335,9 @@ class CombatDamageXpSystemContractTest {
 		} catch (ReflectiveOperationException e) {
 			throw new IllegalStateException("Unable to invoke grantAttackerDamageXp for contract testing", e);
 		}
+	}
+
+	private static double closeTo(double expected) {
+		return doubleThat(actual -> Math.abs(actual - expected) < 0.000001D);
 	}
 }

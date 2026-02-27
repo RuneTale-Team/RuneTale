@@ -1,5 +1,14 @@
 {
   "xpPerDamage": 4.0,
+  "constitution": {
+    "xpPerDamage": 3.3,
+    "baseLevel": 10,
+    "healthPerLevel": 10.0,
+    "source": {
+      "damage": "combat:constitution:damage",
+      "baseline": "combat:constitution:baseline"
+    }
+  },
   "source": {
     "ranged": "combat:ranged",
     "melee": {
