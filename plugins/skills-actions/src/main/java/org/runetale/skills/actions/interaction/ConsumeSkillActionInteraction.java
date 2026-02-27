@@ -3,10 +3,13 @@ package org.runetale.skills.actions.interaction;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.protocol.BlockPosition;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.InteractionState;
 import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.entity.InteractionContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
@@ -14,6 +17,7 @@ import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.transaction.ItemStackSlotTransaction;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.CooldownHandler;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInstantInteraction;
+import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.actions.ItemActionsRuntimeRegistry;
 import org.runetale.skills.api.SkillsRuntimeApi;
@@ -72,11 +76,13 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             return;
         }
 
-        ItemActionsConfig.ItemXpActionDefinition action = matchAction(itemActionsConfig, interactionType, player, heldItem);
+        Store<EntityStore> store = commandBuffer.getStore();
+        String targetBlockId = resolveTargetBlockId(context, store);
+        ItemActionsConfig.ItemXpActionDefinition action = matchAction(itemActionsConfig, interactionType, player, heldItem, targetBlockId);
         if (action == null) {
             context.getState().state = InteractionState.Failed;
-            LOGGER.atInfo().log("[Skills Actions] No action match interaction=%s item=%s", interactionType, heldItem.getItemId());
-            debugLog(runtimeApi, itemActionsConfig, "No configured action matched item=%s interactionType=%s", heldItem.getItemId(), interactionType);
+            LOGGER.atInfo().log("[Skills Actions] No action match interaction=%s item=%s targetBlock=%s", interactionType, heldItem.getItemId(), targetBlockId);
+            debugLog(runtimeApi, itemActionsConfig, "No configured action matched item=%s interactionType=%s targetBlock=%s", heldItem.getItemId(), interactionType, targetBlockId);
             return;
         }
 
@@ -135,7 +141,8 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             @Nonnull ItemActionsConfig config,
             @Nonnull InteractionType interactionType,
             @Nonnull Player player,
-            @Nonnull ItemStack heldItem) {
+            @Nonnull ItemStack heldItem,
+            @Nullable String targetBlockId) {
         for (ItemActionsConfig.ItemXpActionDefinition action : config.actions()) {
             if (!action.enabled()) {
                 continue;
@@ -144,6 +151,9 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
                 continue;
             }
             if (!action.matchesItemId(heldItem.getItemId())) {
+                continue;
+            }
+            if (!action.matchesTargetBlockId(targetBlockId)) {
                 continue;
             }
             if (heldItem.getQuantity() < action.consumeQuantity()) {
@@ -155,6 +165,28 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             return action;
         }
         return null;
+    }
+
+    @Nullable
+    private static String resolveTargetBlockId(
+            @Nonnull InteractionContext context,
+            @Nonnull Store<EntityStore> store) {
+        BlockPosition targetBlock = context.getTargetBlock();
+        if (targetBlock == null) {
+            return null;
+        }
+
+        World world = store.getExternalData().getWorld();
+        if (world == null) {
+            return null;
+        }
+
+        BlockType blockType = world.getBlockType(targetBlock.x, targetBlock.y, targetBlock.z);
+        if (blockType == null) {
+            return null;
+        }
+
+        return blockType.getId();
     }
 
     private static void debugLog(

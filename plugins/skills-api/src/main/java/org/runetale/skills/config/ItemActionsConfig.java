@@ -11,8 +11,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public record ItemActionsConfig(
         @Nonnull List<ItemXpActionDefinition> actions,
@@ -74,6 +76,7 @@ public record ItemActionsConfig(
         boolean notifyPlayer = ConfigResourceLoader.booleanValue(actionObject, "notifyPlayer", true);
         boolean cancelInputEvent = ConfigResourceLoader.booleanValue(actionObject, "cancelInputEvent", true);
         boolean allowCreative = ConfigResourceLoader.booleanValue(actionObject, "allowCreative", false);
+        List<String> targetBlockIds = parseTargetBlockIds(actionObject);
 
         if (itemId.isBlank() || skillType == null || experience <= 0.0D) {
             return null;
@@ -99,7 +102,45 @@ public record ItemActionsConfig(
                 cancelInputEvent,
                 allowCreative,
                 buttonType,
-                buttonState);
+                buttonState,
+                targetBlockIds);
+    }
+
+    @Nonnull
+    private static List<String> parseTargetBlockIds(@Nonnull JsonObject actionObject) {
+        Set<String> targetBlockIds = new LinkedHashSet<>();
+
+        JsonElement listElement = actionObject.get("targetBlockIds");
+        if (listElement != null && listElement.isJsonArray()) {
+            for (JsonElement entry : listElement.getAsJsonArray()) {
+                if (entry == null || entry.isJsonNull()) {
+                    continue;
+                }
+
+                String raw;
+                try {
+                    raw = entry.getAsString();
+                } catch (RuntimeException ignored) {
+                    continue;
+                }
+
+                String normalized = raw.trim();
+                if (!normalized.isBlank()) {
+                    targetBlockIds.add(normalized);
+                }
+            }
+        }
+
+        String singleBlockId = ConfigResourceLoader.stringValue(actionObject, "targetBlockId", "");
+        if (!singleBlockId.isBlank()) {
+            targetBlockIds.add(singleBlockId);
+        }
+
+        if (targetBlockIds.isEmpty()) {
+            return List.of();
+        }
+
+        return List.copyOf(targetBlockIds);
     }
 
     @Nonnull
@@ -144,7 +185,41 @@ public record ItemActionsConfig(
             boolean cancelInputEvent,
             boolean allowCreative,
             @Nonnull MouseButtonType mouseButtonType,
-            @Nonnull MouseButtonState mouseButtonState) {
+            @Nonnull MouseButtonState mouseButtonState,
+            @Nonnull List<String> targetBlockIds) {
+
+        public ItemXpActionDefinition {
+            targetBlockIds = targetBlockIds == null || targetBlockIds.isEmpty() ? List.of() : List.copyOf(targetBlockIds);
+        }
+
+        public ItemXpActionDefinition(
+                @Nonnull String id,
+                boolean enabled,
+                @Nonnull String itemId,
+                @Nonnull SkillType skillType,
+                double experience,
+                int consumeQuantity,
+                @Nonnull String source,
+                boolean notifyPlayer,
+                boolean cancelInputEvent,
+                boolean allowCreative,
+                @Nonnull MouseButtonType mouseButtonType,
+                @Nonnull MouseButtonState mouseButtonState) {
+            this(
+                    id,
+                    enabled,
+                    itemId,
+                    skillType,
+                    experience,
+                    consumeQuantity,
+                    source,
+                    notifyPlayer,
+                    cancelInputEvent,
+                    allowCreative,
+                    mouseButtonType,
+                    mouseButtonState,
+                    List.of());
+        }
 
         public boolean matchesInteractionType(@Nonnull InteractionType interactionType) {
             if (this.mouseButtonState != MouseButtonState.Pressed) {
@@ -163,16 +238,37 @@ public record ItemActionsConfig(
                 return false;
             }
 
-            String configured = this.itemId.trim();
-            String held = heldItemId.trim();
-            if (configured.equalsIgnoreCase(held)) {
+            return idsMatch(this.itemId, heldItemId);
+        }
+
+        public boolean matchesTargetBlockId(@Nullable String targetBlockId) {
+            if (this.targetBlockIds.isEmpty()) {
+                return true;
+            }
+            if (targetBlockId == null) {
+                return false;
+            }
+
+            for (String configuredBlockId : this.targetBlockIds) {
+                if (idsMatch(configuredBlockId, targetBlockId)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static boolean idsMatch(@Nonnull String configuredId, @Nonnull String actualId) {
+            String configured = configuredId.trim();
+            String actual = actualId.trim();
+            if (configured.equalsIgnoreCase(actual)) {
                 return true;
             }
 
-            int heldNamespaceSeparator = held.lastIndexOf(':');
-            if (heldNamespaceSeparator >= 0 && heldNamespaceSeparator + 1 < held.length()) {
-                String heldWithoutNamespace = held.substring(heldNamespaceSeparator + 1);
-                if (configured.equalsIgnoreCase(heldWithoutNamespace)) {
+            int actualNamespaceSeparator = actual.lastIndexOf(':');
+            if (actualNamespaceSeparator >= 0 && actualNamespaceSeparator + 1 < actual.length()) {
+                String actualWithoutNamespace = actual.substring(actualNamespaceSeparator + 1);
+                if (configured.equalsIgnoreCase(actualWithoutNamespace)) {
                     return true;
                 }
             }
@@ -180,7 +276,7 @@ public record ItemActionsConfig(
             int configuredNamespaceSeparator = configured.lastIndexOf(':');
             if (configuredNamespaceSeparator >= 0 && configuredNamespaceSeparator + 1 < configured.length()) {
                 String configuredWithoutNamespace = configured.substring(configuredNamespaceSeparator + 1);
-                return configuredWithoutNamespace.equalsIgnoreCase(held);
+                return configuredWithoutNamespace.equalsIgnoreCase(actual);
             }
 
             return false;
