@@ -10,8 +10,12 @@ import org.runetale.skills.combat.config.CombatExternalConfigBootstrap;
 import org.runetale.skills.config.CombatConfig;
 import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.service.CombatStyleService;
+import org.runetale.skills.service.ConstitutionHealthService;
+import org.runetale.skills.system.ConstitutionBaselineSystem;
 import org.runetale.skills.system.CombatDamageXpSystem;
 import org.runetale.skills.system.CombatSessionCleanupSystem;
+import org.runetale.skills.system.ConstitutionHealthLevelUpSystem;
+import org.runetale.skills.system.ConstitutionHealthSyncOnJoinSystem;
 
 import javax.annotation.Nonnull;
 
@@ -21,6 +25,7 @@ public class CombatSkillsPlugin extends JavaPlugin {
 
     private CombatConfig combatConfig;
     private CombatStyleService combatStyleService;
+    private ConstitutionHealthService constitutionHealthService;
 
     public CombatSkillsPlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -61,6 +66,17 @@ public class CombatSkillsPlugin extends JavaPlugin {
             return;
         }
 
+        this.constitutionHealthService = new ConstitutionHealthService(runtimeApi, this.combatConfig);
+
+        this.getEntityStoreRegistry().registerSystem(
+                new ConstitutionBaselineSystem(runtimeApi, this.combatConfig));
+
+        this.getEntityStoreRegistry().registerSystem(
+                new ConstitutionHealthSyncOnJoinSystem(this.constitutionHealthService));
+
+        this.getEntityStoreRegistry().registerSystem(
+                new ConstitutionHealthLevelUpSystem(this.constitutionHealthService));
+
         this.getEntityStoreRegistry().registerSystem(
                 new CombatDamageXpSystem(runtimeApi, this.combatStyleService, this.combatConfig));
 
@@ -77,5 +93,6 @@ public class CombatSkillsPlugin extends JavaPlugin {
         LOGGER.atInfo().log("Shutting down skills combat plugin...");
         this.combatConfig = null;
         this.combatStyleService = null;
+        this.constitutionHealthService = null;
     }
 }
