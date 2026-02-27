@@ -23,7 +23,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build and bundle distributable plugin jars
-        run: ./gradlew test contractTest build bundlePluginJars
+        run: ./gradlew build bundlePluginJars
 
       - name: Upload plugin bundle artifact
         uses: actions/upload-artifact@v4
