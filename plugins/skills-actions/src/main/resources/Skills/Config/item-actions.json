@@ -46,8 +46,122 @@
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
+	    }
+	},
+    {
+      "id": "firemaking_burn_log",
+      "enabled": true,
+      "itemId": "RuneTale_Log",
+      "skill": "FIREMAKING",
+      "xp": 40.0,
+      "consumeQuantity": 1,
+      "source": "firemaking:burn",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "targetBlockIds": [
+        "Furniture_Crude_Brazier"
+      ],
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+      }
+	},
+    {
+      "id": "firemaking_burn_oak_log",
+      "enabled": true,
+      "itemId": "RuneTale_Oak_Log",
+      "skill": "FIREMAKING",
+      "xp": 60.0,
+      "consumeQuantity": 1,
+      "source": "firemaking:burn",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "targetBlockIds": [
+        "Furniture_Crude_Brazier"
+      ],
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+      }
+	},
+    {
+      "id": "firemaking_burn_willow_log",
+      "enabled": true,
+      "itemId": "RuneTale_Willow_Log",
+      "skill": "FIREMAKING",
+      "xp": 90.0,
+      "consumeQuantity": 1,
+      "source": "firemaking:burn",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "targetBlockIds": [
+        "Furniture_Crude_Brazier"
+      ],
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+      }
+	},
+    {
+      "id": "firemaking_burn_maple_log",
+      "enabled": true,
+      "itemId": "RuneTale_Maple_Log",
+      "skill": "FIREMAKING",
+      "xp": 135.0,
+      "consumeQuantity": 1,
+      "source": "firemaking:burn",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "targetBlockIds": [
+        "Furniture_Crude_Brazier"
+      ],
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+      }
+	},
+    {
+      "id": "firemaking_burn_yew_log",
+      "enabled": true,
+      "itemId": "RuneTale_Yew_Log",
+      "skill": "FIREMAKING",
+      "xp": 202.5,
+      "consumeQuantity": 1,
+      "source": "firemaking:burn",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "targetBlockIds": [
+        "Furniture_Crude_Brazier"
+      ],
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+      }
+	},
+    {
+      "id": "firemaking_burn_magic_log",
+      "enabled": true,
+      "itemId": "RuneTale_Magic_Log",
+      "skill": "FIREMAKING",
+      "xp": 303.8,
+      "consumeQuantity": 1,
+      "source": "firemaking:burn",
+      "notifyPlayer": true,
+      "cancelInputEvent": true,
+      "allowCreative": false,
+      "targetBlockIds": [
+        "Furniture_Crude_Brazier"
+      ],
+      "trigger": {
+        "mouseButton": "Right",
+        "mouseState": "Pressed"
+      }
     }
-	}
   ],
   "debug": {
     "pluginKey": "skills-actions"
