@@ -34,6 +34,13 @@ If you do not agree to these terms, please do not submit a contribution.
 - Use the Gradle wrapper (`./gradlew`) instead of a system Gradle installation.
 - The project is a multi-module Gradle build.
 
+### Gradle Conventions (Important)
+- Plugin mod jars are produced as `runetale-<module>-<version>.jar`.
+- Add/update dependency and plugin versions in `gradle/libs.versions.toml`.
+- Update Hytale server dependency level through `hytaleServerVersion` in `gradle.properties`.
+- Repositories are centralized in `settings.gradle.kts`; do not add project-level repositories in module build scripts.
+- Skills feature modules should follow the `:plugins:skills-*` naming pattern to inherit shared Gradle conventions.
+
 ## Building and Testing
 
 ### Build everything
