@@ -16,6 +16,7 @@ public enum SkillType {
 	DEFENCE,
 	RANGED,
 	PRAYER,
+	FIREMAKING,
 	WOODCUTTING,
 	MINING,
 	SMITHING;
