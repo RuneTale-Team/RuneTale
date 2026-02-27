@@ -20,6 +20,7 @@ import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Sim
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.actions.ItemActionsRuntimeRegistry;
+import org.runetale.skills.actions.service.ItemActionPlacementQueueService;
 import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.config.ItemActionsConfig;
@@ -92,20 +93,22 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             return;
         }
 
-        ItemStackSlotTransaction consumeTransaction = heldItemContainer.removeItemStackFromSlot(
-                heldItemSlot,
-                heldItem,
-                action.consumeQuantity(),
-                true,
-                true);
-        if (!consumeTransaction.succeeded()) {
-            context.getState().state = InteractionState.Failed;
-            debugLog(runtimeApi, itemActionsConfig, "Failed consume action id=%s slot=%d item=%s qty=%d", action.id(), heldItemSlot, heldItem.getItemId(), action.consumeQuantity());
-            return;
-        }
+        if (action.requiresItemConsumption()) {
+            ItemStackSlotTransaction consumeTransaction = heldItemContainer.removeItemStackFromSlot(
+                    heldItemSlot,
+                    heldItem,
+                    action.consumeQuantity(),
+                    true,
+                    true);
+            if (!consumeTransaction.succeeded()) {
+                context.getState().state = InteractionState.Failed;
+                debugLog(runtimeApi, itemActionsConfig, "Failed consume action id=%s slot=%d item=%s qty=%d", action.id(), heldItemSlot, heldItem.getItemId(), action.consumeQuantity());
+                return;
+            }
 
-        ItemStack updated = heldItemContainer.getItemStack(heldItemSlot);
-        context.setHeldItem(ItemStack.isEmpty(updated) ? null : updated);
+            ItemStack updated = heldItemContainer.getItemStack(heldItemSlot);
+            context.setHeldItem(ItemStack.isEmpty(updated) ? null : updated);
+        }
 
         boolean granted;
         try {
@@ -130,6 +133,8 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             LOGGER.atWarning().log("[Skills Actions] XP dispatch failed after consume action=%s player=%s skill=%s", action.id(), playerRef, action.skillType());
             return;
         }
+
+        queueTargetBlockReplacement(context, store, action, targetBlockId, runtimeApi, itemActionsConfig);
 
         context.getState().state = InteractionState.Finished;
         LOGGER.atInfo().log("[Skills Actions] Applied action=%s interaction=%s item=%s qty=%d", action.id(), interactionType, heldItem.getItemId(), action.consumeQuantity());
@@ -187,6 +192,60 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
         }
 
         return blockType.getId();
+    }
+
+    private static void queueTargetBlockReplacement(
+            @Nonnull InteractionContext context,
+            @Nonnull Store<EntityStore> store,
+            @Nonnull ItemActionsConfig.ItemXpActionDefinition action,
+            @Nullable String resolvedTargetBlockId,
+            @Nonnull SkillsRuntimeApi runtimeApi,
+            @Nonnull ItemActionsConfig config) {
+        if (!action.hasTargetBlockReplacement()) {
+            return;
+        }
+
+        BlockPosition targetBlock = context.getTargetBlock();
+        if (targetBlock == null) {
+            debugLog(runtimeApi, config, "Skipped replacement for action id=%s because target block was null", action.id());
+            return;
+        }
+
+        ItemActionPlacementQueueService placementQueueService = ItemActionsRuntimeRegistry.getPlacementQueueService();
+        if (placementQueueService == null) {
+            LOGGER.atWarning().log("[Skills Actions] Missing placement queue for replacement action=%s", action.id());
+            return;
+        }
+
+        World world = store.getExternalData().getWorld();
+        if (world == null) {
+            debugLog(runtimeApi, config, "Skipped replacement for action id=%s because world was null", action.id());
+            return;
+        }
+
+        String expectedBlockId = action.requireTargetBlockMatchForReplacement()
+                ? resolvedTargetBlockId
+                : null;
+        long applyAtMillis = System.currentTimeMillis() + action.replaceTargetBlockDelayMillis();
+        placementQueueService.queue(
+                world.getName(),
+                targetBlock.x,
+                targetBlock.y,
+                targetBlock.z,
+                expectedBlockId,
+                action.replaceTargetBlockId(),
+                applyAtMillis);
+        debugLog(
+                runtimeApi,
+                config,
+                "Queued replacement action id=%s world=%s pos=%d,%d,%d block=%s delay=%d",
+                action.id(),
+                world.getName(),
+                targetBlock.x,
+                targetBlock.y,
+                targetBlock.z,
+                action.replaceTargetBlockId(),
+                action.replaceTargetBlockDelayMillis());
     }
 
     private static void debugLog(

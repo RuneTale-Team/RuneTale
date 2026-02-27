@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.asset.SkillNodeDefinition;
+import org.runetale.skills.domain.SkillIconPaths;
 import org.runetale.skills.domain.SkillType;
 import org.runetale.skills.service.SkillNodeLookupService;
 
@@ -351,13 +352,7 @@ public class SkillsOverviewPage extends InteractiveCustomUIPage<SkillsOverviewPa
 
 	@Nonnull
 	private String skillIconTexturePath(@Nullable SkillType skill) {
-		String id = skill == null ? "unknown" : skillIconId(skill);
-		return "SkillsPlugin/Assets/Icons/icon_" + id + ".png";
-	}
-
-	@Nonnull
-	private String skillIconId(@Nonnull SkillType skill) {
-		return skill.name().toLowerCase(Locale.ROOT);
+		return SkillIconPaths.forSkill(skill);
 	}
 
 	private boolean isCombatRoadmapSkill(@Nonnull SkillType skill) {

@@ -71,12 +71,15 @@ public record ItemActionsConfig(
         String itemId = ConfigResourceLoader.stringValue(actionObject, "itemId", "");
         SkillType skillType = SkillType.tryParseStrict(ConfigResourceLoader.stringValue(actionObject, "skill", ""));
         double experience = ConfigResourceLoader.doubleValue(actionObject, "xp", 0.0D);
-        int consumeQuantity = Math.max(1, ConfigResourceLoader.intValue(actionObject, "consumeQuantity", 1));
+        int consumeQuantity = Math.max(0, ConfigResourceLoader.intValue(actionObject, "consumeQuantity", 1));
         String source = ConfigResourceLoader.stringValue(actionObject, "source", "item-action:" + id.toLowerCase(Locale.ROOT));
         boolean notifyPlayer = ConfigResourceLoader.booleanValue(actionObject, "notifyPlayer", true);
         boolean cancelInputEvent = ConfigResourceLoader.booleanValue(actionObject, "cancelInputEvent", true);
         boolean allowCreative = ConfigResourceLoader.booleanValue(actionObject, "allowCreative", false);
         List<String> targetBlockIds = parseTargetBlockIds(actionObject);
+        String replaceTargetBlockId = ConfigResourceLoader.stringValue(actionObject, "replaceTargetBlockId", "").trim();
+        long replaceTargetBlockDelayMillis = Math.max(0L, ConfigResourceLoader.longValue(actionObject, "replaceTargetBlockDelayMillis", 0L));
+        boolean requireTargetBlockMatchForReplacement = ConfigResourceLoader.booleanValue(actionObject, "requireTargetBlockMatchForReplacement", true);
 
         if (itemId.isBlank() || skillType == null || experience <= 0.0D) {
             return null;
@@ -103,7 +106,10 @@ public record ItemActionsConfig(
                 allowCreative,
                 buttonType,
                 buttonState,
-                targetBlockIds);
+                targetBlockIds,
+                replaceTargetBlockId,
+                replaceTargetBlockDelayMillis,
+                requireTargetBlockMatchForReplacement);
     }
 
     @Nonnull
@@ -186,10 +192,48 @@ public record ItemActionsConfig(
             boolean allowCreative,
             @Nonnull MouseButtonType mouseButtonType,
             @Nonnull MouseButtonState mouseButtonState,
-            @Nonnull List<String> targetBlockIds) {
+            @Nonnull List<String> targetBlockIds,
+            @Nullable String replaceTargetBlockId,
+            long replaceTargetBlockDelayMillis,
+            boolean requireTargetBlockMatchForReplacement) {
 
         public ItemXpActionDefinition {
             targetBlockIds = targetBlockIds == null || targetBlockIds.isEmpty() ? List.of() : List.copyOf(targetBlockIds);
+            replaceTargetBlockId = replaceTargetBlockId == null ? "" : replaceTargetBlockId.trim();
+            replaceTargetBlockDelayMillis = Math.max(0L, replaceTargetBlockDelayMillis);
+        }
+
+        public ItemXpActionDefinition(
+                @Nonnull String id,
+                boolean enabled,
+                @Nonnull String itemId,
+                @Nonnull SkillType skillType,
+                double experience,
+                int consumeQuantity,
+                @Nonnull String source,
+                boolean notifyPlayer,
+                boolean cancelInputEvent,
+                boolean allowCreative,
+                @Nonnull MouseButtonType mouseButtonType,
+                @Nonnull MouseButtonState mouseButtonState,
+                @Nonnull List<String> targetBlockIds) {
+            this(
+                    id,
+                    enabled,
+                    itemId,
+                    skillType,
+                    experience,
+                    consumeQuantity,
+                    source,
+                    notifyPlayer,
+                    cancelInputEvent,
+                    allowCreative,
+                    mouseButtonType,
+                    mouseButtonState,
+                    targetBlockIds,
+                    "",
+                    0L,
+                    true);
         }
 
         public ItemXpActionDefinition(
@@ -218,7 +262,18 @@ public record ItemActionsConfig(
                     allowCreative,
                     mouseButtonType,
                     mouseButtonState,
-                    List.of());
+                    List.of(),
+                    "",
+                    0L,
+                    true);
+        }
+
+        public boolean requiresItemConsumption() {
+            return this.consumeQuantity > 0;
+        }
+
+        public boolean hasTargetBlockReplacement() {
+            return !this.replaceTargetBlockId.isBlank();
         }
 
         public boolean matchesInteractionType(@Nonnull InteractionType interactionType) {
@@ -258,7 +313,7 @@ public record ItemActionsConfig(
             return false;
         }
 
-        private static boolean idsMatch(@Nonnull String configuredId, @Nonnull String actualId) {
+        public static boolean idsMatch(@Nonnull String configuredId, @Nonnull String actualId) {
             String configured = configuredId.trim();
             String actual = actualId.trim();
             if (configured.equalsIgnoreCase(actual)) {

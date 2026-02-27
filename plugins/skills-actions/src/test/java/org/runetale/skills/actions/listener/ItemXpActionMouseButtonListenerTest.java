@@ -155,6 +155,48 @@ class ItemXpActionMouseButtonListenerTest {
         verifyNoInteractions(runtimeApi);
     }
 
+    @Test
+    void handleDoesNotConsumeHeldItemWhenActionConsumeQuantityIsZero() {
+        SkillsRuntimeApi runtimeApi = mock(SkillsRuntimeApi.class);
+        ItemActionsConfig config = new ItemActionsConfig(
+                List.of(prayerAction(0)),
+                "skills-actions");
+        ItemXpActionMouseButtonListener listener = new ItemXpActionMouseButtonListener(runtimeApi, config);
+
+        PlayerMouseButtonEvent event = mock(PlayerMouseButtonEvent.class);
+        Player player = mock(Player.class);
+        Inventory inventory = mock(Inventory.class);
+        ItemContainer hotbar = mock(ItemContainer.class);
+        ItemStack heldStack = mock(ItemStack.class);
+        @SuppressWarnings("unchecked")
+        Ref<EntityStore> playerRef = (Ref<EntityStore>) mock(Ref.class);
+        @SuppressWarnings("unchecked")
+        Store<EntityStore> store = (Store<EntityStore>) mock(Store.class);
+
+        when(event.isCancelled()).thenReturn(false);
+        when(event.getMouseButton()).thenReturn(new MouseButtonEvent(MouseButtonType.Right, MouseButtonState.Pressed, (byte) 1));
+        when(event.getPlayer()).thenReturn(player);
+        when(event.getPlayerRef()).thenReturn(playerRef);
+
+        when(player.getInventory()).thenReturn(inventory);
+        when(player.getGameMode()).thenReturn(GameMode.Adventure);
+        when(inventory.usingToolsItem()).thenReturn(false);
+        when(inventory.getHotbar()).thenReturn(hotbar);
+        when(inventory.getActiveHotbarSlot()).thenReturn((byte) 0);
+        when(hotbar.getItemStack((short) 0)).thenReturn(heldStack);
+        when(heldStack.getItemId()).thenReturn("RuneTale_Bones");
+        when(heldStack.getQuantity()).thenReturn(1);
+        when(playerRef.isValid()).thenReturn(true);
+        when(playerRef.getStore()).thenReturn(store);
+        when(runtimeApi.hasSkillProfile(store, playerRef)).thenReturn(true);
+        when(runtimeApi.grantSkillXp(store, playerRef, SkillType.PRAYER, 4.5D, "prayer:bury", true)).thenReturn(true);
+
+        listener.handle(event);
+
+        verify(hotbar, never()).removeItemStackFromSlot((short) 0, heldStack, 0, true, true);
+        verify(runtimeApi).grantSkillXp(store, playerRef, SkillType.PRAYER, 4.5D, "prayer:bury", true);
+    }
+
     @SuppressWarnings("deprecation")
     @Test
     void handleProcessesSecondaryInteractAsRightClickFallback() {

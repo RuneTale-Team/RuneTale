@@ -24,7 +24,7 @@ class ItemActionsConfigTest {
             assertThat(action.itemId()).isNotBlank();
             assertThat(action.skillType()).isNotNull();
             assertThat(action.experience()).isGreaterThan(0.0D);
-            assertThat(action.consumeQuantity()).isGreaterThanOrEqualTo(1);
+            assertThat(action.consumeQuantity()).isGreaterThanOrEqualTo(0);
             assertThat(action.source()).isNotBlank();
             assertThat(action.mouseButtonType()).isNotNull();
             assertThat(action.mouseButtonState()).isNotNull();
@@ -52,6 +52,9 @@ class ItemActionsConfigTest {
                         "Furniture_Crude_Brazier",
                         "runetale:Furniture_Crude_Brazier"
                       ],
+                      "replaceTargetBlockId": "Furniture_Crude_Brazier",
+                      "replaceTargetBlockDelayMillis": 1200,
+                      "requireTargetBlockMatchForReplacement": false,
                       "trigger": {
                         "mouseButton": "Middle",
                         "mouseState": "Released"
@@ -86,7 +89,38 @@ class ItemActionsConfigTest {
         assertThat(action.mouseButtonType()).isEqualTo(MouseButtonType.Middle);
         assertThat(action.mouseButtonState()).isEqualTo(MouseButtonState.Released);
         assertThat(action.targetBlockIds()).containsExactly("Furniture_Crude_Brazier", "runetale:Furniture_Crude_Brazier");
+        assertThat(action.replaceTargetBlockId()).isEqualTo("Furniture_Crude_Brazier");
+        assertThat(action.replaceTargetBlockDelayMillis()).isEqualTo(1200L);
+        assertThat(action.requireTargetBlockMatchForReplacement()).isFalse();
         assertThat(config.debugPluginKey()).isEqualTo("skills-prayer");
+    }
+
+    @Test
+    void loadAllowsZeroConsumeQuantity(@TempDir Path tempDir) throws IOException {
+        write(tempDir, "Config/item-actions.json", """
+                {
+                  "actions": [
+                    {
+                      "id": "firemaking_campfire",
+                      "itemId": "RuneTale_Tinderbox",
+                      "skill": "FIREMAKING",
+                      "xp": 40.0,
+                      "consumeQuantity": 0,
+                      "targetBlockId": "RuneTale_Log",
+                      "replaceTargetBlockId": "Furniture_Crude_Brazier",
+                      "replaceTargetBlockDelayMillis": 1200
+                    }
+                  ]
+                }
+                """);
+
+        ItemActionsConfig config = ItemActionsConfig.load(tempDir);
+
+        assertThat(config.actions()).hasSize(1);
+        ItemActionsConfig.ItemXpActionDefinition action = config.actions().getFirst();
+        assertThat(action.consumeQuantity()).isZero();
+        assertThat(action.requiresItemConsumption()).isFalse();
+        assertThat(action.hasTargetBlockReplacement()).isTrue();
     }
 
     @Test

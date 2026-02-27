@@ -114,15 +114,17 @@ public final class ItemXpActionMouseButtonListener {
             return;
         }
 
-        ItemStackSlotTransaction consumeTransaction = activeContainer.removeItemStackFromSlot(
-                activeSlot,
-                slotStack,
-                action.consumeQuantity(),
-                true,
-                true);
-        if (!consumeTransaction.succeeded()) {
-            debugLog("Failed consume action id=%s slot=%d item=%s qty=%d", action.id(), activeSlot, slotStack.getItemId(), action.consumeQuantity());
-            return;
+        if (action.requiresItemConsumption()) {
+            ItemStackSlotTransaction consumeTransaction = activeContainer.removeItemStackFromSlot(
+                    activeSlot,
+                    slotStack,
+                    action.consumeQuantity(),
+                    true,
+                    true);
+            if (!consumeTransaction.succeeded()) {
+                debugLog("Failed consume action id=%s slot=%d item=%s qty=%d", action.id(), activeSlot, slotStack.getItemId(), action.consumeQuantity());
+                return;
+            }
         }
 
         boolean granted = this.runtimeApi.grantSkillXp(
