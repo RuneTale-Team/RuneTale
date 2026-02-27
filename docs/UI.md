@@ -28,7 +28,7 @@ This document explains how the Skills custom UI is wired, where assets live, and
 - Keep two-pane layout (navigation + details).
 - Keep interaction click-driven; no hover behavior.
 - Selection indicator is visual-only in UI (no `>` prefix in label text).
-- Left list always shows small skill icons.
+- Left list always shows readable, prominent skill icons.
 - Right cards show icons on overview cards, but hide icons in detail view cards for readability.
 - Missing icon files are acceptable (engine may show red-X placeholders).
 - Node card display name uses optional `label` property; fallback is raw `id` verbatim.

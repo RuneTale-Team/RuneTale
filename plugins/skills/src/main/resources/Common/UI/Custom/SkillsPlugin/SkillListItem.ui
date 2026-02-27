@@ -7,8 +7,8 @@
 );
 
 Button {
-  Anchor: (Height: 42, Bottom: 6);
-  Padding: (Left: 10, Right: 10);
+  Anchor: (Height: 52, Bottom: 6);
+  Padding: (Left: 12, Right: 12);
   Style: (
     Default: (Background: #122439),
     Hovered: (Background: #1a3150),
@@ -25,16 +25,22 @@ Button {
     LayoutMode: Left;
     Padding: (Left: 8);
 
-    Group #SkillIcon {
-      Anchor: (Width: 20, Height: 20, Top: 1);
-      Background: "Assets/Icons/icon_unknown.png";
+    Group {
+      Anchor: (Width: 34, Height: 34, Top: 8);
+      Background: #274266;
+      LayoutMode: Middle;
+
+      Group #SkillIcon {
+        Anchor: (Width: 30, Height: 30);
+        Background: "Assets/Icons/icon_unknown.png";
+      }
     }
 
-    Group { Anchor: (Width: 10); }
+    Group { Anchor: (Width: 12); }
 
     Label #SkillLabel {
       Text: "Skill";
-      Anchor: (Height: 22);
+      Anchor: (Height: 34, Top: 9);
       Style: @SkillLabelStyle;
     }
   }
