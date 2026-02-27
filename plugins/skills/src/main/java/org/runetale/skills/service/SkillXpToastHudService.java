@@ -6,6 +6,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomHud;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import org.runetale.skills.config.HudConfig;
+import org.runetale.skills.domain.SkillIconPaths;
 import org.runetale.skills.domain.SkillType;
 
 import javax.annotation.Nonnull;
@@ -135,13 +136,7 @@ public class SkillXpToastHudService {
 
 	@Nonnull
 	private String skillIconTexturePath(@Nonnull SkillType skillType) {
-		String id = skillIconId(skillType);
-		return "SkillsPlugin/Assets/Icons/icon_" + id + ".png";
-	}
-
-	@Nonnull
-	private String skillIconId(@Nonnull SkillType skillType) {
-		return skillType.name().toLowerCase(Locale.ROOT);
+		return SkillIconPaths.forSkill(skillType);
 	}
 
 	@Nonnull

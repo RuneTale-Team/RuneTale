@@ -1,7 +1,6 @@
 package org.runetale.skills.domain;
 
 import javax.annotation.Nonnull;
-import java.util.Locale;
 
 /**
  * Material tiers shared by smelting (furnace) and smithing (anvil) UIs.
@@ -53,14 +52,6 @@ public enum SmithingMaterialTier {
 	@Nonnull
 	public String getBarSubstring() {
 		return "Bar_" + displayName;
-	}
-
-	/**
-	 * Returns the icon texture path for this tier's tab button.
-	 */
-	@Nonnull
-	public String getIconPath() {
-		return "SkillsPlugin/Assets/Icons/icon_smithing.png";
 	}
 
 	/**
