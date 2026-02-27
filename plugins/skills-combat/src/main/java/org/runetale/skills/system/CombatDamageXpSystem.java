@@ -112,6 +112,13 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 			@Nonnull Damage event,
 			@Nonnull Damage.Source source,
 			double finalDamage) {
+		grantXp(
+				commandBuffer,
+				attackerRef,
+				SkillType.CONSTITUTION,
+				finalDamage * this.combatConfig.constitutionXpPerDamage(),
+				this.combatConfig.sourceConstitutionDamage());
+
 		long totalXp = Math.max(0L, Math.round(finalDamage * this.combatConfig.xpPerDamage()));
 		if (totalXp <= 0L) {
 			return;
@@ -165,9 +172,9 @@ public class CombatDamageXpSystem extends DamageEventSystem {
 			@Nonnull CommandBuffer<EntityStore> commandBuffer,
 			@Nonnull Ref<EntityStore> playerRef,
 			@Nonnull SkillType skillType,
-			long amount,
+			double amount,
 			@Nonnull String sourceTag) {
-		if (amount <= 0L) {
+		if (amount <= 0.0D) {
 			return;
 		}
 

@@ -14,6 +14,9 @@ import java.util.Locale;
 
 public record CombatConfig(
         double xpPerDamage,
+        double constitutionXpPerDamage,
+        int constitutionBaseLevel,
+        double constitutionHealthPerLevel,
         @Nonnull String sourceRanged,
         @Nonnull String sourceMeleePrefix,
         @Nonnull String sourceMeleeAccurate,
@@ -23,6 +26,8 @@ public record CombatConfig(
         @Nonnull String sourceMeleeControlledStrength,
         @Nonnull String sourceMeleeControlledDefence,
         @Nonnull String sourceBlockDefence,
+        @Nonnull String sourceConstitutionDamage,
+        @Nonnull String sourceConstitutionBaseline,
         @Nonnull List<String> projectileCauseTokens) {
 
     private static final String RESOURCE_PATH = "Skills/Config/combat.json";
@@ -42,16 +47,28 @@ public record CombatConfig(
         }
 
         double xpPerDamage = Math.max(0.0D, ConfigResourceLoader.doubleValue(combatConfig, "xpPerDamage", 4.0D));
+        JsonObject constitutionConfig = ConfigResourceLoader.objectValue(combatConfig, "constitution");
+        double constitutionXpPerDamage = Math.max(0.0D,
+                ConfigResourceLoader.doubleValue(constitutionConfig, "xpPerDamage", 3.3D));
+        int constitutionBaseLevel = Math.max(1,
+                ConfigResourceLoader.intValue(constitutionConfig, "baseLevel", 10));
+        double constitutionHealthPerLevel = Math.max(0.0D,
+                ConfigResourceLoader.doubleValue(constitutionConfig, "healthPerLevel", 10.0D));
+
         JsonObject sourceConfig = ConfigResourceLoader.objectValue(combatConfig, "source");
         JsonObject meleeConfig = ConfigResourceLoader.objectValue(sourceConfig, "melee");
         JsonObject controlledConfig = ConfigResourceLoader.objectValue(meleeConfig, "controlled");
         JsonObject blockConfig = ConfigResourceLoader.objectValue(sourceConfig, "block");
+        JsonObject constitutionSourceConfig = ConfigResourceLoader.objectValue(constitutionConfig, "source");
 
         String sourceRanged = ConfigResourceLoader.stringValue(sourceConfig, "ranged", "combat:ranged");
         String sourceMeleePrefix = ConfigResourceLoader.stringValue(meleeConfig, "prefix", "combat:melee:");
 
         return new CombatConfig(
                 xpPerDamage,
+                constitutionXpPerDamage,
+                constitutionBaseLevel,
+                constitutionHealthPerLevel,
                 sourceRanged,
                 sourceMeleePrefix,
                 ConfigResourceLoader.stringValue(meleeConfig, "accurate", "accurate"),
@@ -61,6 +78,8 @@ public record CombatConfig(
                 ConfigResourceLoader.stringValue(controlledConfig, "strength", "controlled:strength"),
                 ConfigResourceLoader.stringValue(controlledConfig, "defence", "controlled:defence"),
                 ConfigResourceLoader.stringValue(blockConfig, "defence", "combat:block:defence"),
+                ConfigResourceLoader.stringValue(constitutionSourceConfig, "damage", "combat:constitution:damage"),
+                ConfigResourceLoader.stringValue(constitutionSourceConfig, "baseline", "combat:constitution:baseline"),
                 parseTokenList(combatConfig, "projectileCauseTokens", List.of("projectile")));
     }
 

@@ -17,6 +17,9 @@ class CombatConfigTest {
 		CombatConfig config = CombatConfig.load(tempDir);
 
 		assertThat(config.xpPerDamage()).isGreaterThanOrEqualTo(0.0D);
+		assertThat(config.constitutionXpPerDamage()).isGreaterThanOrEqualTo(0.0D);
+		assertThat(config.constitutionBaseLevel()).isGreaterThanOrEqualTo(1);
+		assertThat(config.constitutionHealthPerLevel()).isGreaterThanOrEqualTo(0.0D);
 		assertThat(config.sourceRanged()).isNotBlank();
 		assertThat(config.sourceMeleePrefix()).isNotBlank();
 		assertThat(config.sourceMeleeAccurate()).isNotBlank();
@@ -26,6 +29,8 @@ class CombatConfigTest {
 		assertThat(config.sourceMeleeControlledStrength()).isNotBlank();
 		assertThat(config.sourceMeleeControlledDefence()).isNotBlank();
 		assertThat(config.sourceBlockDefence()).isNotBlank();
+		assertThat(config.sourceConstitutionDamage()).isNotBlank();
+		assertThat(config.sourceConstitutionBaseline()).isNotBlank();
 		assertThat(config.projectileCauseTokens())
 				.isNotEmpty()
 				.allSatisfy(token -> {
@@ -39,6 +44,15 @@ class CombatConfigTest {
 		write(tempDir, "Config/combat.json", """
 				{
 				  "xpPerDamage": -4.5,
+				  "constitution": {
+				    "xpPerDamage": 3.3,
+				    "baseLevel": -12,
+				    "healthPerLevel": -10,
+				    "source": {
+				      "damage": "Combat:Constitution:Damage",
+				      "baseline": "Combat:Constitution:Baseline"
+				    }
+				  },
 				  "source": {
 				    "ranged": "Combat:RANGED",
 				    "melee": {
@@ -52,8 +66,13 @@ class CombatConfigTest {
 		CombatConfig config = CombatConfig.load(tempDir);
 
 		assertThat(config.xpPerDamage()).isZero();
+		assertThat(config.constitutionXpPerDamage()).isEqualTo(3.3D);
+		assertThat(config.constitutionBaseLevel()).isEqualTo(1);
+		assertThat(config.constitutionHealthPerLevel()).isZero();
 		assertThat(config.sourceRanged()).isEqualTo("Combat:RANGED");
 		assertThat(config.sourceMeleePrefix()).isEqualTo("Combat:Melee:");
+		assertThat(config.sourceConstitutionDamage()).isEqualTo("Combat:Constitution:Damage");
+		assertThat(config.sourceConstitutionBaseline()).isEqualTo("Combat:Constitution:Baseline");
 		assertThat(config.projectileCauseTokens()).containsExactly("projectile", "arrow_hit");
 	}
 
