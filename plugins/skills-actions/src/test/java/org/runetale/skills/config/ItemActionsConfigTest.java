@@ -48,6 +48,10 @@ class ItemActionsConfigTest {
                       "notifyPlayer": false,
                       "cancelInputEvent": false,
                       "allowCreative": true,
+                      "targetBlockIds": [
+                        "Furniture_Crude_Brazier",
+                        "runetale:Furniture_Crude_Brazier"
+                      ],
                       "trigger": {
                         "mouseButton": "Middle",
                         "mouseState": "Released"
@@ -81,7 +85,30 @@ class ItemActionsConfigTest {
         assertThat(action.allowCreative()).isTrue();
         assertThat(action.mouseButtonType()).isEqualTo(MouseButtonType.Middle);
         assertThat(action.mouseButtonState()).isEqualTo(MouseButtonState.Released);
+        assertThat(action.targetBlockIds()).containsExactly("Furniture_Crude_Brazier", "runetale:Furniture_Crude_Brazier");
         assertThat(config.debugPluginKey()).isEqualTo("skills-prayer");
+    }
+
+    @Test
+    void targetBlockMatchingSupportsExactAndNamespacedIds() {
+        ItemActionsConfig.ItemXpActionDefinition action = new ItemActionsConfig.ItemXpActionDefinition(
+                "firemaking_burn_logs",
+                true,
+                "RuneTale_Log",
+                SkillType.FIREMAKING,
+                40.0D,
+                1,
+                "firemaking:burn",
+                true,
+                true,
+                false,
+                MouseButtonType.Right,
+                MouseButtonState.Pressed,
+                java.util.List.of("Furniture_Crude_Brazier"));
+
+        assertThat(action.matchesTargetBlockId("Furniture_Crude_Brazier")).isTrue();
+        assertThat(action.matchesTargetBlockId("runetale:Furniture_Crude_Brazier")).isTrue();
+        assertThat(action.matchesTargetBlockId("Furniture_Crude_Torch")).isFalse();
     }
 
     private static void write(Path root, String relativePath, String content) throws IOException {
