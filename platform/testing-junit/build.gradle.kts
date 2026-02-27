@@ -3,6 +3,6 @@ plugins {
 }
 
 dependencies {
-    compileOnly("org.junit.jupiter:junit-jupiter-api:5.14.3")
+    compileOnly(libs.junit.jupiter.api)
     api(project(":platform:testing-core"))
 }

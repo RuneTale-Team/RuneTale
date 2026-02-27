@@ -3,23 +3,21 @@ import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.language.jvm.tasks.ProcessResources
 
 plugins {
     // Shadow makes “fat jars” (bundle your dependencies)
-    id("com.gradleup.shadow") version "9.3.1" apply false
+    alias(libs.plugins.shadow) apply false
     // java apply false
     // `java-library` apply false
 }
 
 val vineflower by configurations.creating
-
-val junitBomVersion = "5.14.3"
-val mockitoVersion = "5.21.0"
-val assertjVersion = "3.27.7"
+val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
 dependencies {
-    vineflower("org.vineflower:vineflower:1.11.2")
+    vineflower(libsCatalog.findLibrary("vineflower").get())
 }
 
 val runDir = layout.projectDirectory.dir("run")
@@ -33,14 +31,6 @@ val filteredJar = layout.buildDirectory.file("tmp/HytaleServer-com-hypixel.jar")
 allprojects {
     group = providers.gradleProperty("group").get()
     version = providers.gradleProperty("version").get()
-
-    repositories {
-        mavenCentral()
-
-        // Official Hytale maven repos (release + pre-release)
-        maven("https://maven.hytale.com/release")
-    }
-
 }
 
 subprojects {
@@ -91,12 +81,12 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
         "testImplementation"(project(":platform:testing-ecs"))
         "testImplementation"(project(":platform:testing-junit"))
 
-        "testImplementation"(platform("org.junit:junit-bom:$junitBomVersion"))
-        "testImplementation"("org.junit.jupiter:junit-jupiter")
-        "testImplementation"("org.mockito:mockito-core:$mockitoVersion")
-        "testImplementation"("org.mockito:mockito-junit-jupiter:$mockitoVersion")
-        "testImplementation"("org.assertj:assertj-core:$assertjVersion")
-        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+        "testImplementation"(platform(libsCatalog.findLibrary("junit-bom").get()))
+        "testImplementation"(libsCatalog.findLibrary("junit-jupiter").get())
+        "testImplementation"(libsCatalog.findLibrary("mockito-core").get())
+        "testImplementation"(libsCatalog.findLibrary("mockito-junit-jupiter").get())
+        "testImplementation"(libsCatalog.findLibrary("assertj-core").get())
+        "testRuntimeOnly"(libsCatalog.findLibrary("junit-platform-launcher").get())
     }
 
 
@@ -123,16 +113,30 @@ configure(subprojects.filter { it.path.startsWith(":plugins:") }) {
     }
 }
 
+val skillsFeatureProjects = subprojects.filter {
+    (it.path == ":plugins:skills" || it.path.startsWith(":plugins:skills-")) && it.path != ":plugins:skills-api"
+}
+
+configure(skillsFeatureProjects) {
+    tasks.named("compileJava") {
+        dependsOn(":plugins:skills-api:shadowJar")
+    }
+
+    tasks.named("compileTestJava") {
+        dependsOn(":plugins:skills-api:shadowJar")
+    }
+}
+
 // Shared conventions for testing framework modules (":platform:testing-*")
 configure(subprojects.filter { it.path.startsWith(":platform:testing-") }) {
     plugins.withType<JavaPlugin> {
         dependencies {
-            "testImplementation"(platform("org.junit:junit-bom:$junitBomVersion"))
-            "testImplementation"("org.junit.jupiter:junit-jupiter")
-            "testImplementation"("org.mockito:mockito-core:$mockitoVersion")
-            "testImplementation"("org.mockito:mockito-junit-jupiter:$mockitoVersion")
-            "testImplementation"("org.assertj:assertj-core:$assertjVersion")
-            "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+            "testImplementation"(platform(libsCatalog.findLibrary("junit-bom").get()))
+            "testImplementation"(libsCatalog.findLibrary("junit-jupiter").get())
+            "testImplementation"(libsCatalog.findLibrary("mockito-core").get())
+            "testImplementation"(libsCatalog.findLibrary("mockito-junit-jupiter").get())
+            "testImplementation"(libsCatalog.findLibrary("assertj-core").get())
+            "testRuntimeOnly"(libsCatalog.findLibrary("junit-platform-launcher").get())
         }
 
         tasks.withType<Test>().configureEach {
