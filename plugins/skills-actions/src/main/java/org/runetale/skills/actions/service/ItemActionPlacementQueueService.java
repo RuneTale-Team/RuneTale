@@ -1,5 +1,7 @@
 package org.runetale.skills.actions.service;
 
+import org.runetale.skills.config.ItemActionsConfig;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -19,6 +21,26 @@ public class ItemActionPlacementQueueService {
             @Nullable String expectedCurrentBlockId,
             @Nonnull String replacementBlockId,
             long applyAtMillis) {
+        queue(
+                worldName,
+                x,
+                y,
+                z,
+                expectedCurrentBlockId,
+                replacementBlockId,
+                ItemActionsConfig.BlockApplyMode.SET_BLOCK,
+                applyAtMillis);
+    }
+
+    public void queue(
+            @Nonnull String worldName,
+            int x,
+            int y,
+            int z,
+            @Nullable String expectedCurrentBlockId,
+            @Nullable String replacementBlockId,
+            @Nonnull ItemActionsConfig.BlockApplyMode applyMode,
+            long applyAtMillis) {
         BlockPositionKey key = new BlockPositionKey(worldName, x, y, z);
         this.placementsByPosition.put(
                 key,
@@ -26,6 +48,7 @@ public class ItemActionPlacementQueueService {
                         key,
                         expectedCurrentBlockId,
                         replacementBlockId,
+                        applyMode,
                         applyAtMillis));
     }
 
@@ -57,7 +80,13 @@ public class ItemActionPlacementQueueService {
     public record PendingPlacement(
             @Nonnull BlockPositionKey position,
             @Nullable String expectedCurrentBlockId,
-            @Nonnull String replacementBlockId,
+            @Nullable String replacementBlockId,
+            @Nonnull ItemActionsConfig.BlockApplyMode applyMode,
             long applyAtMillis) {
+
+        public PendingPlacement {
+            applyMode = applyMode == null ? ItemActionsConfig.BlockApplyMode.SET_BLOCK : applyMode;
+            replacementBlockId = replacementBlockId == null ? "" : replacementBlockId.trim();
+        }
     }
 }

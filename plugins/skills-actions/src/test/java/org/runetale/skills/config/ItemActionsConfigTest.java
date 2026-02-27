@@ -55,6 +55,9 @@ class ItemActionsConfigTest {
                       "replaceTargetBlockId": "Furniture_Crude_Brazier",
                       "replaceTargetBlockDelayMillis": 1200,
                       "requireTargetBlockMatchForReplacement": false,
+                      "despawnDelayMillis": 30000,
+                      "despawnApplyMode": "NATURAL_REMOVE",
+                      "requireTargetBlockMatchForDespawn": false,
                       "trigger": {
                         "mouseButton": "Middle",
                         "mouseState": "Released"
@@ -65,6 +68,18 @@ class ItemActionsConfigTest {
                       "itemId": "RuneTale_Bones",
                       "skill": "unknown",
                       "xp": 5.0
+                    }
+                  ],
+                  "placementDespawnRules": [
+                    {
+                      "id": "placed_logs",
+                      "targetBlockIds": [
+                        "RuneTale_Log"
+                      ],
+                      "delayMillis": 30000,
+                      "applyMode": "SET_BLOCK",
+                      "setBlockId": "Empty",
+                      "requireTargetBlockMatch": true
                     }
                   ],
                   "debug": {
@@ -92,6 +107,16 @@ class ItemActionsConfigTest {
         assertThat(action.replaceTargetBlockId()).isEqualTo("Furniture_Crude_Brazier");
         assertThat(action.replaceTargetBlockDelayMillis()).isEqualTo(1200L);
         assertThat(action.requireTargetBlockMatchForReplacement()).isFalse();
+        assertThat(action.despawnDelayMillis()).isEqualTo(30000L);
+        assertThat(action.despawnApplyMode()).isEqualTo(ItemActionsConfig.BlockApplyMode.NATURAL_REMOVE);
+        assertThat(action.requireTargetBlockMatchForDespawn()).isFalse();
+        assertThat(config.placementDespawnRules()).hasSize(1);
+        ItemActionsConfig.PlacementDespawnRule placementRule = config.placementDespawnRules().getFirst();
+        assertThat(placementRule.id()).isEqualTo("placed_logs");
+        assertThat(placementRule.delayMillis()).isEqualTo(30000L);
+        assertThat(placementRule.applyMode()).isEqualTo(ItemActionsConfig.BlockApplyMode.SET_BLOCK);
+        assertThat(placementRule.setBlockId()).isEqualTo("Empty");
+        assertThat(placementRule.matchesTargetBlockId("RuneTale_Log")).isTrue();
         assertThat(config.debugPluginKey()).isEqualTo("skills-prayer");
     }
 
