@@ -7,6 +7,7 @@ import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Int
 import org.runetale.skills.actions.config.ItemActionsExternalConfigBootstrap;
 import org.runetale.skills.actions.interaction.ConsumeSkillActionInteraction;
 import org.runetale.skills.actions.service.ItemActionPlacementQueueService;
+import org.runetale.skills.actions.system.ItemActionPlacementDespawnSystem;
 import org.runetale.skills.actions.system.ItemActionPendingPlacementSystem;
 import org.runetale.skills.api.SkillsRuntimeApi;
 import org.runetale.skills.api.SkillsRuntimeRegistry;
@@ -49,6 +50,9 @@ public class ActionsSkillsPlugin extends JavaPlugin {
         ItemActionsRuntimeRegistry.register(this.itemActionsConfig);
         ItemActionsRuntimeRegistry.registerPlacementQueueService(this.placementQueueService);
         this.getEntityStoreRegistry().registerSystem(new ItemActionPendingPlacementSystem(this.placementQueueService));
+        this.getEntityStoreRegistry().registerSystem(new ItemActionPlacementDespawnSystem(
+                this.placementQueueService,
+                this.itemActionsConfig));
 
         SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
         if (runtimeApi != null && this.itemActionsConfig != null && runtimeApi.isDebugEnabled(this.itemActionsConfig.debugPluginKey())) {

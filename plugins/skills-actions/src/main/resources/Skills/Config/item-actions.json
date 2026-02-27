@@ -62,6 +62,9 @@
       "targetBlockIds": [
         "RuneTale_Fire"
       ],
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -81,6 +84,9 @@
       "targetBlockIds": [
         "RuneTale_Fire"
       ],
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -100,6 +106,9 @@
       "targetBlockIds": [
         "RuneTale_Fire"
       ],
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -119,6 +128,9 @@
       "targetBlockIds": [
         "RuneTale_Fire"
       ],
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -138,6 +150,9 @@
       "targetBlockIds": [
         "RuneTale_Fire"
       ],
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -157,6 +172,9 @@
       "targetBlockIds": [
         "RuneTale_Fire"
       ],
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -179,6 +197,9 @@
       "replaceTargetBlockId": "RuneTale_Fire",
       "replaceTargetBlockDelayMillis": 0,
       "requireTargetBlockMatchForReplacement": true,
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -201,6 +222,9 @@
       "replaceTargetBlockId": "RuneTale_Fire",
       "replaceTargetBlockDelayMillis": 0,
       "requireTargetBlockMatchForReplacement": true,
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -223,6 +247,9 @@
       "replaceTargetBlockId": "RuneTale_Fire",
       "replaceTargetBlockDelayMillis": 0,
       "requireTargetBlockMatchForReplacement": true,
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -245,6 +272,9 @@
       "replaceTargetBlockId": "RuneTale_Fire",
       "replaceTargetBlockDelayMillis": 0,
       "requireTargetBlockMatchForReplacement": true,
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -267,6 +297,9 @@
       "replaceTargetBlockId": "RuneTale_Fire",
       "replaceTargetBlockDelayMillis": 0,
       "requireTargetBlockMatchForReplacement": true,
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
@@ -289,10 +322,31 @@
       "replaceTargetBlockId": "RuneTale_Fire",
       "replaceTargetBlockDelayMillis": 0,
       "requireTargetBlockMatchForReplacement": true,
+      "despawnDelayMillis": 30000,
+      "despawnApplyMode": "NATURAL_REMOVE",
+      "requireTargetBlockMatchForDespawn": true,
       "trigger": {
         "mouseButton": "Right",
         "mouseState": "Pressed"
       }
+    }
+  ],
+  "placementDespawnRules": [
+    {
+      "id": "firemaking_placed_logs",
+      "enabled": true,
+      "targetBlockIds": [
+        "RuneTale_Log",
+        "RuneTale_Oak_Log",
+        "RuneTale_Willow_Log",
+        "RuneTale_Maple_Log",
+        "RuneTale_Yew_Log",
+        "RuneTale_Magic_Log"
+      ],
+      "delayMillis": 30000,
+      "applyMode": "SET_BLOCK",
+      "setBlockId": "Empty",
+      "requireTargetBlockMatch": true
     }
   ],
   "debug": {

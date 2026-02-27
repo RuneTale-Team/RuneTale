@@ -134,7 +134,7 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             return;
         }
 
-        queueTargetBlockReplacement(context, store, action, targetBlockId, runtimeApi, itemActionsConfig);
+        queueActionTargetChanges(context, store, action, targetBlockId, runtimeApi, itemActionsConfig);
 
         context.getState().state = InteractionState.Finished;
         LOGGER.atInfo().log("[Skills Actions] Applied action=%s interaction=%s item=%s qty=%d", action.id(), interactionType, heldItem.getItemId(), action.consumeQuantity());
@@ -194,14 +194,14 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
         return blockType.getId();
     }
 
-    private static void queueTargetBlockReplacement(
+    private static void queueActionTargetChanges(
             @Nonnull InteractionContext context,
             @Nonnull Store<EntityStore> store,
             @Nonnull ItemActionsConfig.ItemXpActionDefinition action,
             @Nullable String resolvedTargetBlockId,
             @Nonnull SkillsRuntimeApi runtimeApi,
             @Nonnull ItemActionsConfig config) {
-        if (!action.hasTargetBlockReplacement()) {
+        if (!action.hasTargetBlockReplacement() && !action.hasDespawnAction()) {
             return;
         }
 
@@ -223,29 +223,84 @@ public final class ConsumeSkillActionInteraction extends SimpleInstantInteractio
             return;
         }
 
-        String expectedBlockId = action.requireTargetBlockMatchForReplacement()
-                ? resolvedTargetBlockId
+        long nowMillis = System.currentTimeMillis();
+        String blockIdAfterReplacement = resolvedTargetBlockId;
+
+        if (action.hasTargetBlockReplacement()) {
+            String expectedBlockId = action.requireTargetBlockMatchForReplacement()
+                    ? resolvedTargetBlockId
+                    : null;
+            long replaceDelayMillis = action.replaceTargetBlockDelayMillis();
+            if (replaceDelayMillis <= 0L) {
+                world.setBlock(
+                        targetBlock.x,
+                        targetBlock.y,
+                        targetBlock.z,
+                        action.replaceTargetBlockId());
+                blockIdAfterReplacement = action.replaceTargetBlockId();
+                debugLog(
+                        runtimeApi,
+                        config,
+                        "Applied immediate replacement action id=%s world=%s pos=%d,%d,%d block=%s",
+                        action.id(),
+                        world.getName(),
+                        targetBlock.x,
+                        targetBlock.y,
+                        targetBlock.z,
+                        action.replaceTargetBlockId());
+            } else {
+                placementQueueService.queue(
+                        world.getName(),
+                        targetBlock.x,
+                        targetBlock.y,
+                        targetBlock.z,
+                        expectedBlockId,
+                        action.replaceTargetBlockId(),
+                        ItemActionsConfig.BlockApplyMode.SET_BLOCK,
+                        nowMillis + replaceDelayMillis);
+                blockIdAfterReplacement = action.replaceTargetBlockId();
+                debugLog(
+                        runtimeApi,
+                        config,
+                        "Queued replacement action id=%s world=%s pos=%d,%d,%d block=%s delay=%d",
+                        action.id(),
+                        world.getName(),
+                        targetBlock.x,
+                        targetBlock.y,
+                        targetBlock.z,
+                        action.replaceTargetBlockId(),
+                        replaceDelayMillis);
+            }
+        }
+
+        if (!action.hasDespawnAction()) {
+            return;
+        }
+
+        String expectedDespawnBlockId = action.requireTargetBlockMatchForDespawn()
+                ? blockIdAfterReplacement
                 : null;
-        long applyAtMillis = System.currentTimeMillis() + action.replaceTargetBlockDelayMillis();
         placementQueueService.queue(
                 world.getName(),
                 targetBlock.x,
                 targetBlock.y,
                 targetBlock.z,
-                expectedBlockId,
-                action.replaceTargetBlockId(),
-                applyAtMillis);
+                expectedDespawnBlockId,
+                action.despawnSetBlockId(),
+                action.despawnApplyMode(),
+                nowMillis + action.despawnDelayMillis());
         debugLog(
                 runtimeApi,
                 config,
-                "Queued replacement action id=%s world=%s pos=%d,%d,%d block=%s delay=%d",
+                "Queued despawn action id=%s world=%s pos=%d,%d,%d mode=%s block=%s delay=%d",
                 action.id(),
                 world.getName(),
                 targetBlock.x,
                 targetBlock.y,
                 targetBlock.z,
-                action.replaceTargetBlockId(),
-                action.replaceTargetBlockDelayMillis());
+                action.despawnApplyMode(),
+                action.despawnSetBlockId(),
+                action.despawnDelayMillis());
     }
 
     private static void debugLog(

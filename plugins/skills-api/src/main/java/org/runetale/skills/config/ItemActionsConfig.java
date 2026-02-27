@@ -18,6 +18,7 @@ import java.util.Set;
 
 public record ItemActionsConfig(
         @Nonnull List<ItemXpActionDefinition> actions,
+        @Nonnull List<PlacementDespawnRule> placementDespawnRules,
         @Nonnull String debugPluginKey) {
 
     private static final String RESOURCE_PATH = "Skills/Config/item-actions.json";
@@ -29,7 +30,19 @@ public record ItemActionsConfig(
 
         return new ItemActionsConfig(
                 parseActions(root.get("actions")),
+                parsePlacementDespawnRules(root.get("placementDespawnRules")),
                 ConfigResourceLoader.stringValue(debugConfig, "pluginKey", "skills-actions"));
+    }
+
+    public ItemActionsConfig {
+        actions = actions == null ? List.of() : List.copyOf(actions);
+        placementDespawnRules = placementDespawnRules == null ? List.of() : List.copyOf(placementDespawnRules);
+    }
+
+    public ItemActionsConfig(
+            @Nonnull List<ItemXpActionDefinition> actions,
+            @Nonnull String debugPluginKey) {
+        this(actions, List.of(), debugPluginKey);
     }
 
     @Nonnull
@@ -80,6 +93,12 @@ public record ItemActionsConfig(
         String replaceTargetBlockId = ConfigResourceLoader.stringValue(actionObject, "replaceTargetBlockId", "").trim();
         long replaceTargetBlockDelayMillis = Math.max(0L, ConfigResourceLoader.longValue(actionObject, "replaceTargetBlockDelayMillis", 0L));
         boolean requireTargetBlockMatchForReplacement = ConfigResourceLoader.booleanValue(actionObject, "requireTargetBlockMatchForReplacement", true);
+        long despawnDelayMillis = Math.max(0L, ConfigResourceLoader.longValue(actionObject, "despawnDelayMillis", 0L));
+        BlockApplyMode despawnApplyMode = parseBlockApplyMode(
+                ConfigResourceLoader.stringValue(actionObject, "despawnApplyMode", BlockApplyMode.SET_BLOCK.name()),
+                BlockApplyMode.SET_BLOCK);
+        String despawnSetBlockId = ConfigResourceLoader.stringValue(actionObject, "despawnSetBlockId", "Empty").trim();
+        boolean requireTargetBlockMatchForDespawn = ConfigResourceLoader.booleanValue(actionObject, "requireTargetBlockMatchForDespawn", true);
 
         if (itemId.isBlank() || skillType == null || experience <= 0.0D) {
             return null;
@@ -109,7 +128,72 @@ public record ItemActionsConfig(
                 targetBlockIds,
                 replaceTargetBlockId,
                 replaceTargetBlockDelayMillis,
-                requireTargetBlockMatchForReplacement);
+                requireTargetBlockMatchForReplacement,
+                despawnDelayMillis,
+                despawnApplyMode,
+                despawnSetBlockId,
+                requireTargetBlockMatchForDespawn);
+    }
+
+    @Nonnull
+    private static List<PlacementDespawnRule> parsePlacementDespawnRules(@Nullable JsonElement element) {
+        List<PlacementDespawnRule> parsed = new ArrayList<>();
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+
+        if (element.isJsonArray()) {
+            int index = 0;
+            for (JsonElement entry : element.getAsJsonArray()) {
+                if (entry == null || !entry.isJsonObject()) {
+                    index++;
+                    continue;
+                }
+
+                PlacementDespawnRule rule = parsePlacementDespawnRule(entry.getAsJsonObject(), index++);
+                if (rule != null) {
+                    parsed.add(rule);
+                }
+            }
+            return List.copyOf(parsed);
+        }
+
+        if (element.isJsonObject()) {
+            PlacementDespawnRule rule = parsePlacementDespawnRule(element.getAsJsonObject(), 0);
+            if (rule != null) {
+                parsed.add(rule);
+            }
+        }
+        return List.copyOf(parsed);
+    }
+
+    @Nullable
+    private static PlacementDespawnRule parsePlacementDespawnRule(@Nonnull JsonObject ruleObject, int index) {
+        String id = ConfigResourceLoader.stringValue(ruleObject, "id", "placement_despawn_" + index);
+        boolean enabled = ConfigResourceLoader.booleanValue(ruleObject, "enabled", true);
+        List<String> targetBlockIds = parseTargetBlockIds(ruleObject);
+        long delayMillis = Math.max(0L, ConfigResourceLoader.longValue(ruleObject, "delayMillis", 0L));
+        BlockApplyMode applyMode = parseBlockApplyMode(
+                ConfigResourceLoader.stringValue(ruleObject, "applyMode", BlockApplyMode.SET_BLOCK.name()),
+                BlockApplyMode.SET_BLOCK);
+        String setBlockId = ConfigResourceLoader.stringValue(ruleObject, "setBlockId", "Empty").trim();
+        boolean requireTargetBlockMatch = ConfigResourceLoader.booleanValue(ruleObject, "requireTargetBlockMatch", true);
+
+        if (targetBlockIds.isEmpty() || delayMillis <= 0L) {
+            return null;
+        }
+        if (applyMode == BlockApplyMode.SET_BLOCK && setBlockId.isBlank()) {
+            return null;
+        }
+
+        return new PlacementDespawnRule(
+                id,
+                enabled,
+                targetBlockIds,
+                delayMillis,
+                applyMode,
+                setBlockId,
+                requireTargetBlockMatch);
     }
 
     @Nonnull
@@ -179,6 +263,64 @@ public record ItemActionsConfig(
         return defaultValue;
     }
 
+    @Nonnull
+    private static BlockApplyMode parseBlockApplyMode(@Nullable String raw, @Nonnull BlockApplyMode defaultValue) {
+        if (raw == null || raw.isBlank()) {
+            return defaultValue;
+        }
+
+        String normalized = raw.trim();
+        for (BlockApplyMode candidate : BlockApplyMode.values()) {
+            if (candidate.name().equalsIgnoreCase(normalized)) {
+                return candidate;
+            }
+        }
+        return defaultValue;
+    }
+
+    public enum BlockApplyMode {
+        SET_BLOCK,
+        NATURAL_REMOVE
+    }
+
+    public record PlacementDespawnRule(
+            @Nonnull String id,
+            boolean enabled,
+            @Nonnull List<String> targetBlockIds,
+            long delayMillis,
+            @Nonnull BlockApplyMode applyMode,
+            @Nullable String setBlockId,
+            boolean requireTargetBlockMatch) {
+
+        public PlacementDespawnRule {
+            targetBlockIds = targetBlockIds == null || targetBlockIds.isEmpty() ? List.of() : List.copyOf(targetBlockIds);
+            delayMillis = Math.max(0L, delayMillis);
+            applyMode = applyMode == null ? BlockApplyMode.SET_BLOCK : applyMode;
+            setBlockId = setBlockId == null ? "" : setBlockId.trim();
+        }
+
+        public boolean hasDespawnAction() {
+            if (!this.enabled || this.delayMillis <= 0L) {
+                return false;
+            }
+            return this.applyMode == BlockApplyMode.NATURAL_REMOVE || !this.setBlockId.isBlank();
+        }
+
+        public boolean matchesTargetBlockId(@Nullable String targetBlockId) {
+            if (this.targetBlockIds.isEmpty() || targetBlockId == null) {
+                return false;
+            }
+
+            for (String configuredBlockId : this.targetBlockIds) {
+                if (ItemXpActionDefinition.idsMatch(configuredBlockId, targetBlockId)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     public record ItemXpActionDefinition(
             @Nonnull String id,
             boolean enabled,
@@ -195,12 +337,19 @@ public record ItemActionsConfig(
             @Nonnull List<String> targetBlockIds,
             @Nullable String replaceTargetBlockId,
             long replaceTargetBlockDelayMillis,
-            boolean requireTargetBlockMatchForReplacement) {
+            boolean requireTargetBlockMatchForReplacement,
+            long despawnDelayMillis,
+            @Nonnull BlockApplyMode despawnApplyMode,
+            @Nullable String despawnSetBlockId,
+            boolean requireTargetBlockMatchForDespawn) {
 
         public ItemXpActionDefinition {
             targetBlockIds = targetBlockIds == null || targetBlockIds.isEmpty() ? List.of() : List.copyOf(targetBlockIds);
             replaceTargetBlockId = replaceTargetBlockId == null ? "" : replaceTargetBlockId.trim();
             replaceTargetBlockDelayMillis = Math.max(0L, replaceTargetBlockDelayMillis);
+            despawnDelayMillis = Math.max(0L, despawnDelayMillis);
+            despawnApplyMode = despawnApplyMode == null ? BlockApplyMode.SET_BLOCK : despawnApplyMode;
+            despawnSetBlockId = despawnSetBlockId == null ? "" : despawnSetBlockId.trim();
         }
 
         public ItemXpActionDefinition(
@@ -233,6 +382,10 @@ public record ItemActionsConfig(
                     targetBlockIds,
                     "",
                     0L,
+                    true,
+                    0L,
+                    BlockApplyMode.SET_BLOCK,
+                    "",
                     true);
         }
 
@@ -265,6 +418,10 @@ public record ItemActionsConfig(
                     List.of(),
                     "",
                     0L,
+                    true,
+                    0L,
+                    BlockApplyMode.SET_BLOCK,
+                    "",
                     true);
         }
 
@@ -274,6 +431,13 @@ public record ItemActionsConfig(
 
         public boolean hasTargetBlockReplacement() {
             return !this.replaceTargetBlockId.isBlank();
+        }
+
+        public boolean hasDespawnAction() {
+            if (this.despawnDelayMillis <= 0L) {
+                return false;
+            }
+            return this.despawnApplyMode == BlockApplyMode.NATURAL_REMOVE || !this.despawnSetBlockId.isBlank();
         }
 
         public boolean matchesInteractionType(@Nonnull InteractionType interactionType) {
