@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "protectBlockBreakDrops": true,
+  "protectKillDrops": true,
+  "blockOwnership": {
+    "enabled": true,
+    "inactivityResetMillis": 3000,
+    "notifyCooldownMillis": 1500
+  },
+  "dropClaim": {
+    "windowMillis": 800,
+    "matchRadius": 3.0
+  },
+  "ownerLock": {
+    "enabled": true,
+    "timeoutMillis": 15000,
+    "retryIntervalMillis": 250,
+    "inventoryFullNotifyCooldownMillis": 2000
+  }
+}

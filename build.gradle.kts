@@ -215,6 +215,10 @@ val blockRegenConfigResourceDirs = listOf(
     layout.projectDirectory.dir("plugins/block-regeneration/src/main/resources/BlockRegen")
 )
 val blockRegenConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/block-regeneration")
+val lootProtectionConfigResourceDirs = listOf(
+    layout.projectDirectory.dir("plugins/loot-protection/src/main/resources/LootProtection")
+)
+val lootProtectionConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/loot-protection")
 
 tasks.register<Sync>("deploySkillsConfigToRun") {
     from(skillsConfigResourceDirs)
@@ -231,6 +235,15 @@ tasks.register<Sync>("deployBlockRegenConfigToRun") {
 
     doLast {
         println("Synced block regeneration config to ${blockRegenConfigRunDir.asFile}")
+    }
+}
+
+tasks.register<Sync>("deployLootProtectionConfigToRun") {
+    from(lootProtectionConfigResourceDirs)
+    into(lootProtectionConfigRunDir)
+
+    doLast {
+        println("Synced loot protection config to ${lootProtectionConfigRunDir.asFile}")
     }
 }
 
@@ -268,6 +281,10 @@ tasks.register<Zip>("bundleModsRelease") {
     from(blockRegenConfigResourceDirs) {
         into("runetale/config/block-regeneration")
     }
+
+    from(lootProtectionConfigResourceDirs) {
+        into("runetale/config/loot-protection")
+    }
 }
 
 tasks.register("deployPluginsToRun") {
@@ -276,6 +293,7 @@ tasks.register("deployPluginsToRun") {
     dependsOn(pluginProjects.map { it.tasks.named("shadowJar") })
     dependsOn("deploySkillsConfigToRun")
     dependsOn("deployBlockRegenConfigToRun")
+    dependsOn("deployLootProtectionConfigToRun")
 
     doLast {
         copy {
