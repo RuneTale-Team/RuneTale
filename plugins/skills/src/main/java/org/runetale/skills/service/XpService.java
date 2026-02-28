@@ -67,16 +67,14 @@ public class XpService {
 
 	private static int[] buildThresholds(@Nonnull XpConfig config) {
 		int[] thresholds = new int[config.maxLevel() + 1];
+		thresholds[1] = 0;
 		int points = 0;
-		for (int level = 1; level <= config.maxLevel(); level++) {
+		for (int level = 2; level <= config.maxLevel(); level++) {
+			int previousLevel = level - 1;
 			points += (int) Math.floor(
-					(config.levelTermMultiplier() * (double) level)
-							+ config.growthScale() * Math.pow(config.growthBase(), (double) level / config.growthDivisor()));
-			if (level == 1) {
-				thresholds[level] = 0;
-			} else {
-				thresholds[level] = points / config.pointsDivisor();
-			}
+					(config.levelTermMultiplier() * (double) previousLevel)
+							+ config.growthScale() * Math.pow(config.growthBase(), (double) previousLevel / config.growthDivisor()));
+			thresholds[level] = points / config.pointsDivisor();
 		}
 		return thresholds;
 	}
