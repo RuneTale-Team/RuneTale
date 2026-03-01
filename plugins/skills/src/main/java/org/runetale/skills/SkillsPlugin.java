@@ -4,6 +4,7 @@ import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.logger.HytaleLogger;
+import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -25,6 +26,7 @@ import org.runetale.skills.service.SkillSessionStatsService;
 import org.runetale.skills.service.SkillXpToastHudService;
 import org.runetale.skills.service.XpService;
 import org.runetale.skills.system.EnsurePlayerSkillProfileSystem;
+import org.runetale.skills.system.PlayerDisconnectInventoryHardeningListener;
 import org.runetale.skills.system.PlayerSessionCleanupSystem;
 import org.runetale.skills.system.SkillXpToastHudExpirySystem;
 
@@ -209,6 +211,10 @@ public class SkillsPlugin extends JavaPlugin implements SkillsRuntimeApi {
         this.getCommandRegistry().registerCommand(new SkillXpCommand(this.xpDispatchService));
         this.getCommandRegistry().registerCommand(new RtDebugCommand(this.debugModeService));
         registerSystems();
+
+        PlayerDisconnectInventoryHardeningListener inventoryHardeningListener = new PlayerDisconnectInventoryHardeningListener();
+        this.getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, inventoryHardeningListener::handle);
+
         SkillsRuntimeRegistry.register(this);
 
         LOGGER.atInfo().log("Skills runtime setup complete.");
