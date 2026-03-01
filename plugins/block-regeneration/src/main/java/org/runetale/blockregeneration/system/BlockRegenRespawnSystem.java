@@ -10,6 +10,8 @@ import org.runetale.blockregeneration.service.BlockRegenRuntimeService;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BlockRegenRespawnSystem extends DelayedSystem<EntityStore> {
 
@@ -17,12 +19,12 @@ public class BlockRegenRespawnSystem extends DelayedSystem<EntityStore> {
     private static final float BASE_POLL_INTERVAL_SECONDS = 0.1F;
 
     private final BlockRegenCoordinatorService coordinatorService;
-    private long nextPollAtMillis;
+    private final Map<String, Long> nextPollAtMillisByWorld;
 
     public BlockRegenRespawnSystem(@Nonnull BlockRegenCoordinatorService coordinatorService) {
         super(BASE_POLL_INTERVAL_SECONDS);
         this.coordinatorService = coordinatorService;
-        this.nextPollAtMillis = 0L;
+        this.nextPollAtMillisByWorld = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -31,14 +33,16 @@ public class BlockRegenRespawnSystem extends DelayedSystem<EntityStore> {
             return;
         }
 
+        World world = store.getExternalData().getWorld();
+        String worldName = world.getName();
         long now = System.currentTimeMillis();
-        if (now < this.nextPollAtMillis) {
+        Long nextPollAtMillis = this.nextPollAtMillisByWorld.get(worldName);
+        if (nextPollAtMillis != null && now < nextPollAtMillis) {
             return;
         }
-        this.nextPollAtMillis = now + this.coordinatorService.respawnTickMillis();
+        this.nextPollAtMillisByWorld.put(worldName, now + this.coordinatorService.respawnTickMillis());
 
-        World world = store.getExternalData().getWorld();
-        List<BlockRegenRuntimeService.RespawnAction> actions = this.coordinatorService.pollDueRespawns(world.getName(), now);
+        List<BlockRegenRuntimeService.RespawnAction> actions = this.coordinatorService.pollDueRespawns(worldName, now);
         for (BlockRegenRuntimeService.RespawnAction action : actions) {
             try {
                 world.setBlock(action.x(), action.y(), action.z(), action.sourceBlockId());
