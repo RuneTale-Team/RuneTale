@@ -23,31 +23,40 @@ import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 /**
- * Custom UI page for smithing at the RuneTale anvil.
+ * Custom UI page for all fletching stations (knife, bowstring, arrow shaft, headless arrow, spinning wheel).
+ *
+ * <p>
+ * A single tabless page configurable per station via {@code stationTitle}, {@code benchId}, and {@code categories}.
  */
-public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.SmithingPageEventData> {
+public class FletchingPage extends AbstractTimedCraftingPage<FletchingPage.FletchingPageEventData> {
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-	private static final String UI_PATH = "SkillsPlugin/Smithing.ui";
+	private static final String UI_PATH = "SkillsPlugin/Fletching.ui";
 	private static final String RECIPE_CARD_TEMPLATE = "SkillsPlugin/SmithingRecipeGridCard.ui";
 	private static final String CARD_ROW_INLINE = "Group { LayoutMode: Left; Anchor: (Bottom: 10); }";
 	private static final String CARD_COLUMN_SPACER_INLINE = "Group { Anchor: (Width: 10); }";
 
-	private final CraftingConfig craftingConfig;
+	private final String stationTitle;
+	private final String benchId;
+	private final List<String> categories;
 
-	public SmithingPage(
+	public FletchingPage(
 			@Nonnull PlayerRef playerRef,
-			@Nonnull BlockPosition blockPosition,
+			@Nullable BlockPosition blockPosition,
 			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
 			@Nonnull CraftingPageTrackerService craftingPageTrackerService,
-			@Nonnull CraftingConfig craftingConfig) {
+			@Nonnull CraftingConfig craftingConfig,
+			@Nonnull String stationTitle,
+			@Nonnull String benchId,
+			@Nonnull List<String> categories) {
 		super(
 				playerRef,
 				blockPosition,
@@ -56,12 +65,14 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 				craftingPageTrackerService,
 				craftingConfig,
 				UI_PATH,
-				"smithing",
-				"Smithing",
-				craftingConfig.smithingCraftDurationMillis(),
-				SkillType.SMITHING,
-				SmithingPageEventData.CODEC);
-		this.craftingConfig = craftingConfig;
+				"fletching",
+				"Fletching",
+				craftingConfig.fletchingCraftDurationMillis(),
+				SkillType.FLETCHING,
+				FletchingPageEventData.CODEC);
+		this.stationTitle = stationTitle;
+		this.benchId = benchId;
+		this.categories = List.copyOf(categories);
 	}
 
 	@Override
@@ -76,9 +87,9 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 				runtimeApi(),
 				craftingRecipeTagService(),
 				LOGGER,
-				"Crafted",
-				"smith",
-				SkillType.SMITHING);
+				"Fletched",
+				"fletch",
+				SkillType.FLETCHING);
 	}
 
 	@Override
@@ -93,15 +104,7 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 			@Nonnull UICommandBuilder commandBuilder,
 			@Nonnull UIEventBuilder eventBuilder) {
 		Player player = store.getComponent(ref, Player.getComponentType());
-		int smithingLevel = runtimeApi().getSkillLevel(store, ref, SkillType.SMITHING);
-
-		for (SmithingMaterialTier tier : SmithingMaterialTier.values()) {
-			String selector = "#Tier" + tier.getDisplayName();
-			boolean selected = tier == selectedTier();
-			commandBuilder.set(selector + ".Text", tier.getDisplayName());
-			commandBuilder.set(selector + "Indicator.Visible", selected);
-			commandBuilder.set(selector + "Selected.Visible", selected);
-		}
+		int fletchingLevel = runtimeApi().getSkillLevel(store, ref, SkillType.FLETCHING);
 
 		int selectedCraftQuantity = CraftingPageSupport.syncQuantityControls(
 				commandBuilder,
@@ -109,13 +112,10 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 				player,
 				selectedRecipeId());
 
-		commandBuilder.set("#SectionTitle.Text", selectedTier().getSectionTitle("Equipment"));
+		commandBuilder.set("#SectionTitle.Text", this.stationTitle);
 
-		commandBuilder.clear("#RecipeGrid");
-		List<CraftingRecipe> recipes = new ArrayList<>(CraftingPlugin.getBenchRecipes(
-				BenchType.Crafting, this.craftingConfig.anvilBenchId(), selectedTier().getAnvilCategory()));
-		recipes.sort(Comparator.comparingInt(recipe ->
-				CraftingPageSupport.getSmithingRequiredLevel(craftingRecipeTagService().getSkillRequirements(recipe))));
+		commandBuilder.clear("#RecipeList");
+		List<CraftingRecipe> recipes = getRecipes();
 
 		for (int i = 0; i < recipes.size(); i++) {
 			CraftingRecipe recipe = recipes.get(i);
@@ -123,14 +123,14 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 			int row = i / 2;
 			int col = i % 2;
 			if (col == 0) {
-				commandBuilder.appendInline("#RecipeGrid", CARD_ROW_INLINE);
+				commandBuilder.appendInline("#RecipeList", CARD_ROW_INLINE);
 			} else {
-				commandBuilder.appendInline("#RecipeGrid[" + row + "]", CARD_COLUMN_SPACER_INLINE);
+				commandBuilder.appendInline("#RecipeList[" + row + "]", CARD_COLUMN_SPACER_INLINE);
 			}
 
 			int uiCol = col == 0 ? 0 : 2;
-			String cardSelector = "#RecipeGrid[" + row + "][" + uiCol + "]";
-			commandBuilder.append("#RecipeGrid[" + row + "]", RECIPE_CARD_TEMPLATE);
+			String cardSelector = "#RecipeList[" + row + "][" + uiCol + "]";
+			commandBuilder.append("#RecipeList[" + row + "]", RECIPE_CARD_TEMPLATE);
 
 			boolean isSelected = recipe.getId().equals(selectedRecipeId());
 			commandBuilder.set(cardSelector + " #SelectedFrame.Visible", isSelected);
@@ -150,13 +150,13 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 			commandBuilder.set(cardSelector + " #CardXp.Text", CraftingPageSupport.getXpText(recipe, craftingRecipeTagService()));
 
 			List<SkillRequirement> requirements = craftingRecipeTagService().getSkillRequirements(recipe);
-			int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
-			boolean unlocked = smithingLevel >= requiredLevel;
+			int requiredLevel = CraftingPageSupport.getRequiredLevel(requirements, SkillType.FLETCHING);
+			boolean unlocked = fletchingLevel >= requiredLevel;
 			boolean hasMaterials = CraftingPageSupport.hasRequiredMaterials(player, recipe);
 			boolean requirementsMet = unlocked && hasMaterials;
 
 			if (!unlocked) {
-				commandBuilder.set(cardSelector + " #CardStatus.Text", "Requires Lv " + requiredLevel + " Smithing");
+				commandBuilder.set(cardSelector + " #CardStatus.Text", "Requires Lv " + requiredLevel + " Fletching");
 				commandBuilder.set(cardSelector + " #CardStatus.Style.TextColor", "#d7a6a6");
 			} else if (!hasMaterials) {
 				commandBuilder.set(cardSelector + " #CardStatus.Text", "Materials Required");
@@ -171,20 +171,20 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 		}
 
 		if (recipes.isEmpty()) {
-			commandBuilder.appendInline("#RecipeGrid", CARD_ROW_INLINE);
-			commandBuilder.append("#RecipeGrid[0]", RECIPE_CARD_TEMPLATE);
-			commandBuilder.set("#RecipeGrid[0][0] #CardName.Text", "No recipes available");
-			commandBuilder.set("#RecipeGrid[0][0] #CardIngredients.Text", "");
-			commandBuilder.set("#RecipeGrid[0][0] #CardXp.Text", "");
-			commandBuilder.set("#RecipeGrid[0][0] #CardStatus.Text", "");
-			commandBuilder.set("#RecipeGrid[0][0] #CardOutputSlot.Visible", false);
-			commandBuilder.set("#RecipeGrid[0][0] #CardOutputQuantity.Text", "");
-			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot0.Visible", false);
-			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot1.Visible", false);
-			commandBuilder.set("#RecipeGrid[0][0] #IngredientSlot2.Visible", false);
-			commandBuilder.set("#RecipeGrid[0][0] #SelectedFrame.Visible", false);
-			commandBuilder.set("#RecipeGrid[0][0] #LockOverlay.Visible", false);
-			commandBuilder.set("#RecipeGrid[0][0] #MissingMaterialsOutline.Visible", false);
+			commandBuilder.appendInline("#RecipeList", CARD_ROW_INLINE);
+			commandBuilder.append("#RecipeList[0]", RECIPE_CARD_TEMPLATE);
+			commandBuilder.set("#RecipeList[0][0] #CardName.Text", "No recipes available");
+			commandBuilder.set("#RecipeList[0][0] #CardIngredients.Text", "");
+			commandBuilder.set("#RecipeList[0][0] #CardXp.Text", "");
+			commandBuilder.set("#RecipeList[0][0] #CardStatus.Text", "");
+			commandBuilder.set("#RecipeList[0][0] #CardOutputSlot.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #CardOutputQuantity.Text", "");
+			commandBuilder.set("#RecipeList[0][0] #IngredientSlot0.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #IngredientSlot1.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #IngredientSlot2.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #SelectedFrame.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #LockOverlay.Visible", false);
+			commandBuilder.set("#RecipeList[0][0] #MissingMaterialsOutline.Visible", false);
 		}
 
 		CraftingRecipe selectedRecipe = CraftingPageSupport.resolveRecipe(selectedRecipeId());
@@ -192,14 +192,15 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 
 		boolean selectedUnlocked = false;
 		if (selectedRecipe != null) {
-			int selectedRequiredLevel = CraftingPageSupport.getSmithingRequiredLevel(craftingRecipeTagService().getSkillRequirements(selectedRecipe));
-			selectedUnlocked = smithingLevel >= selectedRequiredLevel;
+			int selectedRequiredLevel = CraftingPageSupport.getRequiredLevel(
+					craftingRecipeTagService().getSkillRequirements(selectedRecipe), SkillType.FLETCHING);
+			selectedUnlocked = fletchingLevel >= selectedRequiredLevel;
 		}
 		boolean canCraftSelected = selectedRecipe != null
 				&& selectedUnlocked
 				&& CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe);
 		if (craftingState().isCraftingInProgress()) {
-			commandBuilder.set("#StartCraftingButton.Text", "Smithing...");
+			commandBuilder.set("#StartCraftingButton.Text", "Fletching...");
 			commandBuilder.set("#StartCraftingButton.Disabled", true);
 		} else if (selectedRecipe != null && !selectedUnlocked) {
 			commandBuilder.set("#StartCraftingButton.Text", "Level Required");
@@ -211,8 +212,27 @@ public class SmithingPage extends AbstractTimedCraftingPage<SmithingPage.Smithin
 		appendProgressUi(commandBuilder);
 	}
 
-	public static class SmithingPageEventData extends TimedCraftingEventData {
-		public static final com.hypixel.hytale.codec.builder.BuilderCodec<SmithingPageEventData> CODEC =
-				TimedCraftingEventData.createCodec(SmithingPageEventData.class, SmithingPageEventData::new);
+	@Nonnull
+	@Override
+	protected List<SmithingMaterialTier> availableTiers() {
+		return List.of();
+	}
+
+	@Nonnull
+	private List<CraftingRecipe> getRecipes() {
+		List<CraftingRecipe> recipes = new ArrayList<>();
+		for (String category : this.categories) {
+			List<CraftingRecipe> categoryRecipes = CraftingPlugin.getBenchRecipes(
+					BenchType.Crafting, this.benchId, category);
+			recipes.addAll(categoryRecipes);
+		}
+		recipes.sort(Comparator.comparingInt(recipe ->
+				CraftingPageSupport.getRequiredLevel(craftingRecipeTagService().getSkillRequirements(recipe), SkillType.FLETCHING)));
+		return recipes;
+	}
+
+	public static class FletchingPageEventData extends TimedCraftingEventData {
+		public static final com.hypixel.hytale.codec.builder.BuilderCodec<FletchingPageEventData> CODEC =
+				TimedCraftingEventData.createCodec(FletchingPageEventData.class, FletchingPageEventData::new);
 	}
 }

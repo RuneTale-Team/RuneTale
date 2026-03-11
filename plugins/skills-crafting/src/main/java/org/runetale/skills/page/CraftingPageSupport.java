@@ -147,7 +147,8 @@ final class CraftingPageSupport {
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
 			@Nonnull HytaleLogger logger,
 			@Nonnull String craftVerb,
-			@Nonnull String contextName) {
+			@Nonnull String contextName,
+			@Nonnull SkillType skillType) {
 		if (selectedRecipeId == null) {
 			return false;
 		}
@@ -167,10 +168,11 @@ final class CraftingPageSupport {
 		}
 
 		List<SkillRequirement> requirements = craftingRecipeTagService.getSkillRequirements(recipe);
-		int requiredLevel = getSmithingRequiredLevel(requirements);
-		int playerLevel = runtimeApi.getSkillLevel(store, ref, SkillType.SMITHING);
+		int requiredLevel = getRequiredLevel(requirements, skillType);
+		int playerLevel = runtimeApi.getSkillLevel(store, ref, skillType);
 		if (playerLevel < requiredLevel) {
-			sendDanger(playerRef, "[Skills] You need Smithing level " + requiredLevel);
+			String skillName = skillType.name().charAt(0) + skillType.name().substring(1).toLowerCase(Locale.ROOT);
+			sendDanger(playerRef, "[Skills] You need " + skillName + " level " + requiredLevel);
 			return false;
 		}
 
@@ -523,8 +525,12 @@ final class CraftingPageSupport {
 	}
 
 	static int getSmithingRequiredLevel(@Nonnull List<SkillRequirement> requirements) {
+		return getRequiredLevel(requirements, SkillType.SMITHING);
+	}
+
+	static int getRequiredLevel(@Nonnull List<SkillRequirement> requirements, @Nonnull SkillType skill) {
 		for (SkillRequirement req : requirements) {
-			if (req.skillType() == SkillType.SMITHING) {
+			if (req.skillType() == skill) {
 				return req.requiredLevel();
 			}
 		}

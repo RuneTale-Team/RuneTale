@@ -14,6 +14,10 @@ docs/hytalemodding
 .secrets/
 **/auth.json
 **/*token*
+**/bin
+**/.classpath
+**/.project
+**/*eclipse*
 
 
 # Compiled class file

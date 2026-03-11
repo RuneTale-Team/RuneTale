@@ -30,6 +30,7 @@ import java.util.UUID;
 abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventData>
 		extends InteractiveCustomUIPage<TEventData> {
 
+	@Nullable
 	private final BlockPosition blockPosition;
 	private final SkillsRuntimeApi runtimeApi;
 	private final CraftingRecipeTagService craftingRecipeTagService;
@@ -39,6 +40,9 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 	private final String benchContextName;
 	private final String progressVerb;
 	private final long craftDurationMillis;
+
+	@Nonnull
+	private final SkillType primarySkill;
 
 	@Nonnull
 	private SmithingMaterialTier selectedTier = SmithingMaterialTier.BRONZE;
@@ -51,7 +55,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 
 	AbstractTimedCraftingPage(
 			@Nonnull PlayerRef playerRef,
-			@Nonnull BlockPosition blockPosition,
+			@Nullable BlockPosition blockPosition,
 			@Nonnull SkillsRuntimeApi runtimeApi,
 			@Nonnull CraftingRecipeTagService craftingRecipeTagService,
 			@Nonnull CraftingPageTrackerService craftingPageTrackerService,
@@ -60,6 +64,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull String benchContextName,
 			@Nonnull String progressVerb,
 			long craftDurationMillis,
+			@Nonnull SkillType primarySkill,
 			@Nonnull com.hypixel.hytale.codec.builder.BuilderCodec<TEventData> codec) {
 		super(playerRef, CustomPageLifetime.CanDismiss, codec);
 		this.blockPosition = blockPosition;
@@ -70,6 +75,7 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 		this.benchContextName = benchContextName;
 		this.progressVerb = progressVerb;
 		this.craftDurationMillis = craftDurationMillis;
+		this.primarySkill = primarySkill;
 		this.craftingState = new TimedCraftingPageState(
 				craftingConfig.maxCraftCount(),
 				craftingConfig.quantityAllToken(),
@@ -84,7 +90,9 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			@Nonnull Store<EntityStore> store) {
 		UUID worldId = store.getExternalData().getWorld().getWorldConfig().getUuid();
 		this.craftingPageTrackerService.trackOpenPage(this.playerRef.getUuid(), worldId);
-		CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, getLogger(), this.benchContextName);
+		if (this.blockPosition != null) {
+			CraftingPageSupport.initializeBenchBinding(ref, store, this.blockPosition, getLogger(), this.benchContextName);
+		}
 		commandBuilder.append(this.uiPath);
 		CraftingPageSupport.bindTierTabs(eventBuilder, availableTiers());
 		CraftingPageSupport.bindQuantityControls(eventBuilder, this.craftingState);
@@ -209,10 +217,10 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			return false;
 		}
 
-		int smithingLevel = this.runtimeApi.getSkillLevel(store, ref, SkillType.SMITHING);
+		int skillLevel = this.runtimeApi.getSkillLevel(store, ref, this.primarySkill);
 		List<SkillRequirement> requirements = this.craftingRecipeTagService.getSkillRequirements(selectedRecipe);
-		int requiredLevel = CraftingPageSupport.getSmithingRequiredLevel(requirements);
-		if (smithingLevel < requiredLevel || !CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe)) {
+		int requiredLevel = CraftingPageSupport.getRequiredLevel(requirements, this.primarySkill);
+		if (skillLevel < requiredLevel || !CraftingPageSupport.hasRequiredMaterials(player, selectedRecipe)) {
 			return false;
 		}
 
@@ -268,6 +276,11 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 	@Nonnull
 	protected final SkillsRuntimeApi runtimeApi() {
 		return this.runtimeApi;
+	}
+
+	@Nonnull
+	protected final SkillType primarySkill() {
+		return this.primarySkill;
 	}
 
 	@Nonnull
