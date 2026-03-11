@@ -15,6 +15,9 @@ docs/hytalemodding
 **/auth.json
 **/*token*
 **/bin
+**/.classpath
+**/.project
+**/*eclipse*
 
 
 # Compiled class file

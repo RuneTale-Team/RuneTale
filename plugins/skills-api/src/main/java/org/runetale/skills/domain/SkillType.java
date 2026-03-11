@@ -20,7 +20,8 @@ public enum SkillType {
 	FIREMAKING,
 	WOODCUTTING,
 	MINING,
-	SMITHING;
+	SMITHING,
+	FLETCHING;
 
 	/**
 	 * Parses a skill identity from resource/config text in a strict,

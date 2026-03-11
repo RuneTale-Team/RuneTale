@@ -62,6 +62,7 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 				"smelting",
 				"Smelting",
 				craftingConfig.smeltingCraftDurationMillis(),
+				SkillType.SMITHING,
 				SmeltingPageEventData.CODEC);
 		this.craftingConfig = craftingConfig;
 	}
@@ -79,7 +80,8 @@ public class SmeltingPage extends AbstractTimedCraftingPage<SmeltingPage.Smeltin
 				craftingRecipeTagService(),
 				LOGGER,
 				"Smelted",
-				"smelt");
+				"smelt",
+				SkillType.SMITHING);
 	}
 
 	@Override

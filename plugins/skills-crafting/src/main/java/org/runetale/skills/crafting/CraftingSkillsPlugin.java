@@ -9,8 +9,13 @@ import org.runetale.skills.api.SkillsRuntimeRegistry;
 import org.runetale.skills.config.CraftingConfig;
 import org.runetale.skills.config.SkillsPathLayout;
 import org.runetale.skills.crafting.config.CraftingExternalConfigBootstrap;
+import org.runetale.skills.interaction.OpenArrowShaftUIInteraction;
+import org.runetale.skills.interaction.OpenBowstringUIInteraction;
+import org.runetale.skills.interaction.OpenHeadlessArrowUIInteraction;
+import org.runetale.skills.interaction.OpenKnifeUIInteraction;
 import org.runetale.skills.interaction.OpenSmeltingUIInteraction;
 import org.runetale.skills.interaction.OpenSmithingUIInteraction;
+import org.runetale.skills.interaction.OpenSpinningWheelUIInteraction;
 import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 import org.runetale.skills.system.CraftingPageProgressSystem;
@@ -65,6 +70,16 @@ public class CraftingSkillsPlugin extends JavaPlugin {
                 .register(OpenSmeltingUIInteraction.TYPE_NAME, OpenSmeltingUIInteraction.class, OpenSmeltingUIInteraction.CODEC);
         this.getCodecRegistry(Interaction.CODEC)
                 .register(OpenSmithingUIInteraction.TYPE_NAME, OpenSmithingUIInteraction.class, OpenSmithingUIInteraction.CODEC);
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenSpinningWheelUIInteraction.TYPE_NAME, OpenSpinningWheelUIInteraction.class, OpenSpinningWheelUIInteraction.CODEC);
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenKnifeUIInteraction.TYPE_NAME, OpenKnifeUIInteraction.class, OpenKnifeUIInteraction.CODEC);
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenBowstringUIInteraction.TYPE_NAME, OpenBowstringUIInteraction.class, OpenBowstringUIInteraction.CODEC);
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenArrowShaftUIInteraction.TYPE_NAME, OpenArrowShaftUIInteraction.class, OpenArrowShaftUIInteraction.CODEC);
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenHeadlessArrowUIInteraction.TYPE_NAME, OpenHeadlessArrowUIInteraction.class, OpenHeadlessArrowUIInteraction.CODEC);
         LOGGER.atInfo().log("[Skills Crafting] Interaction codecs registered.");
     }
 

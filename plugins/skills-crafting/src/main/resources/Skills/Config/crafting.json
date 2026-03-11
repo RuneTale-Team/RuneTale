@@ -1,7 +1,12 @@
 {
   "bench": {
     "anvilId": "RuneTale_Anvil",
-    "furnaceId": "RuneTale_Furnace"
+    "furnaceId": "RuneTale_Furnace",
+    "fletchingId": "RuneTale_Fletching",
+    "spinningWheelId": "RuneTale_Spinning_Wheel"
+  },
+  "fletching": {
+    "craftDurationMillis": 1800
   },
   "smithing": {
     "craftDurationMillis": 3000

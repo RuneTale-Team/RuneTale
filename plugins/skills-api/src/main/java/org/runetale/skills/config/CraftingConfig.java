@@ -12,8 +12,11 @@ import java.util.List;
 public record CraftingConfig(
         @Nonnull String anvilBenchId,
         @Nonnull String furnaceBenchId,
+        @Nonnull String fletchingBenchId,
+        @Nonnull String spinningWheelBenchId,
         long smithingCraftDurationMillis,
         long smeltingCraftDurationMillis,
+        long fletchingCraftDurationMillis,
         int maxCraftCount,
         @Nonnull List<Integer> quantityPresets,
         @Nonnull String quantityAllToken,
@@ -30,10 +33,14 @@ public record CraftingConfig(
         JsonObject smithingConfig = ConfigResourceLoader.objectValue(root, "smithing");
         JsonObject smeltingConfig = ConfigResourceLoader.objectValue(root, "smelting");
 
+        JsonObject fletchingConfig = ConfigResourceLoader.objectValue(root, "fletching");
         String anvilBenchId = ConfigResourceLoader.stringValue(benchConfig, "anvilId", "RuneTale_Anvil");
         String furnaceBenchId = ConfigResourceLoader.stringValue(benchConfig, "furnaceId", "RuneTale_Furnace");
+        String fletchingBenchId = ConfigResourceLoader.stringValue(benchConfig, "fletchingId", "RuneTale_Fletching");
+        String spinningWheelBenchId = ConfigResourceLoader.stringValue(benchConfig, "spinningWheelId", "RuneTale_Spinning_Wheel");
         long smithingDuration = Math.max(1L, ConfigResourceLoader.longValue(smithingConfig, "craftDurationMillis", 3000L));
         long smeltingDuration = Math.max(1L, ConfigResourceLoader.longValue(smeltingConfig, "craftDurationMillis", 3000L));
+        long fletchingDuration = Math.max(1L, ConfigResourceLoader.longValue(fletchingConfig, "craftDurationMillis", 1800L));
         int maxCraftCount = Math.max(1, ConfigResourceLoader.intValue(craftConfig, "maxCount", 999));
         String quantityAllToken = ConfigResourceLoader.stringValue(craftConfig, "quantityAllToken", "ALL");
         String smeltingOutputContainsToken = ConfigResourceLoader.stringValue(smeltingConfig, "outputContainsToken", "bar_");
@@ -43,8 +50,11 @@ public record CraftingConfig(
         return new CraftingConfig(
                 anvilBenchId,
                 furnaceBenchId,
+                fletchingBenchId,
+                spinningWheelBenchId,
                 smithingDuration,
                 smeltingDuration,
+                fletchingDuration,
                 maxCraftCount,
                 parseQuantityPresets(craftConfig, "quantityPresets", List.of(1, 5, 10)),
                 quantityAllToken,
