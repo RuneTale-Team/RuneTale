@@ -11,6 +11,7 @@ import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Resource;
 import com.hypixel.hytale.component.ResourceType;
 import com.hypixel.hytale.component.event.EntityEventType;
+import com.hypixel.hytale.component.event.EntityHolderEventType;
 import com.hypixel.hytale.component.event.WorldEventType;
 import com.hypixel.hytale.component.system.EcsEvent;
 
@@ -62,6 +63,16 @@ public class RecordingComponentAccessor<ECS_TYPE> implements ComponentAccessor<E
 	@Override
 	public <Event extends EcsEvent> void invoke(Event event) {
 		this.worldInvocations.add(event);
+	}
+
+	@Override
+	public <Event extends EcsEvent> void invoke(Holder<ECS_TYPE> holder, Event event) {
+		throw unsupported();
+	}
+
+	@Override
+	public <Event extends EcsEvent> void invoke(EntityHolderEventType<ECS_TYPE, Event> type, Holder<ECS_TYPE> holder, Event event) {
+		throw unsupported();
 	}
 
 	@Override

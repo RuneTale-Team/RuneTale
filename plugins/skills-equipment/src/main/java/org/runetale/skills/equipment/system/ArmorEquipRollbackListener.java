@@ -1,12 +1,16 @@
 package org.runetale.skills.equipment.system;
 
+import com.hypixel.hytale.component.ArchetypeChunk;
+import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.component.query.Query;
+import com.hypixel.hytale.component.system.EntityEventSystem;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.ItemArmorSlot;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.event.events.entity.LivingEntityInventoryChangeEvent;
 import com.hypixel.hytale.server.core.inventory.Inventory;
+import com.hypixel.hytale.server.core.inventory.InventoryChangeEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.transaction.ItemStackTransaction;
@@ -27,7 +31,7 @@ import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ArmorEquipRollbackListener {
+public class ArmorEquipRollbackListener extends EntityEventSystem<EntityStore, InventoryChangeEvent> {
 
     private final SkillsRuntimeApi runtimeApi;
     private final EquipmentRequirementTagService requirementTagService;
@@ -38,13 +42,27 @@ public class ArmorEquipRollbackListener {
             @Nonnull SkillsRuntimeApi runtimeApi,
             @Nonnull EquipmentRequirementTagService requirementTagService,
             @Nonnull EquipmentGateNotificationService notificationService) {
+        super(InventoryChangeEvent.class);
         this.runtimeApi = runtimeApi;
         this.requirementTagService = requirementTagService;
         this.notificationService = notificationService;
     }
 
-    public void handle(@Nonnull LivingEntityInventoryChangeEvent event) {
-        if (!(event.getEntity() instanceof Player player) || player.getGameMode() == GameMode.Creative) {
+    @Nullable
+    @Override
+    public Query<EntityStore> getQuery() {
+        return Player.getComponentType();
+    }
+
+    @Override
+    public void handle(
+            int index,
+            @Nonnull ArchetypeChunk<EntityStore> archetypeChunk,
+            @Nonnull Store<EntityStore> store,
+            @Nonnull CommandBuffer<EntityStore> commandBuffer,
+            @Nonnull InventoryChangeEvent event) {
+        Player player = archetypeChunk.getComponent(index, Player.getComponentType());
+        if (player == null || player.getGameMode() == GameMode.Creative) {
             return;
         }
 
@@ -53,13 +71,12 @@ public class ArmorEquipRollbackListener {
             return;
         }
 
-        Ref<EntityStore> ref = player.getReference();
+        Ref<EntityStore> ref = archetypeChunk.getReferenceTo(index);
         if (ref == null || !ref.isValid() || !this.guardedRefs.add(ref)) {
             return;
         }
 
         try {
-            Store<EntityStore> store = ref.getStore();
             PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
             ItemContainer armor = inventory.getArmor();
 

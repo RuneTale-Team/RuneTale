@@ -80,13 +80,10 @@ public class EquipmentSkillsPlugin extends JavaPlugin {
         }
 
         if (this.equipmentConfig.enforceArmor()) {
-            ArmorEquipRollbackListener rollbackListener = new ArmorEquipRollbackListener(
+            this.getEntityStoreRegistry().registerSystem(new ArmorEquipRollbackListener(
                     runtimeApi,
                     this.requirementTagService,
-                    this.notificationService);
-            this.getEventRegistry().registerGlobal(
-                    com.hypixel.hytale.server.core.event.events.entity.LivingEntityInventoryChangeEvent.class,
-                    rollbackListener::handle);
+                    this.notificationService));
 
             this.getEntityStoreRegistry().registerSystem(new EquipmentRequirementEnforcementSystem(
                     runtimeApi,
