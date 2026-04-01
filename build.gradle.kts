@@ -219,6 +219,10 @@ val lootProtectionConfigResourceDirs = listOf(
     layout.projectDirectory.dir("plugins/loot-protection/src/main/resources/LootProtection")
 )
 val lootProtectionConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/loot-protection")
+val starterKitConfigResourceDirs = listOf(
+    layout.projectDirectory.dir("plugins/starterkit/src/main/resources/StarterKit")
+)
+val starterKitConfigRunDir = layout.projectDirectory.dir("server/mods/runetale/config/starterkit")
 
 tasks.register<Sync>("deploySkillsConfigToRun") {
     from(skillsConfigResourceDirs)
@@ -244,6 +248,15 @@ tasks.register<Sync>("deployLootProtectionConfigToRun") {
 
     doLast {
         println("Synced loot protection config to ${lootProtectionConfigRunDir.asFile}")
+    }
+}
+
+tasks.register<Sync>("deployStarterKitConfigToRun") {
+    from(starterKitConfigResourceDirs)
+    into(starterKitConfigRunDir)
+
+    doLast {
+        println("Synced starter kit config to ${starterKitConfigRunDir.asFile}")
     }
 }
 
@@ -285,6 +298,10 @@ tasks.register<Zip>("bundleModsRelease") {
     from(lootProtectionConfigResourceDirs) {
         into("runetale/config/loot-protection")
     }
+
+    from(starterKitConfigResourceDirs) {
+        into("runetale/config/starterkit")
+    }
 }
 
 tasks.register("deployPluginsToRun") {
@@ -294,6 +311,7 @@ tasks.register("deployPluginsToRun") {
     dependsOn("deploySkillsConfigToRun")
     dependsOn("deployBlockRegenConfigToRun")
     dependsOn("deployLootProtectionConfigToRun")
+    dependsOn("deployStarterKitConfigToRun")
 
     doLast {
         copy {
