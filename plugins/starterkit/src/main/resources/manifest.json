@@ -1,0 +1,14 @@
+{
+  "Group": "RuneTale",
+  "Name": "StarterKitPlugin",
+  "Version": "0.1.0",
+  "Main": "org.runetale.starterkit.StarterKitPlugin",
+  "Authors": [
+    {
+      "Name": "Nico Piel",
+      "Email": "nicopiel@mailbox.org"
+    }
+  ],
+  "ServerVersion": "${hytaleServerVersion}",
+  "IncludesAssetPack": false
+}

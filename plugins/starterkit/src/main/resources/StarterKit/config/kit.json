@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "enabled": true,
+  "items": [
+    { "container": "hotbar", "itemId": "Weapon_Sword_Steel_Rusty", "quantity": 1 },
+    { "container": "hotbar", "itemId": "Food_Bread", "quantity": 9 },
+    { "container": "armour", "itemId": "Armor_Leather_Light_Legs", "quantity": 1 },
+    { "container": "utility", "itemId": "Weapon_Shield_Rusty", "quantity": 1 }
+  ]
+}
