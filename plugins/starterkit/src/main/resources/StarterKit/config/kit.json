@@ -1,0 +1,21 @@
+{
+  "_comment": "StarterKit config. Items are granted to first-time players. Set enabled to false to disable granting (players are still marked as having received a kit).",
+  "version": 1,
+  "enabled": true,
+  "items": [
+    { "container": "hotbar",  "itemId": "Weapon_Sword_Steel_Rusty",  "quantity": 1 },
+    { "container": "hotbar",  "itemId": "Food_Bread",                "quantity": 9 },
+    { "container": "armour",  "itemId": "Armor_Leather_Light_Legs",  "quantity": 1 },
+    { "container": "utility", "itemId": "Weapon_Shield_Rusty",       "quantity": 1 }
+  ],
+
+  "_examples": "All valid container types shown below. Remove the _disabled prefix to activate.",
+  "_disabled_items": [
+    { "container": "hotbar",  "itemId": "Tool_Pickaxe_Copper", "quantity": 1, "_comment": "hotbar: slots 0-7, main hand items" },
+    { "container": "armour",  "itemId": "Armor_Iron_Chest",    "quantity": 1, "_comment": "armour: slots 0-3 (head, chest, legs, feet)" },
+    { "container": "utility", "itemId": "Weapon_Shield_Iron",  "quantity": 1, "_comment": "utility: offhand/shield slots" },
+    { "container": "tools",   "itemId": "Tool_Hatchet_Copper", "quantity": 1, "_comment": "tools: tool belt slots" },
+    { "container": "storage", "itemId": "Material_Wood_Oak",   "quantity": 32, "_comment": "storage: main inventory grid" },
+    { "container": "backpack","itemId": "Material_Stone",       "quantity": 16, "_comment": "backpack: extended inventory" }
+  ]
+}
