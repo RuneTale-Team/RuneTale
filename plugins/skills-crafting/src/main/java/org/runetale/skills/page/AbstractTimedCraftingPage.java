@@ -188,7 +188,8 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			CraftingRecipe recipe = CraftingPageSupport.resolveRecipe(recipeId);
 			Player player = store.getComponent(ref, Player.getComponentType());
 			boolean canContinue = crafted && recipe != null && CraftingPageSupport.hasRequiredMaterials(player, recipe);
-			this.craftingState.handleCraftStepResult(crafted, canContinue, this.craftDurationMillis);
+			long duration = recipe != null ? resolveCraftDuration(recipe) : this.craftDurationMillis;
+			this.craftingState.handleCraftStepResult(crafted, canContinue, duration);
 
 			UICommandBuilder commandBuilder = new UICommandBuilder();
 			UIEventBuilder eventBuilder = new UIEventBuilder();
@@ -232,8 +233,13 @@ abstract class AbstractTimedCraftingPage<TEventData extends TimedCraftingEventDa
 			return false;
 		}
 
-		this.craftingState.startCrafting(selectedRecipe.getId(), targetCraftCount, this.craftDurationMillis);
+		long duration = resolveCraftDuration(selectedRecipe);
+		this.craftingState.startCrafting(selectedRecipe.getId(), targetCraftCount, duration);
 		return true;
+	}
+
+	private long resolveCraftDuration(@Nonnull CraftingRecipe recipe) {
+		return this.craftingRecipeTagService.getCraftDurationMillis(recipe).orElse(this.craftDurationMillis);
 	}
 
 	protected final void appendProgressUi(@Nonnull UICommandBuilder commandBuilder) {

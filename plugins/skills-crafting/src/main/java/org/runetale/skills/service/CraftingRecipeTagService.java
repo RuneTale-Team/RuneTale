@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
 	 * Stateless utility that extracts custom skill tags from crafted output items.
@@ -34,6 +35,7 @@ public class CraftingRecipeTagService {
 	private static final String TAG_SKILLS_REQUIRED = "SkillsRequired";
 	private static final String TAG_SKILL_LEVELS_REQUIRED = "CraftingLevelRequirement";
 	private static final String TAG_CRAFTING_LEVEL_REQUIRED = "CraftingLevelRequirement";
+	private static final String TAG_CRAFT_DURATION_MILLIS = "CraftDurationMillis";
 
 	private final CraftingConfig craftingConfig;
 
@@ -61,6 +63,29 @@ public class CraftingRecipeTagService {
 			LOGGER.atWarning().log("Invalid %s value '%s' on recipe %s; ignoring",
 					TAG_XP_ON_SUCCESSFUL_CRAFT, values[0], recipe.getId());
 			return Optional.empty();
+		}
+	}
+
+	/**
+	 * Returns the per-recipe craft duration override, if configured on the output item.
+	 */
+	@Nonnull
+	public OptionalLong getCraftDurationMillis(@Nonnull CraftingRecipe recipe) {
+		String[] values = getRawTagValues(recipe, TAG_CRAFT_DURATION_MILLIS);
+		if (values == null || values.length == 0) {
+			return OptionalLong.empty();
+		}
+
+		try {
+			long millis = Long.parseLong(values[0].trim());
+			if (millis <= 0L) {
+				return OptionalLong.empty();
+			}
+			return OptionalLong.of(millis);
+		} catch (NumberFormatException e) {
+			LOGGER.atWarning().log("Invalid %s value '%s' on recipe %s; ignoring",
+					TAG_CRAFT_DURATION_MILLIS, values[0], recipe.getId());
+			return OptionalLong.empty();
 		}
 	}
 
