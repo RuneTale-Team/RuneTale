@@ -78,13 +78,15 @@ public class CraftingRecipeTagService {
 	public List<SkillRequirement> getSkillRequirements(@Nonnull CraftingRecipe recipe) {
 		String[] skillNames = getRawTagValues(recipe, TAG_SKILLS_REQUIRED);
 		if (skillNames == null || skillNames.length == 0) {
+			SkillType benchSkill = detectBenchSkillType(recipe);
 			Integer craftingLevelRequired = parseCraftingLevelRequired(recipe);
 			if (craftingLevelRequired != null) {
-				return List.of(new SkillRequirement(SkillType.SMITHING, craftingLevelRequired));
+				return List.of(new SkillRequirement(
+						benchSkill != null ? benchSkill : SkillType.SMITHING, craftingLevelRequired));
 			}
 
-			if (isRuneTaleSmithingBenchRecipe(recipe)) {
-				return List.of(new SkillRequirement(SkillType.SMITHING, 1));
+			if (benchSkill != null) {
+				return List.of(new SkillRequirement(benchSkill, 1));
 			}
 			return Collections.emptyList();
 		}
@@ -139,10 +141,11 @@ public class CraftingRecipeTagService {
 		}
 	}
 
-	private boolean isRuneTaleSmithingBenchRecipe(@Nonnull CraftingRecipe recipe) {
+	@Nullable
+	private SkillType detectBenchSkillType(@Nonnull CraftingRecipe recipe) {
 		BenchRequirement[] benchRequirements = recipe.getBenchRequirement();
 		if (benchRequirements == null || benchRequirements.length == 0) {
-			return false;
+			return null;
 		}
 
 		for (BenchRequirement benchRequirement : benchRequirements) {
@@ -152,11 +155,16 @@ public class CraftingRecipeTagService {
 
 			if (this.craftingConfig.anvilBenchId().equals(benchRequirement.id)
 					|| this.craftingConfig.furnaceBenchId().equals(benchRequirement.id)) {
-				return true;
+				return SkillType.SMITHING;
+			}
+
+			if (this.craftingConfig.fletchingBenchId().equals(benchRequirement.id)
+					|| this.craftingConfig.spinningWheelBenchId().equals(benchRequirement.id)) {
+				return SkillType.FLETCHING;
 			}
 		}
 
-		return false;
+		return null;
 	}
 
 	@Nullable
