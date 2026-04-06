@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.runetale.skills.config.CraftingConfig;
+import org.runetale.skills.page.FletchingPage;
 import org.runetale.skills.page.SmeltingPage;
 import org.runetale.skills.page.SmithingPage;
 import org.runetale.skills.service.CraftingPageTrackerService;
@@ -19,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Ticks custom smithing/smelting page crafting progress animations.
+ * Ticks custom smithing/smelting/fletching page crafting progress animations.
  */
 public class CraftingPageProgressSystem extends DelayedSystem<EntityStore> {
 	private final CraftingPageTrackerService craftingPageTrackerService;
@@ -76,6 +77,8 @@ public class CraftingPageProgressSystem extends DelayedSystem<EntityStore> {
 					smeltingPage.tickProgress(playerEntityRef, store, deltaTime);
 				} else if (customPage instanceof SmithingPage smithingPage) {
 					smithingPage.tickProgress(playerEntityRef, store, deltaTime);
+				} else if (customPage instanceof FletchingPage fletchingPage) {
+					fletchingPage.tickProgress(playerEntityRef, store, deltaTime);
 				} else {
 					this.craftingPageTrackerService.untrackOpenPage(playerId);
 				}
