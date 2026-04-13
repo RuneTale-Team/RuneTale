@@ -26,6 +26,10 @@ public class GrantStarterKitSystem extends HolderSystem<EntityStore> {
 
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
+    private static final int GRANT_SUCCESS = 0;
+    private static final int GRANT_NO_CONTAINER = 1;
+    private static final int GRANT_SKIP = 2;
+
     private final ComponentType<EntityStore, ReceivedStarterKitComponent> receivedKitComponentType;
     private final StarterKitConfig config;
     private final Query<EntityStore> query;
@@ -35,7 +39,14 @@ public class GrantStarterKitSystem extends HolderSystem<EntityStore> {
             @Nonnull StarterKitConfig config) {
         this.receivedKitComponentType = receivedKitComponentType;
         this.config = config;
-        this.query = Query.and(PlayerRef.getComponentType(), Query.not(receivedKitComponentType));
+        // InventoryComponent.Hotbar is required in addition to PlayerRef so that the system only
+        // fires once inventory is fully initialized. For brand-new players, PlayerRef is attached
+        // before inventory components, so without this guard the grant runs against null containers,
+        // nothing is placed, but markReceived is called — permanently losing the kit.
+        this.query = Query.and(
+                PlayerRef.getComponentType(),
+                InventoryComponent.Hotbar.getComponentType(),
+                Query.not(receivedKitComponentType));
     }
 
     @Nonnull
@@ -66,14 +77,25 @@ public class GrantStarterKitSystem extends HolderSystem<EntityStore> {
         }
 
         int granted = 0;
+        int nullContainers = 0;
         for (KitItem kitItem : items) {
-            if (grantItem(holder, kitItem)) {
+            int result = grantItem(holder, kitItem);
+            if (result == GRANT_SUCCESS) {
                 granted++;
+            } else if (result == GRANT_NO_CONTAINER) {
+                nullContainers++;
             }
         }
 
+        if (nullContainers > 0 && granted == 0) {
+            // Every item failed due to missing containers — inventory not ready despite query guard.
+            // Skip markReceived so the system retries when the query re-matches.
+            LOGGER.atWarning().log("[StarterKit] All containers unavailable, deferring kit grant (nullContainers=%d)", nullContainers);
+            return;
+        }
+
         markReceived(holder);
-        LOGGER.atInfo().log("[StarterKit] Granted starter kit to player items=%d/%d", granted, items.size());
+        LOGGER.atInfo().log("[StarterKit] Granted starter kit to player granted=%d/%d", granted, items.size());
     }
 
     @Override
@@ -82,34 +104,34 @@ public class GrantStarterKitSystem extends HolderSystem<EntityStore> {
         // No cleanup required. Component lifecycle is handled by ECS persistence.
     }
 
-    private boolean grantItem(
+    private int grantItem(
             @Nonnull Holder<EntityStore> holder,
             @Nonnull KitItem kitItem) {
         // Validate item exists in asset registry before attempting to grant
         Item item = Item.getAssetMap().getAsset(kitItem.itemId());
         if (item == null) {
             LOGGER.atWarning().log("[StarterKit] Unknown item id=%s, skipping", kitItem.itemId());
-            return false;
+            return GRANT_SKIP;
         }
 
         ItemContainer container = resolveContainer(holder, kitItem.container());
         if (container == null) {
             LOGGER.atWarning().log("[StarterKit] Could not resolve container=%s, skipping item=%s",
                     kitItem.container(), kitItem.itemId());
-            return false;
+            return GRANT_NO_CONTAINER;
         }
 
         for (short slot = 0; slot < container.getCapacity(); slot++) {
             ItemStack existing = container.getItemStack(slot);
             if (existing == null || ItemStack.isEmpty(existing)) {
                 container.setItemStackForSlot(slot, new ItemStack(kitItem.itemId(), kitItem.quantity()));
-                return true;
+                return GRANT_SUCCESS;
             }
         }
 
         LOGGER.atWarning().log("[StarterKit] Container=%s full, could not place item=%s",
                 kitItem.container(), kitItem.itemId());
-        return false;
+        return GRANT_SKIP;
     }
 
     @Nullable
