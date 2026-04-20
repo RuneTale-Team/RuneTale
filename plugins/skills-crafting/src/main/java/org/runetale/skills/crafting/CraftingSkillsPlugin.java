@@ -16,6 +16,7 @@ import org.runetale.skills.interaction.OpenKnifeUIInteraction;
 import org.runetale.skills.interaction.OpenSmeltingUIInteraction;
 import org.runetale.skills.interaction.OpenSmithingUIInteraction;
 import org.runetale.skills.interaction.OpenSpinningWheelUIInteraction;
+import org.runetale.skills.interaction.OpenXBowstringUIInteraction;
 import org.runetale.skills.service.CraftingPageTrackerService;
 import org.runetale.skills.service.CraftingRecipeTagService;
 import org.runetale.skills.system.CraftingPageProgressSystem;
@@ -76,6 +77,8 @@ public class CraftingSkillsPlugin extends JavaPlugin {
                 .register(OpenKnifeUIInteraction.TYPE_NAME, OpenKnifeUIInteraction.class, OpenKnifeUIInteraction.CODEC);
         this.getCodecRegistry(Interaction.CODEC)
                 .register(OpenBowstringUIInteraction.TYPE_NAME, OpenBowstringUIInteraction.class, OpenBowstringUIInteraction.CODEC);
+        this.getCodecRegistry(Interaction.CODEC)
+                .register(OpenXBowstringUIInteraction.TYPE_NAME, OpenXBowstringUIInteraction.class, OpenXBowstringUIInteraction.CODEC);
         this.getCodecRegistry(Interaction.CODEC)
                 .register(OpenArrowShaftUIInteraction.TYPE_NAME, OpenArrowShaftUIInteraction.class, OpenArrowShaftUIInteraction.CODEC);
         this.getCodecRegistry(Interaction.CODEC)

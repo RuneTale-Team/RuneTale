@@ -23,17 +23,17 @@ import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
- * Item interaction that opens the Bowstringing fletching UI page.
+ * Item interaction that opens the Crossbow Stringing fletching UI page.
  *
  * <p>
- * Registered as {@code "runetale_open_bowstring"}. Triggered by right-clicking while holding a bowstring.
+ * Registered as {@code "runetale_open_xbowstring"}. Triggered by right-clicking while holding a crossbowstring.
  */
-public final class OpenBowstringUIInteraction extends SimpleInstantInteraction {
+public final class OpenXBowstringUIInteraction extends SimpleInstantInteraction {
 
-	public static final String TYPE_NAME = "runetale_open_bowstring";
+	public static final String TYPE_NAME = "runetale_open_xbowstring";
 
-	public static final BuilderCodec<OpenBowstringUIInteraction> CODEC = BuilderCodec
-			.builder(OpenBowstringUIInteraction.class, OpenBowstringUIInteraction::new, SimpleInstantInteraction.CODEC)
+	public static final BuilderCodec<OpenXBowstringUIInteraction> CODEC = BuilderCodec
+			.builder(OpenXBowstringUIInteraction.class, OpenXBowstringUIInteraction::new, SimpleInstantInteraction.CODEC)
 			.build();
 
 	private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
@@ -64,7 +64,7 @@ public final class OpenBowstringUIInteraction extends SimpleInstantInteraction {
 		SkillsRuntimeApi runtimeApi = SkillsRuntimeRegistry.get();
 		CraftingRuntimeState craftingRuntime = CraftingRuntimeRegistry.get();
 		if (runtimeApi == null || craftingRuntime == null) {
-			LOGGER.atWarning().log("Skills runtime not available; cannot open bowstring UI");
+			LOGGER.atWarning().log("Skills runtime not available; cannot open crossbowstring UI");
 			ctx.getState().state = InteractionState.Failed;
 			return;
 		}
@@ -79,9 +79,9 @@ public final class OpenBowstringUIInteraction extends SimpleInstantInteraction {
 				craftingRuntime.craftingRecipeTagService(),
 				craftingRuntime.craftingPageTrackerService(),
 				craftingRuntime.craftingConfig(),
-				"Bow Stringing",
+				"Crossbow Stringing",
 				craftingRuntime.craftingConfig().fletchingBenchId(),
-				List.of("RuneTale_Fletching_Bowstringing"));
+				List.of("RuneTale_Fletching_XBowstringing"));
 
 		player.getPageManager().openCustomPage(ref, store, page);
 		ctx.getState().state = InteractionState.Finished;
